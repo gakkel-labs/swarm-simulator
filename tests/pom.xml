@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.gakkel</groupId>
-        <artifactId>gakkel-swarm-simulator</artifactId>
+        <groupId>fr.gakkel.swarmsimulator</groupId>
+        <artifactId>swarm-simulator</artifactId>
         <version>0.1-SNAPSHOT</version>
     </parent>
 
@@ -15,7 +15,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.gakkel</groupId>
+            <groupId>fr.gakkel.swarmsimulator</groupId>
             <artifactId>swarm-server</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>

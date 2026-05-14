@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.gakkel</groupId>
-        <artifactId>gakkel-swarm-simulator</artifactId>
+        <groupId>fr.gakkel.swarmsimulator</groupId>
+        <artifactId>swarm-simulator</artifactId>
         <version>0.1-SNAPSHOT</version>
     </parent>
 
@@ -15,9 +15,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.gakkel</groupId>
+            <groupId>fr.gakkel.swarmsimulator</groupId>
             <artifactId>contracts</artifactId>
             <version>0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-services</artifactId>
+            <version>${grpc.version}</version>
         </dependency>
     </dependencies>
 

@@ -233,7 +233,9 @@ class BoidsRulesTest {
 
         @Test
         void closerAgentReceivesStrongerForce() {
-            // same obstacle; compare magnitudes at two distances
+            // obstacle r=2 at x=10 → surface at x=8 (left side)
+            // farAgent at x=4 → 4u from the surface; nearAgent at x=7 → 1u from the surface
+            // "far"/"near" labels refer to distance from the OBSTACLE SURFACE, not from the origin
             var obstacle = new Obstacle(new Vector3D(10, 0, 0), 2.0);
             var farAgent  = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(4, 0, 0), Vector3D.ZERO);
             var nearAgent = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(7, 0, 0), Vector3D.ZERO);

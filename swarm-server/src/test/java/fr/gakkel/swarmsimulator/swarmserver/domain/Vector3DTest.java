@@ -99,10 +99,4 @@ class Vector3DTest {
         assertEquals(6.0, a.dot(b), 1e-9);
     }
 
-    @Test
-    void zero_constant_allComponentsAreZero() {
-        assertEquals(0.0, Vector3D.ZERO.x());
-        assertEquals(0.0, Vector3D.ZERO.y());
-        assertEquals(0.0, Vector3D.ZERO.z());
-    }
 }

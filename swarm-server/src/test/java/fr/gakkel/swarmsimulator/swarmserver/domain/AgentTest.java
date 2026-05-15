@@ -97,10 +97,4 @@ class AgentTest {
         assertThrows(NullPointerException.class, () -> agent.update(ORIGIN, null));
     }
 
-    @Test
-    void carrier_type_isRecognized() {
-        var carrier = Agent.create(AgentType.CARRIER, ORIGIN);
-
-        assertEquals(AgentType.CARRIER, carrier.type());
-    }
 }

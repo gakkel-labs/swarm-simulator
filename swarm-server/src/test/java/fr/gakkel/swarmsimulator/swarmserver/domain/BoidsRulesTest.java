@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BoidsRulesTest {
 
     private static final double DELTA = 1e-9;
-    private static final BoidsConfig DEFAULT_CONFIG = new BoidsConfig(15.0, 1.5, 1.0, 1.0, 5.0, 15.0, 2.0);
+    private static final BoidsConfig DEFAULT_CONFIG = BoidsConfig.builder().build();
 
     private BoidsRules rules;
     private Agent agent;
@@ -132,7 +132,7 @@ class BoidsRulesTest {
 
         @Test
         void onlySeparationActive_equalsWeightedSeparation() {
-            var config = new BoidsConfig(15.0, 2.0, 0.0, 0.0, 5.0, 15.0, 0.0);
+            var config = BoidsConfig.builder().separationWeight(2.0).alignmentWeight(0.0).cohesionWeight(0.0).boundaryRepulsionWeight(0.0).build();
             var separationOnlyRules = new BoidsRules(config);
             var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
 

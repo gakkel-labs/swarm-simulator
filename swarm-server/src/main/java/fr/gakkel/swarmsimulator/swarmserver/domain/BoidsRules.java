@@ -19,8 +19,9 @@ public final class BoidsRules {
         Vector3D sum = Vector3D.ZERO;
         for (Agent neighbor : neighbors) {
             Vector3D away = agent.position().subtract(neighbor.position());
-            if (away.magnitude() > MIN_SEPARATION_DISTANCE) {
-                sum = sum.add(away);
+            double dist = away.magnitude();
+            if (dist > MIN_SEPARATION_DISTANCE) {
+                sum = sum.add(away.scale(1.0 / (dist * dist)));
             }
         }
         return sum.normalize();

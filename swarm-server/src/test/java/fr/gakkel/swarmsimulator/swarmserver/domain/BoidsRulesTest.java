@@ -31,6 +31,13 @@ class BoidsRulesTest {
         }
 
         @Test
+        void coLocatedNeighbor_returnsZero() {
+            var coLocated = Agent.create(AgentType.EXPLORER, new Vector3D(0, 0, 0));
+
+            assertEquals(Vector3D.ZERO, rules.separation(agent, List.of(coLocated)));
+        }
+
+        @Test
         void oneNeighbor_returnsVectorAwayFromNeighbor() {
             var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
 
@@ -137,18 +144,20 @@ class BoidsRulesTest {
         }
 
         @Test
-        void allRulesActive_equalsWeightedSumOfThreeRules() {
+        void allRulesActive_producesExpectedSteeringVector() {
+            // agent at origin, neighbor at (5,0,0) moving up (0,1,0)
+            // separation → (-1,0,0)*1.5 = (-1.5,0,0)
+            // alignment  → ( 0,1,0)*1.0 = ( 0.0,1,0)
+            // cohesion   → ( 1,0,0)*1.0 = ( 1.0,0,0)
+            // steer      → (-0.5, 1.0, 0.0)
             var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
             neighbor.update(neighbor.position(), new Vector3D(0, 1, 0));
 
             var steer = rules.steer(agent, List.of(neighbor));
-            var expected = rules.separation(agent, List.of(neighbor)).scale(DEFAULT_CONFIG.separationWeight())
-                    .add(rules.alignment(List.of(neighbor)).scale(DEFAULT_CONFIG.alignmentWeight()))
-                    .add(rules.cohesion(agent, List.of(neighbor)).scale(DEFAULT_CONFIG.cohesionWeight()));
 
-            assertEquals(expected.x(), steer.x(), DELTA);
-            assertEquals(expected.y(), steer.y(), DELTA);
-            assertEquals(expected.z(), steer.z(), DELTA);
+            assertEquals(-0.5, steer.x(), DELTA);
+            assertEquals(1.0,  steer.y(), DELTA);
+            assertEquals(0.0,  steer.z(), DELTA);
         }
     }
 }

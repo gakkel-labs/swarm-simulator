@@ -27,7 +27,9 @@ public final class World {
     public double depth() { return depth; }
 
     public void addAgent(Agent agent) {
-        agents.add(Objects.requireNonNull(agent, "agent"));
+        Objects.requireNonNull(agent, "agent");
+        if (agents.contains(agent)) throw new IllegalArgumentException("agent already in world");
+        agents.add(agent);
     }
 
     public boolean removeAgent(Agent agent) {
@@ -44,6 +46,7 @@ public final class World {
 
     // squared-distance filter avoids sqrt in the Boids hot loop
     public List<Agent> neighbors(Agent agent, double radius) {
+        if (radius < 0) throw new IllegalArgumentException("radius must be >= 0");
         double radiusSq = radius * radius;
         return agents.stream()
                 .filter(a -> !a.equals(agent))

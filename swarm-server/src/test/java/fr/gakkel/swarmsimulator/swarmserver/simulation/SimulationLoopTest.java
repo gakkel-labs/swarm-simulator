@@ -88,22 +88,23 @@ class SimulationLoopTest {
     }
 
     @Nested
-    class ComputeSpread {
+    class ComputePositionStandardDeviation {
 
         @Test
-        void allAgentsAtSamePosition_spreadIsZero() {
+        void allAgentsAtSamePosition_sigmaIsZero() {
             var a1 = agent(new Vector3D(5, 5, 5));
             var a2 = agent(new Vector3D(5, 5, 5));
             Vector3D centroid = SimulationLoop.computeCentroid(List.of(a1, a2));
-            assertEquals(0.0, SimulationLoop.computeSpread(List.of(a1, a2), centroid), 1e-9);
+            assertEquals(0.0, SimulationLoop.computePositionStandardDeviation(List.of(a1, a2), centroid), 1e-9);
         }
 
         @Test
-        void twoAgentsSymmetric_spreadEqualsDistanceToCentroid() {
+        void twoAgentsSymmetric_sigmaEqualsDistanceToCentroid() {
+            // each agent is 5u from centroid → σ = sqrt((5² + 5²) / 2) = 5
             var a1 = agent(new Vector3D(0, 0, 0));
             var a2 = agent(new Vector3D(10, 0, 0));
             Vector3D centroid = SimulationLoop.computeCentroid(List.of(a1, a2));
-            assertEquals(5.0, SimulationLoop.computeSpread(List.of(a1, a2), centroid), 1e-9);
+            assertEquals(5.0, SimulationLoop.computePositionStandardDeviation(List.of(a1, a2), centroid), 1e-9);
         }
     }
 

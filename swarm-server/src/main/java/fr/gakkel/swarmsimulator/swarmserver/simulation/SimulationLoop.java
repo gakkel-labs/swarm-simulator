@@ -33,8 +33,10 @@ public class SimulationLoop {
 
     private int tickCount = 0;
     private Vector3D lastCentroid = null;
-    private double lastSpread = 0;
-    private int consecutiveSpreadIncreases = 0;
+    private double previousPositionStandardDeviation = 0;
+    private int consecutiveStandardDeviationIncreases = 0;
+    private final List<Double> recentSigmas = new ArrayList<>();
+    private boolean flockingConfirmed = false;
 
     public SimulationLoop(World world, BoidsConfig config) {
         this.world = Objects.requireNonNull(world, "world");
@@ -91,22 +93,23 @@ public class SimulationLoop {
         if (agents.isEmpty()) return;
 
         Vector3D centroid = computeCentroid(agents);
-        double spread = computeSpread(agents, centroid);
+        double positionStandardDeviation = computePositionStandardDeviation(agents, centroid);
         int elapsed = tickCount / TICK_RATE_HZ;
-        double spreadRounded = Math.round(spread * 10) / 10.0;
+        double standardDeviationRounded = Math.round(positionStandardDeviation * 10) / 10.0;
 
         if (lastCentroid == null) {
-            LOG.info("t={}s | premier releve | spread={} u", elapsed, spreadRounded);
+            LOG.info("t={}s | premier releve | σ={} u", elapsed, standardDeviationRounded);
         } else {
             double intervalSeconds = (double) LOG_INTERVAL_TICKS / TICK_RATE_HZ;
             double drift = centroid.distanceTo(lastCentroid) / intervalSeconds;
             double driftRounded = Math.round(drift * 100) / 100.0;
-            LOG.info("t={}s | drift={} u/s | spread={} u", elapsed, driftRounded, spreadRounded);
-            checkAlerts(elapsed, drift, driftRounded, spread, spreadRounded);
+            LOG.info("t={}s | drift={} u/s | σ={} u", elapsed, driftRounded, standardDeviationRounded);
+            checkAlerts(elapsed, drift, driftRounded, positionStandardDeviation, standardDeviationRounded);
+            checkFlocking(elapsed, positionStandardDeviation, standardDeviationRounded);
         }
 
         lastCentroid = centroid;
-        lastSpread = spread;
+        previousPositionStandardDeviation = positionStandardDeviation;
     }
 
     static Vector3D computeCentroid(List<Agent> agents) {
@@ -115,34 +118,51 @@ public class SimulationLoop {
         return sum.scale(1.0 / agents.size());
     }
 
-    static double computeSpread(List<Agent> agents, Vector3D centroid) {
-        double sum = 0;
-        for (Agent a : agents) sum += a.position().distanceTo(centroid);
-        return sum / agents.size();
+    static double computePositionStandardDeviation(List<Agent> agents, Vector3D centroid) {
+        double sumSq = 0;
+        for (Agent a : agents) {
+            double dist = a.position().distanceTo(centroid);
+            sumSq += dist * dist;
+        }
+        return Math.sqrt(sumSq / agents.size());
     }
 
-    private void checkAlerts(int elapsed, double drift, double driftRounded, double spread, double spreadRounded) {
+    private void checkAlerts(int elapsed, double drift, double driftRounded, double positionStandardDeviation, double standardDeviationRounded) {
         if (drift < 0.1) {
             LOG.warn("t={}s | ALERTE essaim immobile (drift={} u/s)", elapsed, driftRounded);
         }
 
-        double spreadLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.8;
-        if (spread > spreadLimit) {
-            LOG.warn("t={}s | ALERTE essaim disperse (spread={} u > {} u)", elapsed, spreadRounded, (int) spreadLimit);
+        double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.8;
+        if (positionStandardDeviation > standardDeviationLimit) {
+            LOG.warn("t={}s | ALERTE essaim disperse (σ={} u > {} u)", elapsed, standardDeviationRounded, (int) standardDeviationLimit);
         }
 
-        if (spread > lastSpread) {
-            consecutiveSpreadIncreases++;
-            if (consecutiveSpreadIncreases >= 3) {
-                LOG.warn("t={}s | ALERTE divergence ({} relevés en hausse)", elapsed, consecutiveSpreadIncreases);
+        if (positionStandardDeviation > previousPositionStandardDeviation) {
+            consecutiveStandardDeviationIncreases++;
+            if (consecutiveStandardDeviationIncreases >= 3) {
+                LOG.warn("t={}s | ALERTE divergence ({} relevés en hausse)", elapsed, consecutiveStandardDeviationIncreases);
             }
         } else {
-            consecutiveSpreadIncreases = 0;
+            consecutiveStandardDeviationIncreases = 0;
         }
 
         long frozenCount = world.agents().stream().filter(a -> a.velocity().magnitude() < 0.01).count();
         if (frozenCount > 0) {
             LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsed, frozenCount);
+        }
+    }
+
+    private void checkFlocking(int elapsed, double positionStandardDeviation, double standardDeviationRounded) {
+        if (flockingConfirmed) return;
+        recentSigmas.add(positionStandardDeviation);
+        if (recentSigmas.size() > 3) recentSigmas.remove(0);
+        if (recentSigmas.size() == 3) {
+            double max = recentSigmas.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+            double min = recentSigmas.stream().mapToDouble(Double::doubleValue).min().orElse(0);
+            if (max > 0 && (max - min) / max < 0.05) {
+                flockingConfirmed = true;
+                LOG.info("t={}s | flocking confirmed — σ stable à {} u", elapsed, standardDeviationRounded);
+            }
         }
     }
 

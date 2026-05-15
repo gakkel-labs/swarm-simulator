@@ -149,6 +149,7 @@ class WorldTest {
     }
 
     @Test
+    @SuppressWarnings("DataFlowIssue")  // intentional: verify the view is truly unmodifiable
     void obstacles_returnsUnmodifiableView() {
         var obstacle = new Obstacle(new Vector3D(10, 10, 10), 2.0);
         var view = world.obstacles();

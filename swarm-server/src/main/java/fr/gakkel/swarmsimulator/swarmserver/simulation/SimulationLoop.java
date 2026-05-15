@@ -33,6 +33,8 @@ public class SimulationLoop {
 
     private int tickCount = 0;
     private Vector3D lastCentroid = null;
+    private double lastSpread = 0;
+    private int consecutiveSpreadIncreases = 0;
 
     public SimulationLoop(World world, BoidsConfig config) {
         this.world = Objects.requireNonNull(world, "world");
@@ -88,30 +90,60 @@ public class SimulationLoop {
         List<Agent> agents = world.agents();
         if (agents.isEmpty()) return;
 
-        Vector3D sum = Vector3D.ZERO;
-        for (Agent a : agents) {
-            sum = sum.add(a.position());
-        }
-        Vector3D centroid = sum.scale(1.0 / agents.size());
+        Vector3D centroid = computeCentroid(agents);
+        double spread = computeSpread(agents, centroid);
+        int elapsed = tickCount / TICK_RATE_HZ;
+        double spreadRounded = Math.round(spread * 10) / 10.0;
 
-        double spreadSum = 0;
-        for (Agent a : agents) {
-            spreadSum += a.position().distanceTo(centroid);
-        }
-        double spread = spreadSum / agents.size();
-
-        double intervalSeconds = (double) LOG_INTERVAL_TICKS / TICK_RATE_HZ;
-        String driftInfo;
         if (lastCentroid == null) {
-            driftInfo = "premier releve";
+            LOG.info("t={}s | premier releve | spread={} u", elapsed, spreadRounded);
         } else {
+            double intervalSeconds = (double) LOG_INTERVAL_TICKS / TICK_RATE_HZ;
             double drift = centroid.distanceTo(lastCentroid) / intervalSeconds;
-            String status = drift < 0.1 ? "essaim bloque (verifier separation)" : "mouvement coherent";
-            driftInfo = String.format("drift=%.2f u/s — %s", drift, status);
+            double driftRounded = Math.round(drift * 100) / 100.0;
+            LOG.info("t={}s | drift={} u/s | spread={} u", elapsed, driftRounded, spreadRounded);
+            checkAlerts(elapsed, drift, driftRounded, spread, spreadRounded);
         }
-        lastCentroid = centroid;
 
-        LOG.info("t={}s | {} | spread={} u", tickCount / TICK_RATE_HZ, driftInfo, Math.round(spread * 10) / 10.0);
+        lastCentroid = centroid;
+        lastSpread = spread;
+    }
+
+    static Vector3D computeCentroid(List<Agent> agents) {
+        Vector3D sum = Vector3D.ZERO;
+        for (Agent a : agents) sum = sum.add(a.position());
+        return sum.scale(1.0 / agents.size());
+    }
+
+    static double computeSpread(List<Agent> agents, Vector3D centroid) {
+        double sum = 0;
+        for (Agent a : agents) sum += a.position().distanceTo(centroid);
+        return sum / agents.size();
+    }
+
+    private void checkAlerts(int elapsed, double drift, double driftRounded, double spread, double spreadRounded) {
+        if (drift < 0.1) {
+            LOG.warn("t={}s | ALERTE essaim immobile (drift={} u/s)", elapsed, driftRounded);
+        }
+
+        double spreadLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.8;
+        if (spread > spreadLimit) {
+            LOG.warn("t={}s | ALERTE essaim disperse (spread={} u > {} u)", elapsed, spreadRounded, (int) spreadLimit);
+        }
+
+        if (spread > lastSpread) {
+            consecutiveSpreadIncreases++;
+            if (consecutiveSpreadIncreases >= 3) {
+                LOG.warn("t={}s | ALERTE divergence ({} relevés en hausse)", elapsed, consecutiveSpreadIncreases);
+            }
+        } else {
+            consecutiveSpreadIncreases = 0;
+        }
+
+        long frozenCount = world.agents().stream().filter(a -> a.velocity().magnitude() < 0.01).count();
+        if (frozenCount > 0) {
+            LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsed, frozenCount);
+        }
     }
 
     static Vector3D clampSpeed(Vector3D velocity, double maxSpeed) {

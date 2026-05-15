@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package gakkel.swarm.v1;
+
+option java_package = "io.gakkel.swarm.contracts.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Gakkel.Swarm.Contracts.V1";
+
+// Coordinates in meters, NED (North/East/Down) frame.
+message Vec3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+enum AgentType {
+  AGENT_TYPE_UNSPECIFIED = 0;
+  AGENT_TYPE_EXPLORER    = 1;
+  AGENT_TYPE_OPERATOR    = 2;
+  AGENT_TYPE_CARRIER     = 3;
+}
+
+message AgentState {
+  string    id           = 1; // UUID
+  AgentType type         = 2;
+  Vec3      position_xyz = 3; // meters, NED
+  Vec3      velocity_mps = 4; // m/s
+}
+
+message Obstacle {
+  Vec3  position_xyz = 1; // center, meters NED
+  float radius_m     = 2;
+}
+
+message WorldState {
+  int64                timestamp_unix_ms = 1;
+  repeated AgentState  agents            = 2;
+  repeated Obstacle    obstacles         = 3;
+}
+
+// Sent once by the client to open the stream.
+message SubscribeRequest {
+  string client_id = 1; // arbitrary label for server-side logging
+}
+
+service SwarmObserver {
+  // Client subscribes once; server pushes WorldState frames at 20 Hz.
+  rpc SubscribeWorldState(SubscribeRequest) returns (stream WorldState);
+}

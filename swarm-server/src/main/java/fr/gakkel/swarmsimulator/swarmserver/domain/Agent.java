@@ -7,8 +7,8 @@ public final class Agent {
 
     private final UUID id;
     private final AgentType type;
-    private Vector3D position;
-    private Vector3D velocity;
+    private volatile Vector3D position;
+    private volatile Vector3D velocity;
 
     public Agent(UUID id, AgentType type, Vector3D position, Vector3D velocity) {
         this.id = Objects.requireNonNull(id, "id");

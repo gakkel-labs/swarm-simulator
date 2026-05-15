@@ -26,7 +26,7 @@ public record DiagnosticsConfig(
         private double immobileThresholdFraction = 0.02;
         private double frozenThresholdFraction   = 0.002;
         private double dispersalLimitFraction    = 0.8;
-        private double flockingLostFraction      = 0.6;
+        private double flockingLostFraction      = 0.9;
         private double stabilityTolerance        = 0.20;
         private int    stabilitySamples          = 3;
 

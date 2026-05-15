@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
-    static final int TICK_RATE_HZ = 30; // package-private: read by SimulationLoopTest
+    public static final int TICK_RATE_HZ = 30;
     private static final double DT = 1.0 / TICK_RATE_HZ;
     // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics
     private static final int LOG_INTERVAL_TICKS = 5 * TICK_RATE_HZ;

@@ -68,7 +68,9 @@ public class SimulationLoop {
         List<Vector3D> steers = new ArrayList<>(agents.size());
         for (Agent agent : agents) {
             List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
-            steers.add(rules.steer(agent, neighbors));
+            Vector3D steer = rules.steer(agent, neighbors)
+                    .add(rules.boundaryRepulsion(agent, world).scale(config.boundaryRepulsionWeight()));
+            steers.add(steer);
         }
         for (int i = 0; i < agents.size(); i++) {
             Agent agent = agents.get(i);
@@ -139,7 +141,7 @@ public class SimulationLoop {
     }
 
     public static void main(String[] args) throws Exception {
-        BoidsConfig config = new BoidsConfig(15.0, 1.5, 1.0, 1.0, 5.0);
+        BoidsConfig config = new BoidsConfig(15.0, 1.5, 1.0, 1.0, 5.0, 15.0, 2.0);
         World world = createDefaultWorld();
         SimulationLoop loop = new SimulationLoop(world, config);
 

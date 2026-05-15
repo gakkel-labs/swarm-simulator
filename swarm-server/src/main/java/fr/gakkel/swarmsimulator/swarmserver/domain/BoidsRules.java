@@ -48,6 +48,27 @@ public final class BoidsRules {
         return centroid.subtract(agent.position()).normalize();
     }
 
+    public Vector3D boundaryRepulsion(Agent agent, World world) {
+        Vector3D pos = agent.position();
+        double r = config.boundaryRepulsionRadius();
+        Vector3D force = Vector3D.ZERO;
+
+        force = force.add(wallForce(pos.x(),             1, 0, 0, r));
+        force = force.add(wallForce(world.width()  - pos.x(), -1, 0, 0, r));
+        force = force.add(wallForce(pos.y(),             0, 1, 0, r));
+        force = force.add(wallForce(world.height() - pos.y(), 0, -1, 0, r));
+        force = force.add(wallForce(pos.z(),             0, 0, 1, r));
+        force = force.add(wallForce(world.depth()  - pos.z(), 0, 0, -1, r));
+
+        return force.normalize();
+    }
+
+    private static Vector3D wallForce(double dist, double nx, double ny, double nz, double radius) {
+        if (dist >= radius || dist < MIN_SEPARATION_DISTANCE) return Vector3D.ZERO;
+        double magnitude = 1.0 / dist;
+        return new Vector3D(nx * magnitude, ny * magnitude, nz * magnitude);
+    }
+
     public Vector3D steer(Agent agent, List<Agent> neighbors) {
         return separation(agent, neighbors).scale(config.separationWeight())
                 .add(alignment(neighbors).scale(config.alignmentWeight()))

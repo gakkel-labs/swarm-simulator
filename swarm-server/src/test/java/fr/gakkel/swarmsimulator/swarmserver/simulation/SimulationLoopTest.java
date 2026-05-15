@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SimulationLoopTest {
 
-    private static final BoidsConfig CONFIG = new BoidsConfig(15.0, 1.5, 1.0, 1.0, 5.0);
+    private static final BoidsConfig CONFIG = new BoidsConfig(15.0, 1.5, 1.0, 1.0, 5.0, 15.0, 2.0);
 
     private World world;
     private SimulationLoop loop;

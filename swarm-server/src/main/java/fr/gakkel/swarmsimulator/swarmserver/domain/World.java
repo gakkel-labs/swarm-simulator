@@ -22,7 +22,7 @@ public final class World {
         this.agents = new ArrayList<>();
     }
 
-    public double oui () { return width; }
+    public double width () { return width; }
     public double height() { return height; }
     public double depth() { return depth; }
 

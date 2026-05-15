@@ -165,35 +165,41 @@ class BoidsRulesTest {
     @Nested
     class BoundaryRepulsion {
 
-        private static final World WORLD = new World(100, 100, 50);
+        // world is recreated per test — no shared mutable state between sibling tests
+        private World world;
+
+        @org.junit.jupiter.api.BeforeEach
+        void setUp() { world = new World(100, 100, 50); }
 
         @Test
         void farFromWalls_returnsZero() {
             var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, 50, 25), Vector3D.ZERO);
-            assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, WORLD));
+            assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, world));
         }
 
         @Test
         void nearXMinWall_forcePushesPositiveX() {
             var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(5, 50, 25), Vector3D.ZERO);
-            var force = rules.boundaryRepulsion(a, WORLD);
+            var force = rules.boundaryRepulsion(a, world);
             assertTrue(force.x() > 0, "force should push away from x=0 wall");
             assertEquals(0.0, force.y(), DELTA);
             assertEquals(0.0, force.z(), DELTA);
         }
 
         @Test
-        void nearXMaxWall_forcePushesNegativeX() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(95, 50, 25), Vector3D.ZERO);
-            var force = rules.boundaryRepulsion(a, WORLD);
-            assertTrue(force.x() < 0, "force should push away from x=width wall");
-        }
-
-        @Test
         void atExactRadiusBoundary_returnsZero() {
             var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER,
                     new Vector3D(DEFAULT_CONFIG.boundaryRepulsionRadius(), 50, 25), Vector3D.ZERO);
-            assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, WORLD));
+            assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, world));
+        }
+
+        @Test
+        void nearXMaxWall_forcePushesNegativeX_andYZAreZero() {
+            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(95, 50, 25), Vector3D.ZERO);
+            var force = rules.boundaryRepulsion(a, world);
+            assertTrue(force.x() < 0, "force should push away from x=width wall");
+            assertEquals(0.0, force.y(), DELTA);
+            assertEquals(0.0, force.z(), DELTA);
         }
     }
 }

@@ -60,6 +60,8 @@ public final class BoidsRules {
         force = force.add(wallForce(pos.z(),             0, 0, 1, r));
         force = force.add(wallForce(world.depth()  - pos.z(), 0, 0, -1, r));
 
+        // normalize() returns ZERO when forces cancel (e.g. agent equidistant from two opposing
+        // walls in a very small world) — no repulsion is the correct silent behaviour in that case
         return force.normalize();
     }
 

@@ -22,9 +22,16 @@ import java.util.concurrent.TimeUnit;
 public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
-    static final int TICK_RATE_HZ = 30;
+    static final int TICK_RATE_HZ = 30; // package-private: read by SimulationLoopTest
     private static final double DT = 1.0 / TICK_RATE_HZ;
+    // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics
     private static final int LOG_INTERVAL_TICKS = 5 * TICK_RATE_HZ;
+
+    static final double DEFAULT_WORLD_WIDTH  = 100;
+    static final double DEFAULT_WORLD_HEIGHT = 100;
+    static final double DEFAULT_WORLD_DEPTH  = 50;
+    private static final double INITIAL_SPEED_XY = 2.0;
+    private static final double INITIAL_SPEED_Z  = 1.0;
 
     private final World world;
     private final BoidsRules rules;
@@ -141,7 +148,7 @@ public class SimulationLoop {
 
         if (positionStandardDeviation > previousPositionStandardDeviation) {
             consecutiveStandardDeviationIncreases++;
-            if (consecutiveStandardDeviationIncreases >= 3) {
+            if (consecutiveStandardDeviationIncreases >= diagnosticsConfig.stabilitySamples()) {
                 LOG.warn("t={}s | ALERTE divergence ({} relevés en hausse)", elapsed, consecutiveStandardDeviationIncreases);
             }
         } else {
@@ -192,16 +199,16 @@ public class SimulationLoop {
     }
 
     static World createWorld(int agentCount, Random rng) {
-        World world = new World(100, 100, 50);
+        World world = new World(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH);
         for (int i = 0; i < agentCount; i++) {
             Vector3D pos = new Vector3D(
-                    rng.nextDouble(0, 100),
-                    rng.nextDouble(0, 100),
-                    rng.nextDouble(0, 50));
+                    rng.nextDouble(0, DEFAULT_WORLD_WIDTH),
+                    rng.nextDouble(0, DEFAULT_WORLD_HEIGHT),
+                    rng.nextDouble(0, DEFAULT_WORLD_DEPTH));
             Vector3D vel = new Vector3D(
-                    rng.nextDouble(-2, 2),
-                    rng.nextDouble(-2, 2),
-                    rng.nextDouble(-1, 1));
+                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                    rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
             world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
         }
         return world;

@@ -32,12 +32,14 @@ public class SimulationLoop {
     private final DiagnosticsConfig diagnosticsConfig;
     private final ScheduledExecutorService executor;
 
+    // All fields below are written exclusively on the sim-loop thread (via tick()).
+    // Add synchronisation before exposing any of them to an external observer (e.g. gRPC handler).
     private int tickCount = 0;
     private Vector3D lastCentroid = null;
     private double previousPositionStandardDeviation = 0;
     private int consecutiveStandardDeviationIncreases = 0;
     private final List<Double> recentSigmas = new ArrayList<>();
-    private boolean flockingConfirmed = false;
+    private volatile boolean flockingConfirmed = false; // volatile: may be polled by future observers
 
     public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig) {
         this.world = Objects.requireNonNull(world, "world");
@@ -52,12 +54,8 @@ public class SimulationLoop {
     }
 
     public void start() {
-    LOG.info(
-        "Simulation demarree — {}Hz | {} agents | maxSpeed={} | perceptionRadius={} Appuyez sur [Entree] pour arreter.",
-        TICK_RATE_HZ,
-        world.agentCount(),
-        config.maxSpeed(),
-        config.perceptionRadius());
+        LOG.info("Simulation demarree — {}Hz | {} agents | maxSpeed={} | perceptionRadius={}",
+                TICK_RATE_HZ, world.agentCount(), config.maxSpeed(), config.perceptionRadius());
         long periodMs = 1000L / TICK_RATE_HZ;
         executor.scheduleAtFixedRate(this::tick, 0, periodMs, TimeUnit.MILLISECONDS);
     }
@@ -74,8 +72,7 @@ public class SimulationLoop {
         List<Vector3D> steers = new ArrayList<>(agents.size());
         for (Agent agent : agents) {
             List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
-            Vector3D steer = rules.steer(agent, neighbors)
-                    .add(rules.boundaryRepulsion(agent, world).scale(config.boundaryRepulsionWeight()));
+            Vector3D steer = rules.steer(agent, neighbors, world);
             steers.add(steer);
         }
         for (int i = 0; i < agents.size(); i++) {

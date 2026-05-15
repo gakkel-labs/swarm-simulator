@@ -74,4 +74,9 @@ public final class BoidsRules {
                 .add(alignment(neighbors).scale(config.alignmentWeight()))
                 .add(cohesion(agent, neighbors).scale(config.cohesionWeight()));
     }
+
+    public Vector3D steer(Agent agent, List<Agent> neighbors, World world) {
+        return steer(agent, neighbors)
+                .add(boundaryRepulsion(agent, world).scale(config.boundaryRepulsionWeight()));
+    }
 }

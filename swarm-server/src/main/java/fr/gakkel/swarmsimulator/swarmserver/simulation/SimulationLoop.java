@@ -118,14 +118,49 @@ public class SimulationLoop {
             checkFlocking(elapsed, positionStandardDeviation, standardDeviationRounded);
         }
 
+        if (!world.obstacles().isEmpty()) {
+            logObstacleAvoidance(elapsed);
+        }
+
         lastCentroid = centroid;
         previousPositionStandardDeviation = positionStandardDeviation;
+    }
+
+    private void logObstacleAvoidance(int elapsed) {
+        List<Agent> agents = world.agents();
+        long penetrations = countAgentsInsideObstacles(agents, world.obstacles());
+        double gap = minObstacleGap(agents, world.obstacles());
+        double gapRounded = Math.round(gap * 10) / 10.0;
+        if (penetrations > 0) {
+            LOG.warn("t={}s | ALERTE {} agent(s) dans obstacle (gap min={} u)", elapsed, penetrations, gapRounded);
+        } else {
+            LOG.info("t={}s | min obstacle gap={} u", elapsed, gapRounded);
+        }
     }
 
     static Vector3D computeCentroid(List<Agent> agents) {
         Vector3D sum = Vector3D.ZERO;
         for (Agent a : agents) sum = sum.add(a.position());
         return sum.scale(1.0 / agents.size());
+    }
+
+    // POSITIVE_INFINITY when there are no obstacles or no agents — caller treats it as "no constraint"
+    static double minObstacleGap(List<Agent> agents, List<Obstacle> obstacles) {
+        double min = Double.POSITIVE_INFINITY;
+        for (Agent a : agents) {
+            for (Obstacle o : obstacles) {
+                double gap = a.position().distanceTo(o.position()) - o.radius();
+                if (gap < min) min = gap;
+            }
+        }
+        return min;
+    }
+
+    static long countAgentsInsideObstacles(List<Agent> agents, List<Obstacle> obstacles) {
+        return agents.stream()
+                .filter(a -> obstacles.stream()
+                        .anyMatch(o -> a.position().distanceTo(o.position()) < o.radius()))
+                .count();
     }
 
     static double computePositionStandardDeviation(List<Agent> agents, Vector3D centroid) {

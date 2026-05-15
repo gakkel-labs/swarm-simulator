@@ -4,6 +4,7 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.BeforeEach;
@@ -107,6 +108,85 @@ class SimulationLoopTest {
             var a2 = agent(new Vector3D(10, 0, 0));
             Vector3D centroid = SimulationLoop.computeCentroid(List.of(a1, a2));
             assertEquals(5.0, SimulationLoop.computePositionStandardDeviation(List.of(a1, a2), centroid), 1e-9);
+        }
+    }
+
+    @Nested
+    class MinObstacleGap {
+
+        @Test
+        void noObstacles_returnsPositiveInfinity() {
+            var a = agent(new Vector3D(50, 50, 25));
+
+            double gap = SimulationLoop.minObstacleGap(List.of(a), List.of());
+
+            assertEquals(Double.POSITIVE_INFINITY, gap);
+        }
+
+        @Test
+        void oneAgentOneObstacle_returnsDistanceToSurface() {
+            var a = agent(new Vector3D(0, 0, 0));
+            var obstacle = new Obstacle(new Vector3D(10, 0, 0), 3.0);
+
+            double gap = SimulationLoop.minObstacleGap(List.of(a), List.of(obstacle));
+
+            assertEquals(7.0, gap, 1e-9);  // 10 - 3 = 7
+        }
+
+        @Test
+        void picksSmallestGapAcrossAllPairs() {
+            var a1 = agent(new Vector3D(0, 0, 0));
+            var a2 = agent(new Vector3D(100, 0, 0));
+            var farObstacle  = new Obstacle(new Vector3D(50, 0, 0), 1.0);   // gap from a1 = 49
+            var nearObstacle = new Obstacle(new Vector3D(5, 0, 0), 2.0);    // gap from a1 = 3 ← min
+
+            double gap = SimulationLoop.minObstacleGap(List.of(a1, a2), List.of(farObstacle, nearObstacle));
+
+            assertEquals(3.0, gap, 1e-9);
+        }
+
+        @Test
+        void agentInsideObstacle_returnsNegativeGap() {
+            var a = agent(new Vector3D(10, 0, 0));
+            var obstacle = new Obstacle(new Vector3D(10, 0, 0), 5.0);  // agent at center
+
+            double gap = SimulationLoop.minObstacleGap(List.of(a), List.of(obstacle));
+
+            assertEquals(-5.0, gap, 1e-9);
+        }
+    }
+
+    @Nested
+    class CountAgentsInsideObstacles {
+
+        @Test
+        void noPenetration_returnsZero() {
+            var outside = agent(new Vector3D(0, 0, 0));
+            var obstacle = new Obstacle(new Vector3D(50, 50, 25), 5.0);
+
+            assertEquals(0, SimulationLoop.countAgentsInsideObstacles(List.of(outside), List.of(obstacle)));
+        }
+
+        @Test
+        void oneInside_returnsOne() {
+            var inside  = agent(new Vector3D(11, 0, 0));  // 1u from center, radius 3 → inside
+            var outside = agent(new Vector3D(50, 0, 0));
+            var obstacle = new Obstacle(new Vector3D(10, 0, 0), 3.0);
+
+            long count = SimulationLoop.countAgentsInsideObstacles(List.of(inside, outside), List.of(obstacle));
+
+            assertEquals(1, count);
+        }
+
+        @Test
+        void multipleObstacles_agentCountedOnceEvenIfInsideSeveral() {
+            var a = agent(new Vector3D(10, 0, 0));
+            var o1 = new Obstacle(new Vector3D(10, 0, 0), 3.0);  // contains a
+            var o2 = new Obstacle(new Vector3D(11, 0, 0), 3.0);  // also contains a
+
+            long count = SimulationLoop.countAgentsInsideObstacles(List.of(a), List.of(o1, o2));
+
+            assertEquals(1, count);
         }
     }
 

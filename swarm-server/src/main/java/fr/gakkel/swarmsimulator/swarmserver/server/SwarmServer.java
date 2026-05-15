@@ -38,6 +38,7 @@ public class SwarmServer {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutting down...");
+            observer.stop();
             server.shutdown();
             try {
                 sim.stop();

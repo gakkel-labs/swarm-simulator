@@ -56,6 +56,10 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
         });
     }
 
+    public void stop() {
+        broadcaster.shutdown();
+    }
+
     void broadcast() {
         if (subscribers.isEmpty()) return;
         WorldState state = buildWorldState();

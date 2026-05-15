@@ -1,5 +1,6 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
+
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimulationLoopTest {
 
     private static final BoidsConfig CONFIG = BoidsConfig.builder().build();
+    private static final DiagnosticsConfig DIAGNOSTICS = DiagnosticsConfig.builder().build();
 
     private World world;
     private SimulationLoop loop;
@@ -25,7 +27,7 @@ class SimulationLoopTest {
     @BeforeEach
     void setUp() {
         world = SimulationLoop.createWorld(10, new Random(0L));
-        loop = new SimulationLoop(world, CONFIG);
+        loop = new SimulationLoop(world, CONFIG, DIAGNOSTICS);
     }
 
     @Test

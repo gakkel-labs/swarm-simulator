@@ -29,6 +29,7 @@ public class SimulationLoop {
     private final World world;
     private final BoidsRules rules;
     private final BoidsConfig config;
+    private final DiagnosticsConfig diagnosticsConfig;
     private final ScheduledExecutorService executor;
 
     private int tickCount = 0;
@@ -38,9 +39,10 @@ public class SimulationLoop {
     private final List<Double> recentSigmas = new ArrayList<>();
     private boolean flockingConfirmed = false;
 
-    public SimulationLoop(World world, BoidsConfig config) {
+    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig) {
         this.world = Objects.requireNonNull(world, "world");
         this.config = Objects.requireNonNull(config, "config");
+        this.diagnosticsConfig = Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig");
         this.rules = new BoidsRules(config);
         this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "sim-loop");
@@ -128,12 +130,13 @@ public class SimulationLoop {
     }
 
     private void checkAlerts(int elapsed, double drift, double driftRounded, double positionStandardDeviation, double standardDeviationRounded) {
-        if (drift < config.maxSpeed() * 0.02) {
+        if (drift < config.maxSpeed() * diagnosticsConfig.immobileThresholdFraction()) {
             LOG.warn("t={}s | ALERTE essaim immobile (drift={} u/s)", elapsed, driftRounded);
         }
 
         if (!flockingConfirmed) {
-            double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.8;
+            double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth()))
+                    * diagnosticsConfig.dispersalLimitFraction();
             if (positionStandardDeviation > standardDeviationLimit) {
                 LOG.warn("t={}s | ALERTE essaim disperse (σ={} u > {} u)", elapsed, standardDeviationRounded, (int) standardDeviationLimit);
             }
@@ -149,7 +152,7 @@ public class SimulationLoop {
         }
 
         long frozenCount = world.agents().stream()
-                .filter(a -> a.velocity().magnitude() < config.maxSpeed() * 0.002)
+                .filter(a -> a.velocity().magnitude() < config.maxSpeed() * diagnosticsConfig.frozenThresholdFraction())
                 .count();
         if (frozenCount > 0) {
             LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsed, frozenCount);
@@ -158,7 +161,8 @@ public class SimulationLoop {
 
     private void checkFlocking(int elapsed, double positionStandardDeviation, double standardDeviationRounded) {
         if (flockingConfirmed) {
-            double criticalLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.6;
+            double criticalLimit = Math.min(world.width(), Math.min(world.height(), world.depth()))
+                    * diagnosticsConfig.flockingLostFraction();
             if (positionStandardDeviation > criticalLimit) {
                 flockingConfirmed = false;
                 recentSigmas.clear();
@@ -168,11 +172,12 @@ public class SimulationLoop {
             return;
         }
         recentSigmas.add(positionStandardDeviation);
-        if (recentSigmas.size() > 5) recentSigmas.removeFirst();
-        if (recentSigmas.size() == 5) {
+        int samples = diagnosticsConfig.stabilitySamples();
+        if (recentSigmas.size() > samples) recentSigmas.removeFirst();
+        if (recentSigmas.size() == samples) {
             double max = recentSigmas.stream().mapToDouble(Double::doubleValue).max().orElse(0);
             double min = recentSigmas.stream().mapToDouble(Double::doubleValue).min().orElse(0);
-            if (max > 0 && (max - min) / max < 0.05) {
+            if (max > 0 && (max - min) / max < diagnosticsConfig.stabilityTolerance()) {
                 flockingConfirmed = true;
                 LOG.info("t={}s | flocking confirmed — σ stable à {} u", elapsed, standardDeviationRounded);
             }
@@ -207,8 +212,9 @@ public class SimulationLoop {
 
     public static void main(String[] args) throws Exception {
         BoidsConfig config = BoidsConfig.builder().build();
+        DiagnosticsConfig diagnostics = DiagnosticsConfig.builder().build();
         World world = createDefaultWorld();
-        SimulationLoop loop = new SimulationLoop(world, config);
+        SimulationLoop loop = new SimulationLoop(world, config, diagnostics);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try { loop.stop(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }

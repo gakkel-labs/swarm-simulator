@@ -137,4 +137,28 @@ class WorldTest {
     void constructor_negativeDepth_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new World(100, 100, -1));
     }
+
+    @Test
+    void addObstacle_obstacleAppearsInObstaclesList() {
+        var obstacle = new Obstacle(new Vector3D(50, 50, 25), 5.0);
+
+        world.addObstacle(obstacle);
+
+        assertTrue(world.obstacles().contains(obstacle));
+        assertEquals(1, world.obstacles().size());
+    }
+
+    @Test
+    @SuppressWarnings("DataFlowIssue")  // intentional: verify the view is truly unmodifiable
+    void obstacles_returnsUnmodifiableView() {
+        var obstacle = new Obstacle(new Vector3D(10, 10, 10), 2.0);
+        var view = world.obstacles();
+
+        assertThrows(UnsupportedOperationException.class, () -> view.add(obstacle));
+    }
+
+    @Test
+    void addObstacle_nullObstacle_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> world.addObstacle(null));
+    }
 }

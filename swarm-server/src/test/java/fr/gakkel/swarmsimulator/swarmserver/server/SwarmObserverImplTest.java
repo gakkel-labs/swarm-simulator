@@ -1,6 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.AgentState;
@@ -128,6 +129,32 @@ class SwarmObserverImplTest {
 
         // Assert
         verify(mockObserver, never()).onNext(any());
+    }
+
+    @Test
+    void buildWorldState_withObstacles_obstaclesMappedToProto() {
+        // Arrange
+        world.addObstacle(new Obstacle(new Vector3D(10, 20, 5), 3.0));
+        world.addObstacle(new Obstacle(new Vector3D(40, 50, 25), 6.5));
+
+        // Act
+        WorldState state = impl.buildWorldState();
+
+        // Assert
+        assertThat(state.getObstaclesCount()).isEqualTo(2);
+        var first = state.getObstacles(0);
+        assertThat(first.getPositionXyz().getX()).isEqualTo(10.0f);
+        assertThat(first.getPositionXyz().getY()).isEqualTo(20.0f);
+        assertThat(first.getPositionXyz().getZ()).isEqualTo(5.0f);
+        assertThat(first.getRadiusM()).isEqualTo(3.0f);
+        assertThat(state.getObstacles(1).getRadiusM()).isEqualTo(6.5f);
+    }
+
+    @Test
+    void buildWorldState_noObstacles_obstaclesListEmpty() {
+        WorldState state = impl.buildWorldState();
+
+        assertThat(state.getObstaclesCount()).isZero();
     }
 
     @Test

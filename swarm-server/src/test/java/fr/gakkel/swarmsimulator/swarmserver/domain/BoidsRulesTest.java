@@ -202,4 +202,93 @@ class BoidsRulesTest {
             assertEquals(0.0, force.z(), DELTA);
         }
     }
+
+    @Nested
+    class ObstacleAvoidance {
+
+        @Test
+        void emptyObstacles_returnsZero() {
+            assertEquals(Vector3D.ZERO, rules.obstacleAvoidance(agent, List.of()));
+        }
+
+        @Test
+        void agentBeyondAvoidanceRadius_returnsZero() {
+            // avoidanceRadius=8, obstacle r=2 at (20,0,0), agent at (0,0,0) → gap=18 > 8 → no force
+            var obstacle = new Obstacle(new Vector3D(20, 0, 0), 2.0);
+
+            assertEquals(Vector3D.ZERO, rules.obstacleAvoidance(agent, List.of(obstacle)));
+        }
+
+        @Test
+        void agentInsideAvoidanceRadius_pushesAwayFromObstacleCenter() {
+            // obstacle r=2 at (5,0,0), agent at (0,0,0): gap=3, force points in -x direction
+            var obstacle = new Obstacle(new Vector3D(5, 0, 0), 2.0);
+
+            var force = rules.obstacleAvoidance(agent, List.of(obstacle));
+
+            assertTrue(force.x() < 0, "force should push agent away from obstacle along -x");
+            assertEquals(0.0, force.y(), DELTA);
+            assertEquals(0.0, force.z(), DELTA);
+        }
+
+        @Test
+        void closerAgentReceivesStrongerForce() {
+            // obstacle r=2 at x=10 → surface at x=8 (left side)
+            // farAgent at x=4 → 4u from the surface; nearAgent at x=7 → 1u from the surface
+            // "far"/"near" labels refer to distance from the OBSTACLE SURFACE, not from the origin
+            var obstacle = new Obstacle(new Vector3D(10, 0, 0), 2.0);
+            var farAgent  = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(4, 0, 0), Vector3D.ZERO);
+            var nearAgent = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(7, 0, 0), Vector3D.ZERO);
+
+            double farMag  = rules.obstacleAvoidance(farAgent,  List.of(obstacle)).magnitude();
+            double nearMag = rules.obstacleAvoidance(nearAgent, List.of(obstacle)).magnitude();
+
+            assertTrue(nearMag > farMag,
+                    "agent closer to obstacle must receive stronger force (near=" + nearMag + " far=" + farMag + ")");
+        }
+
+        @Test
+        void atSurface_strengthIsOne() {
+            // obstacle r=2 at (5,0,0), agent at (3,0,0) → distance=2, gap=0, t=0, exp(0)=1.0
+            var obstacle = new Obstacle(new Vector3D(5, 0, 0), 2.0);
+            var surfaceAgent = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(3, 0, 0), Vector3D.ZERO);
+
+            var force = rules.obstacleAvoidance(surfaceAgent, List.of(obstacle));
+
+            assertEquals(1.0, force.magnitude(), DELTA);
+            assertEquals(-1.0, force.x(), DELTA);
+        }
+
+        @Test
+        void agentInsideObstacle_strengthSaturatesToOne() {
+            // obstacle r=5 at (10,0,0), agent at (12,0,0) → distance=2, gap=-3 → t=max(-3,0)/8=0, strength=1
+            var obstacle = new Obstacle(new Vector3D(10, 0, 0), 5.0);
+            var insideAgent = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(12, 0, 0), Vector3D.ZERO);
+
+            var force = rules.obstacleAvoidance(insideAgent, List.of(obstacle));
+
+            assertEquals(1.0, force.magnitude(), DELTA);
+            assertTrue(force.x() > 0, "agent inside obstacle should be pushed outward along +x");
+        }
+
+        @Test
+        void agentAtObstacleCenter_returnsZero() {
+            // degenerate: no defined direction, skip rather than NaN
+            var obstacle = new Obstacle(new Vector3D(0, 0, 0), 2.0);
+
+            assertEquals(Vector3D.ZERO, rules.obstacleAvoidance(agent, List.of(obstacle)));
+        }
+
+        @Test
+        void twoSymmetricObstacles_forcesCancel() {
+            var left  = new Obstacle(new Vector3D(-5, 0, 0), 1.0);
+            var right = new Obstacle(new Vector3D( 5, 0, 0), 1.0);
+
+            var force = rules.obstacleAvoidance(agent, List.of(left, right));
+
+            assertEquals(0.0, force.x(), DELTA);
+            assertEquals(0.0, force.y(), DELTA);
+            assertEquals(0.0, force.z(), DELTA);
+        }
+    }
 }

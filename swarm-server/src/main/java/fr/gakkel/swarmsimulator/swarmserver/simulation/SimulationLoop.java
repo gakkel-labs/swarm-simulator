@@ -69,7 +69,10 @@ public class SimulationLoop {
 
     public void stop() throws InterruptedException {
         executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.SECONDS);
+        if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+            LOG.warn("sim-loop did not terminate within 1s — forcing shutdown");
+            executor.shutdownNow();
+        }
     }
 
     // snapshot steer forces before applying — parallel Boids update, all forces

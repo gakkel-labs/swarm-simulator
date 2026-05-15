@@ -11,6 +11,7 @@ public final class World {
     private final double height;
     private final double depth;
     private final List<Agent> agents;
+    private final List<Obstacle> obstacles;
 
     public World(double width, double height, double depth) {
         if (width <= 0 || height <= 0 || depth <= 0) {
@@ -20,6 +21,7 @@ public final class World {
         this.height = height;
         this.depth = depth;
         this.agents = new ArrayList<>();
+        this.obstacles = new ArrayList<>();
     }
 
     public double width () { return width; }
@@ -42,6 +44,15 @@ public final class World {
 
     public int agentCount() {
         return agents.size();
+    }
+
+    public void addObstacle(Obstacle obstacle) {
+        Objects.requireNonNull(obstacle, "obstacle");
+        obstacles.add(obstacle);
+    }
+
+    public List<Obstacle> obstacles() {
+        return Collections.unmodifiableList(obstacles);
     }
 
     // squared-distance filter avoids sqrt in the Boids hot loop

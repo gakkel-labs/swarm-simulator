@@ -128,13 +128,15 @@ public class SimulationLoop {
     }
 
     private void checkAlerts(int elapsed, double drift, double driftRounded, double positionStandardDeviation, double standardDeviationRounded) {
-        if (drift < 0.1) {
+        if (drift < config.maxSpeed() * 0.02) {
             LOG.warn("t={}s | ALERTE essaim immobile (drift={} u/s)", elapsed, driftRounded);
         }
 
-        double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.8;
-        if (positionStandardDeviation > standardDeviationLimit) {
-            LOG.warn("t={}s | ALERTE essaim disperse (σ={} u > {} u)", elapsed, standardDeviationRounded, (int) standardDeviationLimit);
+        if (!flockingConfirmed) {
+            double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.8;
+            if (positionStandardDeviation > standardDeviationLimit) {
+                LOG.warn("t={}s | ALERTE essaim disperse (σ={} u > {} u)", elapsed, standardDeviationRounded, (int) standardDeviationLimit);
+            }
         }
 
         if (positionStandardDeviation > previousPositionStandardDeviation) {
@@ -146,17 +148,28 @@ public class SimulationLoop {
             consecutiveStandardDeviationIncreases = 0;
         }
 
-        long frozenCount = world.agents().stream().filter(a -> a.velocity().magnitude() < 0.01).count();
+        long frozenCount = world.agents().stream()
+                .filter(a -> a.velocity().magnitude() < config.maxSpeed() * 0.002)
+                .count();
         if (frozenCount > 0) {
             LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsed, frozenCount);
         }
     }
 
     private void checkFlocking(int elapsed, double positionStandardDeviation, double standardDeviationRounded) {
-        if (flockingConfirmed) return;
+        if (flockingConfirmed) {
+            double criticalLimit = Math.min(world.width(), Math.min(world.height(), world.depth())) * 0.6;
+            if (positionStandardDeviation > criticalLimit) {
+                flockingConfirmed = false;
+                recentSigmas.clear();
+                LOG.warn("t={}s | flocking lost — σ={} u depasse seuil critique ({} u)",
+                        elapsed, standardDeviationRounded, (int) criticalLimit);
+            }
+            return;
+        }
         recentSigmas.add(positionStandardDeviation);
-        if (recentSigmas.size() > 3) recentSigmas.remove(0);
-        if (recentSigmas.size() == 3) {
+        if (recentSigmas.size() > 5) recentSigmas.removeFirst();
+        if (recentSigmas.size() == 5) {
             double max = recentSigmas.stream().mapToDouble(Double::doubleValue).max().orElse(0);
             double min = recentSigmas.stream().mapToDouble(Double::doubleValue).min().orElse(0);
             if (max > 0 && (max - min) / max < 0.05) {

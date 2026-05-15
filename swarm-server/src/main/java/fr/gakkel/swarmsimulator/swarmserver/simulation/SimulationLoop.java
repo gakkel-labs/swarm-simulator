@@ -1,0 +1,232 @@
+package fr.gakkel.swarmsimulator.swarmserver.simulation;
+
+import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
+import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
+import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
+import fr.gakkel.swarmsimulator.swarmserver.domain.World;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class SimulationLoop {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
+    static final int TICK_RATE_HZ = 30; // package-private: read by SimulationLoopTest
+    private static final double DT = 1.0 / TICK_RATE_HZ;
+    // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics
+    private static final int LOG_INTERVAL_TICKS = 5 * TICK_RATE_HZ;
+
+    static final double DEFAULT_WORLD_WIDTH  = 100;
+    static final double DEFAULT_WORLD_HEIGHT = 100;
+    static final double DEFAULT_WORLD_DEPTH  = 50;
+    private static final double INITIAL_SPEED_XY = 2.0;
+    private static final double INITIAL_SPEED_Z  = 1.0;
+
+    private final World world;
+    private final BoidsRules rules;
+    private final BoidsConfig config;
+    private final DiagnosticsConfig diagnosticsConfig;
+    private final ScheduledExecutorService executor;
+
+    // All fields below are written exclusively on the sim-loop thread (via tick()).
+    // Add synchronisation before exposing any of them to an external observer (e.g. gRPC handler).
+    private int tickCount = 0;
+    private Vector3D lastCentroid = null;
+    private double previousPositionStandardDeviation = 0;
+    private int consecutiveStandardDeviationIncreases = 0;
+    private final List<Double> recentSigmas = new ArrayList<>();
+    private volatile boolean flockingConfirmed = false; // volatile: may be polled by future observers
+
+    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig) {
+        this.world = Objects.requireNonNull(world, "world");
+        this.config = Objects.requireNonNull(config, "config");
+        this.diagnosticsConfig = Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig");
+        this.rules = new BoidsRules(config);
+        this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "sim-loop");
+            t.setDaemon(true);
+            return t;
+        });
+    }
+
+    public void start() {
+        LOG.info("Simulation demarree — {}Hz | {} agents | maxSpeed={} | perceptionRadius={}",
+                TICK_RATE_HZ, world.agentCount(), config.maxSpeed(), config.perceptionRadius());
+        long periodMs = 1000L / TICK_RATE_HZ;
+        executor.scheduleAtFixedRate(this::tick, 0, periodMs, TimeUnit.MILLISECONDS);
+    }
+
+    public void stop() throws InterruptedException {
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.SECONDS);
+    }
+
+    // snapshot steer forces before applying — parallel Boids update, all forces
+    // computed from time t so order of iteration doesn't affect the result
+    void tick() {
+        List<Agent> agents = world.agents();
+        List<Vector3D> steers = new ArrayList<>(agents.size());
+        for (Agent agent : agents) {
+            List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
+            Vector3D steer = rules.steer(agent, neighbors, world);
+            steers.add(steer);
+        }
+        for (int i = 0; i < agents.size(); i++) {
+            Agent agent = agents.get(i);
+            Vector3D newVelocity = clampSpeed(agent.velocity().add(steers.get(i).scale(DT)), config.maxSpeed());
+            Vector3D newPosition = world.clamp(agent.position().add(newVelocity.scale(DT)));
+            agent.update(newPosition, newVelocity);
+        }
+        tickCount++;
+        if (tickCount % LOG_INTERVAL_TICKS == 0) {
+            logCentroid();
+        }
+    }
+
+    private void logCentroid() {
+        List<Agent> agents = world.agents();
+        if (agents.isEmpty()) return;
+
+        Vector3D centroid = computeCentroid(agents);
+        double positionStandardDeviation = computePositionStandardDeviation(agents, centroid);
+        int elapsed = tickCount / TICK_RATE_HZ;
+        double standardDeviationRounded = Math.round(positionStandardDeviation * 10) / 10.0;
+
+        if (lastCentroid == null) {
+            LOG.info("t={}s | premier releve | σ={} u", elapsed, standardDeviationRounded);
+        } else {
+            double intervalSeconds = (double) LOG_INTERVAL_TICKS / TICK_RATE_HZ;
+            double drift = centroid.distanceTo(lastCentroid) / intervalSeconds;
+            double driftRounded = Math.round(drift * 100) / 100.0;
+            LOG.info("t={}s | drift={} u/s | σ={} u", elapsed, driftRounded, standardDeviationRounded);
+            checkAlerts(elapsed, drift, driftRounded, positionStandardDeviation, standardDeviationRounded);
+            checkFlocking(elapsed, positionStandardDeviation, standardDeviationRounded);
+        }
+
+        lastCentroid = centroid;
+        previousPositionStandardDeviation = positionStandardDeviation;
+    }
+
+    static Vector3D computeCentroid(List<Agent> agents) {
+        Vector3D sum = Vector3D.ZERO;
+        for (Agent a : agents) sum = sum.add(a.position());
+        return sum.scale(1.0 / agents.size());
+    }
+
+    static double computePositionStandardDeviation(List<Agent> agents, Vector3D centroid) {
+        double sumSq = 0;
+        for (Agent a : agents) {
+            double dist = a.position().distanceTo(centroid);
+            sumSq += dist * dist;
+        }
+        return Math.sqrt(sumSq / agents.size());
+    }
+
+    private void checkAlerts(int elapsed, double drift, double driftRounded, double positionStandardDeviation, double standardDeviationRounded) {
+        if (drift < config.maxSpeed() * diagnosticsConfig.immobileThresholdFraction()) {
+            LOG.warn("t={}s | ALERTE essaim immobile (drift={} u/s)", elapsed, driftRounded);
+        }
+
+        if (!flockingConfirmed) {
+            double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth()))
+                    * diagnosticsConfig.dispersalLimitFraction();
+            if (positionStandardDeviation > standardDeviationLimit) {
+                LOG.warn("t={}s | ALERTE essaim disperse (σ={} u > {} u)", elapsed, standardDeviationRounded, (int) standardDeviationLimit);
+            }
+        }
+
+        if (positionStandardDeviation > previousPositionStandardDeviation) {
+            consecutiveStandardDeviationIncreases++;
+            if (consecutiveStandardDeviationIncreases >= diagnosticsConfig.stabilitySamples()) {
+                LOG.warn("t={}s | ALERTE divergence ({} relevés en hausse)", elapsed, consecutiveStandardDeviationIncreases);
+            }
+        } else {
+            consecutiveStandardDeviationIncreases = 0;
+        }
+
+        long frozenCount = world.agents().stream()
+                .filter(a -> a.velocity().magnitude() < config.maxSpeed() * diagnosticsConfig.frozenThresholdFraction())
+                .count();
+        if (frozenCount > 0) {
+            LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsed, frozenCount);
+        }
+    }
+
+    private void checkFlocking(int elapsed, double positionStandardDeviation, double standardDeviationRounded) {
+        if (flockingConfirmed) {
+            double criticalLimit = Math.min(world.width(), Math.min(world.height(), world.depth()))
+                    * diagnosticsConfig.flockingLostFraction();
+            if (positionStandardDeviation > criticalLimit) {
+                flockingConfirmed = false;
+                recentSigmas.clear();
+                LOG.warn("t={}s | flocking lost — σ={} u depasse seuil critique ({} u)",
+                        elapsed, standardDeviationRounded, (int) criticalLimit);
+            }
+            return;
+        }
+        recentSigmas.add(positionStandardDeviation);
+        int samples = diagnosticsConfig.stabilitySamples();
+        if (recentSigmas.size() > samples) recentSigmas.removeFirst();
+        if (recentSigmas.size() == samples) {
+            double max = recentSigmas.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+            double min = recentSigmas.stream().mapToDouble(Double::doubleValue).min().orElse(0);
+            if (max > 0 && (max - min) / max < diagnosticsConfig.stabilityTolerance()) {
+                flockingConfirmed = true;
+                LOG.info("t={}s | flocking confirmed — σ stable à {} u", elapsed, standardDeviationRounded);
+            }
+        }
+    }
+
+    static Vector3D clampSpeed(Vector3D velocity, double maxSpeed) {
+        double mag = velocity.magnitude();
+        if (mag > maxSpeed) return velocity.scale(maxSpeed / mag);
+        return velocity;
+    }
+
+    public static World createDefaultWorld() {
+        return createWorld(20, new Random(42L));
+    }
+
+    static World createWorld(int agentCount, Random rng) {
+        World world = new World(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH);
+        for (int i = 0; i < agentCount; i++) {
+            Vector3D pos = new Vector3D(
+                    rng.nextDouble(0, DEFAULT_WORLD_WIDTH),
+                    rng.nextDouble(0, DEFAULT_WORLD_HEIGHT),
+                    rng.nextDouble(0, DEFAULT_WORLD_DEPTH));
+            Vector3D vel = new Vector3D(
+                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                    rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
+            world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
+        }
+        return world;
+    }
+
+    public static void main(String[] args) throws Exception {
+        BoidsConfig config = BoidsConfig.builder().build();
+        DiagnosticsConfig diagnostics = DiagnosticsConfig.builder().build();
+        World world = createDefaultWorld();
+        SimulationLoop loop = new SimulationLoop(world, config, diagnostics);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try { loop.stop(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }));
+
+        loop.start();
+        //noinspection ResultOfMethodCallIgnored
+        System.in.read();
+        loop.stop();
+    }
+}

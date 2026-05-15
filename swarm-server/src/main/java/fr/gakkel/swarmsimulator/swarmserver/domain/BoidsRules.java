@@ -6,6 +6,7 @@ import java.util.Objects;
 public final class BoidsRules {
 
     private static final double MIN_SEPARATION_DISTANCE = 1e-10;
+    private static final double OBSTACLE_FALLOFF = 5.0;
 
     private final BoidsConfig config;
 
@@ -71,6 +72,30 @@ public final class BoidsRules {
         return new Vector3D(nx * magnitude, ny * magnitude, nz * magnitude);
     }
 
+    // Unlike the other rules, obstacleAvoidance does NOT normalize its output: the magnitude
+    // grows exponentially as the agent approaches a sphere surface, so navigation curves
+    // smoothly around obstacles instead of snapping at the threshold. Walls (boundaryRepulsion)
+    // form a closed box and can stay binary; obstacles must be steered around, so they need
+    // distance-modulated force. maxSpeed clamping in SimulationLoop keeps things bounded.
+    public Vector3D obstacleAvoidance(Agent agent, List<Obstacle> obstacles) {
+        if (obstacles.isEmpty()) return Vector3D.ZERO;
+
+        double avoidanceRadius = config.obstacleAvoidanceRadius();
+        Vector3D total = Vector3D.ZERO;
+        for (Obstacle obstacle : obstacles) {
+            Vector3D delta = agent.position().subtract(obstacle.position());
+            double distance = delta.magnitude();
+            double gap = distance - obstacle.radius();
+            // skip degenerate case (agent at center → no direction) and obstacles beyond the threshold
+            if (distance < MIN_SEPARATION_DISTANCE || gap >= avoidanceRadius) continue;
+
+            double t = Math.max(gap, 0) / avoidanceRadius;
+            double strength = Math.exp(-OBSTACLE_FALLOFF * t);
+            total = total.add(delta.scale(strength / distance));  // delta/distance is the unit direction
+        }
+        return total;
+    }
+
     public Vector3D steer(Agent agent, List<Agent> neighbors) {
         return separation(agent, neighbors).scale(config.separationWeight())
                 .add(alignment(neighbors).scale(config.alignmentWeight()))
@@ -79,6 +104,7 @@ public final class BoidsRules {
 
     public Vector3D steer(Agent agent, List<Agent> neighbors, World world) {
         return steer(agent, neighbors)
-                .add(boundaryRepulsion(agent, world).scale(config.boundaryRepulsionWeight()));
+                .add(boundaryRepulsion(agent, world).scale(config.boundaryRepulsionWeight()))
+                .add(obstacleAvoidance(agent, world.obstacles()).scale(config.obstacleAvoidanceWeight()));
     }
 }

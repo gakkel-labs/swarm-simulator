@@ -1,6 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.AgentState;
@@ -83,6 +84,9 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
         for (Agent agent : world.agents()) {
             builder.addAgents(toAgentState(agent));
         }
+        for (Obstacle obstacle : world.obstacles()) {
+            builder.addObstacles(toProtoObstacle(obstacle));
+        }
         return builder.build();
     }
 
@@ -108,6 +112,13 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
                 .setX((float) v.x())
                 .setY((float) v.y())
                 .setZ((float) v.z())
+                .build();
+    }
+
+    private io.gakkel.swarm.contracts.v1.Obstacle toProtoObstacle(Obstacle o) {
+        return io.gakkel.swarm.contracts.v1.Obstacle.newBuilder()
+                .setPositionXyz(toVec3(o.position()))
+                .setRadiusM((float) o.radius())
                 .build();
     }
 }

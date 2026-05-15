@@ -4,6 +4,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
@@ -214,6 +215,9 @@ public class SimulationLoop {
                     rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
             world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
         }
+        world.addObstacle(new Obstacle(new Vector3D(50, 50, 25), 8.0));
+        world.addObstacle(new Obstacle(new Vector3D(25, 70, 25), 5.0));
+        world.addObstacle(new Obstacle(new Vector3D(75, 30, 25), 6.0));
         return world;
     }
 

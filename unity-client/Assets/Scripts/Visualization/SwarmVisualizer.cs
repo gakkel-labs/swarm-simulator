@@ -19,14 +19,19 @@ namespace Gakkel.Swarm.Unity
             new(0.2f, 0.9f, 0.8f),  // cyan
         };
 
+        [SerializeField] private float trailTime = 2f;
+        [SerializeField] private float trailStartWidth = 0.15f;
+
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
+        private readonly Dictionary<string, TrailRenderer> _agentTrails = new();
         private readonly List<GameObject> _obstacles = new();
 
         private Material _isolatedMaterial;
         private Material _obstacleMaterial;
         private Material _mothershipMaterial;
         private Material _floorMaterial;
+        private Material _trailMaterial;
         private Material[] _groupMaterials;
 
         private bool _obstaclesSpawned;
@@ -40,6 +45,7 @@ namespace Gakkel.Swarm.Unity
             _obstacleMaterial   = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
             _mothershipMaterial = new Material(shader) { color = Color.gray };
             _floorMaterial      = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
+            _trailMaterial      = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
 
             _groupMaterials = new Material[GroupColors.Length];
             for (int i = 0; i < GroupColors.Length; i++)
@@ -82,8 +88,18 @@ namespace Gakkel.Swarm.Unity
                     var rend = go.GetComponent<Renderer>();
                     rend.material = _isolatedMaterial;
                     go.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+
+                    var trail = go.AddComponent<TrailRenderer>();
+                    trail.time = trailTime;
+                    trail.startWidth = trailStartWidth;
+                    trail.endWidth = 0f;
+                    trail.material = _trailMaterial;
+                    trail.colorGradient = MakeTrailGradient(Color.gray);
+                    trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
                     _agents[agent.Id] = go;
                     _agentRenderers[agent.Id] = rend;
+                    _agentTrails[agent.Id] = trail;
                 }
 
                 go.transform.position = NedToUnity(agent.PositionXyz);
@@ -102,6 +118,7 @@ namespace Gakkel.Swarm.Unity
             {
                 _agents.Remove(id);
                 _agentRenderers.Remove(id);
+                _agentTrails.Remove(id);
             }
         }
 
@@ -121,9 +138,14 @@ namespace Gakkel.Swarm.Unity
             {
                 if (!_agentRenderers.TryGetValue(agent.Id, out var rend)) continue;
                 int g = groupIds[agent.Id];
-                rend.material = groupSizes[g] > 1
-                    ? _groupMaterials[g % _groupMaterials.Length]
-                    : _isolatedMaterial;
+                bool inGroup = groupSizes[g] > 1;
+                rend.material = inGroup ? _groupMaterials[g % _groupMaterials.Length] : _isolatedMaterial;
+
+                if (_agentTrails.TryGetValue(agent.Id, out var trail))
+                {
+                    Color trailColor = inGroup ? GroupColors[g % GroupColors.Length] : Color.gray;
+                    trail.colorGradient = MakeTrailGradient(trailColor);
+                }
             }
         }
 
@@ -161,6 +183,17 @@ namespace Gakkel.Swarm.Unity
             }
 
             return groupId;
+        }
+
+        // Gradient: head (0) = full opacity, tail (1) = transparent.
+        private static Gradient MakeTrailGradient(Color color)
+        {
+            var g = new Gradient();
+            g.SetKeys(
+                new[] { new GradientColorKey(color, 0f), new GradientColorKey(color, 1f) },
+                new[] { new GradientAlphaKey(0.8f, 0f), new GradientAlphaKey(0f, 1f) }
+            );
+            return g;
         }
 
         private void SpawnObstacles(IList<Obstacle> obstacles)
@@ -212,6 +245,7 @@ namespace Gakkel.Swarm.Unity
             Destroy(_obstacleMaterial);
             Destroy(_mothershipMaterial);
             Destroy(_floorMaterial);
+            Destroy(_trailMaterial);
             foreach (var mat in _groupMaterials) Destroy(mat);
         }
     }

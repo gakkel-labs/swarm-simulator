@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Gakkel.Swarm.Unity
 {
@@ -7,7 +8,7 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private SwarmVisualizer visualizer;
         [SerializeField] private float distance = 25f;
         [SerializeField] private float autoOrbitSpeed = 10f;
-        [SerializeField] private float mouseSensitivity = 3f;
+        [SerializeField] private float mouseSensitivity = 0.3f;
         [SerializeField] private float zoomSensitivity = 2f;
         [SerializeField] private float minDistance = 5f;
         [SerializeField] private float maxDistance = 100f;
@@ -27,23 +28,24 @@ namespace Gakkel.Swarm.Unity
 
         private void HandleInput()
         {
-            // Orbit avec clic gauche
-            if (Input.GetMouseButton(0))
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+
+            if (mouse.leftButton.isPressed)
             {
-                _yaw   += Input.GetAxis("Mouse X") * mouseSensitivity;
-                _pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+                var delta = mouse.delta.ReadValue();
+                _yaw   += delta.x * mouseSensitivity;
+                _pitch -= delta.y * mouseSensitivity;
                 _pitch  = Mathf.Clamp(_pitch, -80f, 80f);
             }
             else
             {
-                // Auto-orbite quand pas d'input
                 _yaw += autoOrbitSpeed * Time.deltaTime;
             }
 
-            // Zoom molette
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            float scroll = mouse.scroll.ReadValue().y;
             if (Mathf.Abs(scroll) > 0.001f)
-                distance = Mathf.Clamp(distance - scroll * zoomSensitivity * 10f, minDistance, maxDistance);
+                distance = Mathf.Clamp(distance - scroll * zoomSensitivity, minDistance, maxDistance);
         }
     }
 }

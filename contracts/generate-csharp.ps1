@@ -18,7 +18,7 @@ if (-not (Test-Path $Protoc)) {
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 Write-Host "Generating C# stubs into $OutDir ..."
 
-& $Protoc --proto_path=$ProtoDir --csharp_out=$OutDir --grpc_out=$OutDir $pluginArg $ProtoFile
+& $Protoc "--proto_path=$ProtoDir" "--csharp_out=$OutDir" "--grpc_out=$OutDir" $pluginArg "$ProtoFile"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "protoc failed (exit $LASTEXITCODE)"

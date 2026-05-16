@@ -8,35 +8,36 @@ using UnityEngine;
 
 namespace Gakkel.Swarm.Unity
 {
-    // Verifies HTTP/2 reachability on serverAddress without opening the gRPC stream.
-    // Grpc.Net.Client connects lazily, so we probe via a raw HEAD request instead.
+    // Probes HTTP/2 reachability on serverAddress without opening the gRPC stream.
+    // Grpc.Net.Client connects lazily, so we send a HEAD request instead.
+    // Attach to any GameObject; configure serverAddress and timeout in the Inspector.
     public class GrpcConnectionTest : MonoBehaviour
     {
         [SerializeField] private string serverAddress = "http://localhost:50051";
-        [SerializeField] private float connectTimeoutSeconds = 3f;
+        [SerializeField] private double connectTimeoutSeconds = 3.0;
 
         private GrpcChannel _channel;
+        private CancellationTokenSource _cts;
 
         private async void Start()
         {
+            _cts = new CancellationTokenSource(TimeSpan.FromSeconds(connectTimeoutSeconds));
             try
             {
-                var handler = new YetAnotherHttpHandler { Http2Only = true };
+                var channelHandler = new YetAnotherHttpHandler { Http2Only = true };
                 _channel = GrpcChannel.ForAddress(serverAddress, new GrpcChannelOptions
                 {
-                    HttpHandler = handler,
+                    HttpHandler = channelHandler,
                     DisposeHttpClient = true,
                 });
 
-                using var cts = new CancellationTokenSource(
-                    TimeSpan.FromSeconds(connectTimeoutSeconds));
-
-                // Probe TCP reachability: a HEAD request will be refused by the gRPC
-                // server (405) but proves HTTP/2 connectivity is up.
-                using var probeClient = new HttpClient(new YetAnotherHttpHandler { Http2Only = true });
+                // Probe TCP reachability: the gRPC server rejects HEAD with 405 but
+                // that proves HTTP/2 connectivity is up.
+                using var probeHandler = new YetAnotherHttpHandler { Http2Only = true };
+                using var probeClient = new HttpClient(probeHandler, disposeHandler: false);
                 probeClient.Timeout = TimeSpan.FromSeconds(connectTimeoutSeconds);
                 var response = await probeClient.SendAsync(
-                    new HttpRequestMessage(HttpMethod.Head, serverAddress), cts.Token);
+                    new HttpRequestMessage(HttpMethod.Head, serverAddress), _cts.Token);
 
                 Debug.Log($"[gRPC] Server reachable at {serverAddress} (HTTP {(int)response.StatusCode})");
             }
@@ -52,6 +53,8 @@ namespace Gakkel.Swarm.Unity
 
         private void OnDestroy()
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
             _channel?.Dispose();
         }
     }

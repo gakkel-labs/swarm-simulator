@@ -81,11 +81,9 @@ Packages/Grpc.Tools*/
 # ===========================
 # gRPC / Protobuf generated
 # ===========================
-# Si tu génères le code C# depuis .proto via protoc, ignore les fichiers générés
-# (décommente si tu veux les régénérer à chaque fois)
-# Assets/Generated/
-# *.pb.cs
-# *Grpc.cs
+# Les stubs C# (SwarmObserver.cs, SwarmObserverGrpc.cs) sont volontairement
+# versionnés pour permettre un clone sans relancer protoc.
+# Pour régénérer : .\contracts\generate-csharp.ps1
 
 # ===========================
 # OS

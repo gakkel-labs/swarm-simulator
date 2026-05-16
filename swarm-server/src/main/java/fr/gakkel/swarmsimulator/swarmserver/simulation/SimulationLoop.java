@@ -10,6 +10,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,22 +80,27 @@ public class SimulationLoop {
     // snapshot steer forces before applying — parallel Boids update, all forces
     // computed from time t so order of iteration doesn't affect the result
     void tick() {
-        List<Agent> agents = world.agents();
-        List<Vector3D> steers = new ArrayList<>(agents.size());
-        for (Agent agent : agents) {
-            List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
-            Vector3D steer = rules.steer(agent, neighbors, world);
-            steers.add(steer);
-        }
-        for (int i = 0; i < agents.size(); i++) {
-            Agent agent = agents.get(i);
-            Vector3D newVelocity = clampSpeed(agent.velocity().add(steers.get(i).scale(DT)), config.maxSpeed());
-            Vector3D newPosition = world.clamp(agent.position().add(newVelocity.scale(DT)));
-            agent.update(newPosition, newVelocity);
-        }
-        tickCount++;
-        if (tickCount % LOG_INTERVAL_TICKS == 0) {
-            logCentroid();
+        MDC.put("simulation_tick", String.valueOf(tickCount));
+        try {
+            List<Agent> agents = world.agents();
+            List<Vector3D> steers = new ArrayList<>(agents.size());
+            for (Agent agent : agents) {
+                List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
+                Vector3D steer = rules.steer(agent, neighbors, world);
+                steers.add(steer);
+            }
+            for (int i = 0; i < agents.size(); i++) {
+                Agent agent = agents.get(i);
+                Vector3D newVelocity = clampSpeed(agent.velocity().add(steers.get(i).scale(DT)), config.maxSpeed());
+                Vector3D newPosition = world.clamp(agent.position().add(newVelocity.scale(DT)));
+                agent.update(newPosition, newVelocity);
+            }
+            tickCount++;
+            if (tickCount % LOG_INTERVAL_TICKS == 0) {
+                logCentroid();
+            }
+        } finally {
+            MDC.remove("simulation_tick");
         }
     }
 

@@ -58,6 +58,19 @@ class BoidsRulesTest {
 
             assertEquals(Vector3D.ZERO, result);
         }
+
+        @Test
+        void twoAgentsTooClose_generateOpposingForces() {
+            // A at (0,0,0), B at (5,0,0) → A pushed -x, B pushed +x
+            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(0, 0, 0), Vector3D.ZERO);
+            var b = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(5, 0, 0), Vector3D.ZERO);
+
+            var forceOnA = rules.separation(a, List.of(b));
+            var forceOnB = rules.separation(b, List.of(a));
+
+            assertEquals(-1.0, forceOnA.x(), DELTA);
+            assertEquals( 1.0, forceOnB.x(), DELTA);
+        }
     }
 
     @Nested
@@ -125,6 +138,20 @@ class BoidsRulesTest {
             assertEquals(0.0, result.y(), DELTA);
             assertEquals(0.0, result.z(), DELTA);
         }
+
+        @Test
+        void threeAgentsInLine_outerAgentPulledTowardSwarmCenter() {
+            // agent A at (0,0,0), neighbours B(10,0,0) and C(20,0,0)
+            // centroid of neighbours = (15,0,0) → cohesion force points +x
+            var b = Agent.create(AgentType.EXPLORER, new Vector3D(10, 0, 0));
+            var c = Agent.create(AgentType.EXPLORER, new Vector3D(20, 0, 0));
+
+            var result = rules.cohesion(agent, List.of(b, c));
+
+            assertEquals(1.0, result.x(), DELTA);
+            assertEquals(0.0, result.y(), DELTA);
+            assertEquals(0.0, result.z(), DELTA);
+        }
     }
 
     @Nested
@@ -147,18 +174,18 @@ class BoidsRulesTest {
         @Test
         void allRulesActive_producesExpectedSteeringVector() {
             // agent at origin, neighbor at (5,0,0) moving up (0,1,0)
-            // separation → (-1,0,0)*1.5 = (-1.5,0,0)
-            // alignment  → ( 0,1,0)*1.0 = ( 0.0,1,0)
-            // cohesion   → ( 1,0,0)*1.0 = ( 1.0,0,0)
-            // steer      → (-0.5, 1.0, 0.0)
+            // separation → (-1,0,0)*1.8 = (-1.8, 0,0)
+            // alignment  → ( 0,1,0)*1.5 = ( 0.0,1.5,0)
+            // cohesion   → ( 1,0,0)*1.5 = ( 1.5, 0,0)
+            // steer      → (-0.3, 1.5, 0.0)
             var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
             neighbor.update(neighbor.position(), new Vector3D(0, 1, 0));
 
             var steer = rules.steer(agent, List.of(neighbor));
 
-            assertEquals(-0.5, steer.x(), DELTA);
-            assertEquals(1.0,  steer.y(), DELTA);
-            assertEquals(0.0,  steer.z(), DELTA);
+            assertEquals(-0.3, steer.x(), DELTA);
+            assertEquals( 1.5, steer.y(), DELTA);
+            assertEquals( 0.0, steer.z(), DELTA);
         }
     }
 

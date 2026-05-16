@@ -109,6 +109,18 @@ class SimulationLoopTest {
             Vector3D centroid = SimulationLoop.computeCentroid(List.of(a1, a2));
             assertEquals(5.0, SimulationLoop.computePositionStandardDeviation(List.of(a1, a2), centroid), 1e-9);
         }
+
+        @Test
+        void scatteredAgents_haveHigherSigmaThanConvergedAgents() {
+            var converged = List.of(agent(new Vector3D(0, 0, 0)), agent(new Vector3D(1, 0, 0)), agent(new Vector3D(0, 1, 0)));
+            var scattered = List.of(agent(new Vector3D(0, 0, 0)), agent(new Vector3D(50, 0, 0)), agent(new Vector3D(0, 50, 0)));
+
+            double sigmaC = SimulationLoop.computePositionStandardDeviation(converged, SimulationLoop.computeCentroid(converged));
+            double sigmaS = SimulationLoop.computePositionStandardDeviation(scattered, SimulationLoop.computeCentroid(scattered));
+
+            assertTrue(sigmaS > sigmaC,
+                    "scattered σ=" + sigmaS + " should exceed converged σ=" + sigmaC);
+        }
     }
 
     @Nested

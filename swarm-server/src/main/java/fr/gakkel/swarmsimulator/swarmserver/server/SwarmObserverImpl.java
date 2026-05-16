@@ -14,6 +14,7 @@ import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,14 +48,25 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
 
     @Override
     public void subscribeWorldState(SubscribeRequest request, StreamObserver<WorldState> responseObserver) {
-        ServerCallStreamObserver<WorldState> obs = (ServerCallStreamObserver<WorldState>) responseObserver;
-        subscribers.add(obs);
-        LOG.info("client '{}' subscribed — {} total", request.getClientId(), subscribers.size());
+        String clientId = request.getClientId();
+        MDC.put("client_id", clientId);
+        try {
+            ServerCallStreamObserver<WorldState> obs = (ServerCallStreamObserver<WorldState>) responseObserver;
+            subscribers.add(obs);
+            LOG.info("client subscribed — {} total", subscribers.size());
 
-        obs.setOnCancelHandler(() -> {
-            subscribers.remove(obs);
-            LOG.info("client '{}' disconnected — {} remaining", request.getClientId(), subscribers.size());
-        });
+            obs.setOnCancelHandler(() -> {
+                MDC.put("client_id", clientId);
+                try {
+                    subscribers.remove(obs);
+                    LOG.info("client disconnected — {} remaining", subscribers.size());
+                } finally {
+                    MDC.remove("client_id");
+                }
+            });
+        } finally {
+            MDC.remove("client_id");
+        }
     }
 
     public void stop() {

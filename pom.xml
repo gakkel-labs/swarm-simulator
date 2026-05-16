@@ -26,6 +26,7 @@
         <mockito.version>5.11.0</mockito.version>
         <slf4j.version>2.0.13</slf4j.version>
         <logback.version>1.5.18</logback.version>
+        <logstash.encoder.version>8.0</logstash.encoder.version>
     </properties>
 
     <dependencyManagement>
@@ -62,6 +63,11 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash.encoder.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

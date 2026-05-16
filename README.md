@@ -3,7 +3,7 @@
 > Distributed simulator of coordinated underwater drone swarms.
 > Reynolds' Boids model with obstacle avoidance and threat response.
 
-[![CI](https://github.com/gakkel/swarm-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/gakkel/swarm-simulator/actions)
+[![CI](https://github.com/gakkel-labs/swarm-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/gakkel-labs/swarm-simulator/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 

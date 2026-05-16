@@ -14,6 +14,7 @@ namespace Gakkel.Swarm.Unity
         [Tooltip("Use http:// (cleartext H2) for local dev; https:// requires a TLS cert.")]
         [SerializeField] private string serverAddress = "http://localhost:50051";
         [SerializeField] private float retryDelaySeconds = 3f;
+        [SerializeField] private SwarmVisualizer visualizer;
 
         private const string ClientId = "unity-client";
 
@@ -78,7 +79,7 @@ namespace Gakkel.Swarm.Unity
 
         private void OnWorldStateReceived(WorldState ws)
         {
-            // Runs on Unity main thread — safe to modify GameObjects here.
+            visualizer?.Apply(ws);
 #if UNITY_EDITOR
             Debug.Log($"[gRPC] WorldState t={ws.TimestampUnixMs} agents={ws.Agents.Count}");
 #endif

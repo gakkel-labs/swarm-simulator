@@ -41,10 +41,10 @@ public record BoidsConfig(
 
     public static final class Builder {
 
-        private double perceptionRadius        = 15.0;
-        private double separationWeight        = 1.5;
-        private double alignmentWeight         = 1.0;
-        private double cohesionWeight          = 1.0;
+        private double perceptionRadius        = 25.0;
+        private double separationWeight        = 1.8;
+        private double alignmentWeight         = 1.5;
+        private double cohesionWeight          = 1.5;
         private double maxSpeed                = 5.0;
         private double boundaryRepulsionRadius = 15.0;
         private double boundaryRepulsionWeight = 2.0;

@@ -92,7 +92,14 @@ public class SimulationLoop {
             for (int i = 0; i < agents.size(); i++) {
                 Agent agent = agents.get(i);
                 Vector3D newVelocity = clampSpeed(agent.velocity().add(steers.get(i).scale(DT)), config.maxSpeed());
-                Vector3D newPosition = world.clamp(agent.position().add(newVelocity.scale(DT)));
+                Vector3D newPosition = agent.position().add(newVelocity.scale(DT));
+                for (Obstacle obstacle : world.obstacles()) {
+                    ObstacleCollision c = resolveObstacleCollision(newPosition, newVelocity, obstacle);
+                    newPosition = c.position();
+                    newVelocity = c.velocity();
+                }
+                newVelocity = constrainVelocityToWalls(newPosition, newVelocity, world);
+                newPosition = world.clamp(newPosition);
                 agent.update(newPosition, newVelocity);
             }
             tickCount++;
@@ -237,6 +244,34 @@ public class SimulationLoop {
         double mag = velocity.magnitude();
         if (mag > maxSpeed) return velocity.scale(maxSpeed / mag);
         return velocity;
+    }
+
+    record ObstacleCollision(Vector3D position, Vector3D velocity) {}
+
+    static ObstacleCollision resolveObstacleCollision(Vector3D position, Vector3D velocity, Obstacle obstacle) {
+        double dist = position.distanceTo(obstacle.position());
+        if (dist >= obstacle.radius()) return new ObstacleCollision(position, velocity);
+        Vector3D outward = dist > 1e-10
+                ? position.subtract(obstacle.position()).scale(1.0 / dist)
+                : new Vector3D(0, 1, 0);
+        Vector3D ejected = obstacle.position().add(outward.scale(obstacle.radius()));
+        double radial = velocity.dot(outward);
+        Vector3D corrected = radial < 0 ? velocity.subtract(outward.scale(radial)) : velocity;
+        return new ObstacleCollision(ejected, corrected);
+    }
+
+    static Vector3D constrainVelocityToWalls(Vector3D position, Vector3D velocity, World world) {
+        double vx = velocity.x();
+        double vy = velocity.y();
+        double vz = velocity.z();
+        if (position.x() < 0              && vx < 0) vx = 0;
+        if (position.x() > world.width()  && vx > 0) vx = 0;
+        if (position.y() < 0              && vy < 0) vy = 0;
+        if (position.y() > world.height() && vy > 0) vy = 0;
+        if (position.z() < 0              && vz < 0) vz = 0;
+        if (position.z() > world.depth()  && vz > 0) vz = 0;
+        if (vx == velocity.x() && vy == velocity.y() && vz == velocity.z()) return velocity;
+        return new Vector3D(vx, vy, vz);
     }
 
     public static World createDefaultWorld() {

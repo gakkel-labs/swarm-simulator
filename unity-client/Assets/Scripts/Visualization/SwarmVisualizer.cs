@@ -8,25 +8,29 @@ namespace Gakkel.Swarm.Unity
     {
         [SerializeField] private float floorDepthOffset = 5f;
         [SerializeField] private float groupingRadius = 15f;
+        [SerializeField] private float obstacleHeightM = 5f;
 
         private static readonly Color[] GroupColors =
         {
-            new(0.2f, 0.6f, 1.0f),  // bleu
-            new(0.2f, 0.8f, 0.2f),  // vert
+            new(0.2f, 0.6f, 1.0f),  // blue
+            new(0.2f, 0.8f, 0.2f),  // green
             new(1.0f, 0.6f, 0.2f),  // orange
-            new(0.8f, 0.2f, 0.8f),  // violet
-            new(1.0f, 0.9f, 0.2f),  // jaune
+            new(0.8f, 0.2f, 0.8f),  // purple
+            new(1.0f, 0.9f, 0.2f),  // yellow
             new(0.2f, 0.9f, 0.8f),  // cyan
         };
 
         private readonly Dictionary<string, GameObject> _agents = new();
-        private readonly Dictionary<string, Material> _agentMaterials = new();
+        private readonly Dictionary<string, Renderer> _agentRenderers = new();
         private readonly List<GameObject> _obstacles = new();
 
         private Material _isolatedMaterial;
         private Material _obstacleMaterial;
+        private Material _mothershipMaterial;
+        private Material _floorMaterial;
         private Material[] _groupMaterials;
 
+        private bool _obstaclesSpawned;
         private Vector3 _centroid;
         private GameObject _floor;
 
@@ -34,29 +38,34 @@ namespace Gakkel.Swarm.Unity
         {
             var shader = Shader.Find("Universal Render Pipeline/Lit");
 
-            _isolatedMaterial = new Material(shader) { color = Color.gray };
-            _obstacleMaterial = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
+            _isolatedMaterial   = new Material(shader) { color = Color.gray };
+            _obstacleMaterial   = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
+            _mothershipMaterial = new Material(shader) { color = Color.gray };
+            _floorMaterial      = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
 
             _groupMaterials = new Material[GroupColors.Length];
             for (int i = 0; i < GroupColors.Length; i++)
                 _groupMaterials[i] = new Material(shader) { color = GroupColors[i] };
 
-            SpawnMothership(shader);
-            SpawnFloor(shader);
+            SpawnMothership();
+            SpawnFloor();
         }
 
         public void Apply(WorldState ws)
         {
             SyncAgents(ws.Agents);
-            if (_obstacles.Count == 0)
+            if (!_obstaclesSpawned && ws.Obstacles.Count > 0)
+            {
                 SpawnObstacles(ws.Obstacles);
+                _obstaclesSpawned = true;
+            }
             UpdateCentroid();
             ColorByGroup(ws.Agents);
         }
 
         public Vector3 GetCentroid() => _centroid;
 
-        // NED (North/East/Down) → Unity (right/up/forward)
+        /// <summary>Converts NED (North/East/Down) to Unity (East/Up/North) coordinates.</summary>
         private static Vector3 NedToUnity(Vec3 ned) => new(ned.Y, -ned.Z, ned.X);
 
         private void SyncAgents(IList<AgentState> incoming)
@@ -70,10 +79,13 @@ namespace Gakkel.Swarm.Unity
                 if (!_agents.TryGetValue(agent.Id, out var go))
                 {
                     go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                    go.name = $"Agent_{agent.Id[..8]}";
-                    go.GetComponent<Renderer>().material = _isolatedMaterial;
+                    var shortId = agent.Id.Length >= 8 ? agent.Id[..8] : agent.Id;
+                    go.name = $"Agent_{shortId}";
+                    var rend = go.GetComponent<Renderer>();
+                    rend.material = _isolatedMaterial;
                     go.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
                     _agents[agent.Id] = go;
+                    _agentRenderers[agent.Id] = rend;
                 }
 
                 go.transform.position = NedToUnity(agent.PositionXyz);
@@ -88,14 +100,18 @@ namespace Gakkel.Swarm.Unity
                     toRemove.Add(id);
                 }
             }
-            foreach (var id in toRemove) _agents.Remove(id);
+            foreach (var id in toRemove)
+            {
+                _agents.Remove(id);
+                _agentRenderers.Remove(id);
+            }
         }
 
         private void ColorByGroup(IList<AgentState> agents)
         {
+            // O(n²) BFS — acceptable up to ~100 agents at 20 Hz.
             var groupIds = ComputeGroupIds(agents);
 
-            // Count members per group to identify isolated agents (group size == 1)
             var groupSizes = new Dictionary<int, int>();
             foreach (var g in groupIds.Values)
             {
@@ -105,16 +121,15 @@ namespace Gakkel.Swarm.Unity
 
             foreach (var agent in agents)
             {
-                if (!_agents.TryGetValue(agent.Id, out var go)) continue;
+                if (!_agentRenderers.TryGetValue(agent.Id, out var rend)) continue;
                 int g = groupIds[agent.Id];
-                var mat = groupSizes[g] > 1
+                rend.material = groupSizes[g] > 1
                     ? _groupMaterials[g % _groupMaterials.Length]
                     : _isolatedMaterial;
-                go.GetComponent<Renderer>().material = mat;
             }
         }
 
-        // BFS connected-components : deux agents sont connectés si distance < groupingRadius
+        // BFS connected-components: two agents are connected if distance < groupingRadius.
         private Dictionary<string, int> ComputeGroupIds(IList<AgentState> agents)
         {
             var positions = new Dictionary<string, Vector3>();
@@ -158,27 +173,26 @@ namespace Gakkel.Swarm.Unity
                 go.name = "Obstacle";
                 go.GetComponent<Renderer>().material = _obstacleMaterial;
                 float diameter = obs.RadiusM * 2f;
-                go.transform.localScale = new Vector3(diameter, 2.5f, diameter);
+                go.transform.localScale = new Vector3(diameter, obstacleHeightM * 0.5f, diameter);
                 go.transform.position = NedToUnity(obs.PositionXyz);
                 _obstacles.Add(go);
             }
         }
 
-        private void SpawnMothership(Shader shader)
+        private void SpawnMothership()
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = "Mothership";
-            go.GetComponent<Renderer>().material = new Material(shader) { color = Color.gray };
+            go.GetComponent<Renderer>().material = _mothershipMaterial;
             go.transform.localScale = new Vector3(2f, 1f, 2f);
             go.transform.position = Vector3.zero;
         }
 
-        private void SpawnFloor(Shader shader)
+        private void SpawnFloor()
         {
             _floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             _floor.name = "SeaFloor";
-            _floor.GetComponent<Renderer>().material =
-                new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
+            _floor.GetComponent<Renderer>().material = _floorMaterial;
             _floor.transform.localScale = new Vector3(20f, 1f, 20f);
         }
 
@@ -199,6 +213,8 @@ namespace Gakkel.Swarm.Unity
         {
             Destroy(_isolatedMaterial);
             Destroy(_obstacleMaterial);
+            Destroy(_mothershipMaterial);
+            Destroy(_floorMaterial);
             foreach (var mat in _groupMaterials) Destroy(mat);
         }
     }

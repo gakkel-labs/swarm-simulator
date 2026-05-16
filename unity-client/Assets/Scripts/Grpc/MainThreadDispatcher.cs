@@ -5,6 +5,8 @@ using UnityEngine;
 
 namespace Gakkel.Swarm.Unity
 {
+    // Marshals actions from background threads to the Unity main thread.
+    // Call Enqueue() from any thread; actions execute on the main thread each frame.
     public class MainThreadDispatcher : MonoBehaviour
     {
         public static MainThreadDispatcher Instance { get; private set; }
@@ -19,14 +21,25 @@ namespace Gakkel.Swarm.Unity
             StartCoroutine(ProcessQueue());
         }
 
-        public static void Enqueue(Action action) => Instance._queue.Enqueue(action);
+        public static void Enqueue(Action action)
+        {
+            if (Instance == null)
+            {
+                Debug.LogError("[MainThreadDispatcher] Instance is null — is the dispatcher in the scene?");
+                return;
+            }
+            Instance._queue.Enqueue(action);
+        }
 
         private IEnumerator ProcessQueue()
         {
             while (true)
             {
                 while (_queue.TryDequeue(out var action))
-                    action();
+                {
+                    try { action(); }
+                    catch (Exception ex) { Debug.LogException(ex); }
+                }
                 yield return null;
             }
         }

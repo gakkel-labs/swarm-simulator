@@ -69,5 +69,6 @@ desktop.ini
 # Logs & temporaires
 # =============================================
 logs/
+**/logs/
 *.swp
 *.bak

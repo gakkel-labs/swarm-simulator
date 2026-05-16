@@ -70,13 +70,20 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/
 
 # ===========================
+# NuGet (NuGetForUnity)
+# ===========================
+# DLLs téléchargées à la restauration — ne pas versionner
+Assets/Packages/
+Assets/Packages.meta
+# Grpc.Tools place ses binaires ici (protoc, grpc_csharp_plugin)
+Packages/Grpc.Tools*/
+
+# ===========================
 # gRPC / Protobuf generated
 # ===========================
-# Si tu génères le code C# depuis .proto via protoc, ignore les fichiers générés
-# (décommente si tu veux les régénérer à chaque fois)
-# Assets/Generated/
-# *.pb.cs
-# *Grpc.cs
+# Les stubs C# (SwarmObserver.cs, SwarmObserverGrpc.cs) sont volontairement
+# versionnés pour permettre un clone sans relancer protoc.
+# Pour régénérer : .\contracts\generate-csharp.ps1
 
 # ===========================
 # OS

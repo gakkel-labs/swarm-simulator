@@ -25,10 +25,16 @@ namespace Gakkel.Swarm.Unity
         {
             if (Instance == null)
             {
-                Debug.LogError("[MainThreadDispatcher] Instance is null — is the dispatcher in the scene?");
+                if (Application.isPlaying)
+                    Debug.LogError("[MainThreadDispatcher] Instance is null — is the dispatcher in the scene?");
                 return;
             }
             Instance._queue.Enqueue(action);
+        }
+
+        private void OnDestroy()
+        {
+            Instance = null;
         }
 
         private IEnumerator ProcessQueue()

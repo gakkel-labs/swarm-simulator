@@ -12,6 +12,7 @@ namespace Gakkel.Swarm.Unity
     public class WorldStateReceiver : MonoBehaviour
     {
         [SerializeField] private string serverAddress = "http://localhost:50051";
+        [SerializeField] private float retryDelaySeconds = 3f;
 
         private GrpcChannel _channel;
         private CancellationTokenSource _cts;
@@ -30,32 +31,38 @@ namespace Gakkel.Swarm.Unity
 
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
-            try
+            while (!ct.IsCancellationRequested)
             {
-                var client = new SwarmObserver.SwarmObserverClient(_channel);
-                using var call = client.SubscribeWorldState(
-                    new SubscribeRequest { ClientId = "unity-client" },
-                    cancellationToken: ct);
-
-                await foreach (var ws in call.ResponseStream.ReadAllAsync(ct))
+                try
                 {
-                    var snapshot = ws;
-                    MainThreadDispatcher.Enqueue(() => OnWorldStateReceived(snapshot));
+                    var client = new SwarmObserver.SwarmObserverClient(_channel);
+                    using var call = client.SubscribeWorldState(
+                        new SubscribeRequest { ClientId = "unity-client" },
+                        cancellationToken: ct);
+
+                    await foreach (var ws in call.ResponseStream.ReadAllAsync(ct))
+                    {
+                        var snapshot = ws;
+                        MainThreadDispatcher.Enqueue(() => OnWorldStateReceived(snapshot));
+                    }
                 }
-            }
-            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
-            {
-                // Normal stop via OnDestroy — no log needed.
-            }
-            catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
-            {
-                MainThreadDispatcher.Enqueue(() =>
-                    Debug.LogWarning("[gRPC] Server disconnected."));
-            }
-            catch (Exception ex)
-            {
-                MainThreadDispatcher.Enqueue(() =>
-                    Debug.LogError($"[gRPC] Stream error: {ex.Message}"));
+                catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+                {
+                    // Normal stop via OnDestroy — no log needed.
+                    return;
+                }
+                catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
+                {
+                    MainThreadDispatcher.Enqueue(() =>
+                        Debug.LogWarning($"[gRPC] Server disconnected. Retrying in {retryDelaySeconds}s..."));
+                    await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds), ct);
+                }
+                catch (Exception ex)
+                {
+                    MainThreadDispatcher.Enqueue(() =>
+                        Debug.LogError($"[gRPC] Stream error: {ex.Message}"));
+                    return;
+                }
             }
         }
 

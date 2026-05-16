@@ -124,8 +124,10 @@ namespace Gakkel.Swarm.Unity
 
         private void ColorByGroup(IList<AgentState> agents)
         {
-            // O(n²) BFS — acceptable up to ~100 agents at 20 Hz.
-            var groupIds = ComputeGroupIds(agents);
+            var positions = new Dictionary<string, Vector3>(agents.Count);
+            foreach (var a in agents) positions[a.Id] = NedToUnity(a.PositionXyz);
+
+            var groupIds = GroupDetector.Compute(positions, groupingRadius);
 
             var groupSizes = new Dictionary<int, int>();
             foreach (var g in groupIds.Values)
@@ -147,42 +149,6 @@ namespace Gakkel.Swarm.Unity
                     trail.colorGradient = MakeTrailGradient(trailColor);
                 }
             }
-        }
-
-        // BFS connected-components: two agents are connected if distance < groupingRadius.
-        private Dictionary<string, int> ComputeGroupIds(IList<AgentState> agents)
-        {
-            var positions = new Dictionary<string, Vector3>();
-            foreach (var a in agents) positions[a.Id] = NedToUnity(a.PositionXyz);
-
-            var groupId = new Dictionary<string, int>();
-            var queue = new Queue<string>();
-            int nextGroup = 0;
-
-            foreach (var agent in agents)
-            {
-                if (groupId.ContainsKey(agent.Id)) continue;
-
-                int g = nextGroup++;
-                groupId[agent.Id] = g;
-                queue.Enqueue(agent.Id);
-
-                while (queue.Count > 0)
-                {
-                    var current = queue.Dequeue();
-                    foreach (var other in agents)
-                    {
-                        if (groupId.ContainsKey(other.Id)) continue;
-                        if (Vector3.Distance(positions[current], positions[other.Id]) < groupingRadius)
-                        {
-                            groupId[other.Id] = g;
-                            queue.Enqueue(other.Id);
-                        }
-                    }
-                }
-            }
-
-            return groupId;
         }
 
         // Gradient: head (0) = full opacity, tail (1) = transparent.

@@ -55,10 +55,13 @@ class SwarmObserverImplTest {
         AgentState as = state.getAgents(0);
         assertThat(as.getId()).isEqualTo(id.toString());
         assertThat(as.getType()).isEqualTo(AgentType.AGENT_TYPE_EXPLORER);
-        assertThat(as.getPositionXyz().getX()).isEqualTo(1.0f);
-        assertThat(as.getPositionXyz().getY()).isEqualTo(2.0f);
-        assertThat(as.getPositionXyz().getZ()).isEqualTo(3.0f);
-        assertThat(as.getVelocityMps().getX()).isEqualTo(0.5f);
+        // NED encoding: North=server.Z, East=server.X, Down=-server.Y (Y=0 is water surface)
+        // pos=(1,2,3) → proto(x=3, y=1, z=-2)
+        assertThat(as.getPositionXyz().getX()).isEqualTo(3.0f);
+        assertThat(as.getPositionXyz().getY()).isEqualTo(1.0f);
+        assertThat(as.getPositionXyz().getZ()).isEqualTo(-2.0f);
+        // vel=(0.5,0.6,0.7) → proto.X = server.Z = 0.7
+        assertThat(as.getVelocityMps().getX()).isEqualTo(0.7f);
     }
 
     @Test
@@ -142,10 +145,11 @@ class SwarmObserverImplTest {
 
         // Assert
         assertThat(state.getObstaclesCount()).isEqualTo(2);
+        // obstacle at server(10,20,5) → NED proto(x=5, y=10, z=-20)
         var first = state.getObstacles(0);
-        assertThat(first.getPositionXyz().getX()).isEqualTo(10.0f);
-        assertThat(first.getPositionXyz().getY()).isEqualTo(20.0f);
-        assertThat(first.getPositionXyz().getZ()).isEqualTo(5.0f);
+        assertThat(first.getPositionXyz().getX()).isEqualTo(5.0f);
+        assertThat(first.getPositionXyz().getY()).isEqualTo(10.0f);
+        assertThat(first.getPositionXyz().getZ()).isEqualTo(-20.0f);
         assertThat(first.getRadiusM()).isEqualTo(3.0f);
         assertThat(state.getObstacles(1).getRadiusM()).isEqualTo(6.5f);
     }

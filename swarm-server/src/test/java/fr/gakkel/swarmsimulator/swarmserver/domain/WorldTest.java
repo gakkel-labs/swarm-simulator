@@ -101,26 +101,30 @@ class WorldTest {
 
     @Test
     void isInBounds_positionInsideWorld_returnsTrue() {
-        assertTrue(world.isInBounds(new Vector3D(50, 50, 25)));
+        // Y=0 is surface, Y=-100 is sea floor; Y=-50 is valid underwater
+        assertTrue(world.isInBounds(new Vector3D(50, -50, 25)));
     }
 
     @Test
     void isInBounds_positionOnBoundary_returnsTrue() {
-        assertTrue(world.isInBounds(new Vector3D(0, 0, 0)));
-        assertTrue(world.isInBounds(new Vector3D(100, 100, 50)));
+        assertTrue(world.isInBounds(new Vector3D(0, 0, 0)));           // surface corner
+        assertTrue(world.isInBounds(new Vector3D(100, -100, 50)));     // sea floor corner
     }
 
     @Test
     void isInBounds_positionOutsideWorld_returnsFalse() {
-        assertFalse(world.isInBounds(new Vector3D(-1, 50, 25)));
-        assertFalse(world.isInBounds(new Vector3D(50, 101, 25)));
-        assertFalse(world.isInBounds(new Vector3D(50, 50, 51)));
+        assertFalse(world.isInBounds(new Vector3D(-1, -50, 25)));      // X out
+        assertFalse(world.isInBounds(new Vector3D(50, 1, 25)));        // above surface
+        assertFalse(world.isInBounds(new Vector3D(50, -101, 25)));     // below sea floor
+        assertFalse(world.isInBounds(new Vector3D(50, -50, 51)));      // Z out
     }
 
     @Test
     void clamp_positionOutsideWorld_clampsToBoundary() {
-        assertEquals(new Vector3D(0, 0, 0), world.clamp(new Vector3D(-10, -5, -1)));
-        assertEquals(new Vector3D(100, 100, 50), world.clamp(new Vector3D(200, 150, 99)));
+        // below floor + outside horizontal → clamp to sea-floor corner
+        assertEquals(new Vector3D(0, -100, 0), world.clamp(new Vector3D(-10, -105, -1)));
+        // above surface + outside horizontal → clamp to surface corner
+        assertEquals(new Vector3D(100, 0, 50), world.clamp(new Vector3D(200, 10, 99)));
     }
 
     @Test

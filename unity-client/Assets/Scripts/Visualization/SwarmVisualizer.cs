@@ -6,7 +6,6 @@ namespace Gakkel.Swarm.Unity
 {
     public class SwarmVisualizer : MonoBehaviour
     {
-        [SerializeField] private float floorDepthOffset = 5f;
         [SerializeField] private float groupingRadius = 15f;
         [SerializeField] private float obstacleHeightM = 5f;
 
@@ -32,7 +31,6 @@ namespace Gakkel.Swarm.Unity
 
         private bool _obstaclesSpawned;
         private Vector3 _centroid;
-        private GameObject _floor;
 
         private void Awake()
         {
@@ -190,10 +188,14 @@ namespace Gakkel.Swarm.Unity
 
         private void SpawnFloor()
         {
-            _floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            _floor.name = "SeaFloor";
-            _floor.GetComponent<Renderer>().material = _floorMaterial;
-            _floor.transform.localScale = new Vector3(20f, 1f, 20f);
+            // World is 100×50 server units (X×Z); Plane default is 10×10, so scale (10,1,5).
+            // Sea floor is at server Y=0 → NED.Down=100 → Unity Y=-100 (100m below surface).
+            // Water surface is at Unity Y=0 (NED.Down=0, server Y=100).
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            floor.name = "SeaFloor";
+            floor.GetComponent<Renderer>().material = _floorMaterial;
+            floor.transform.localScale = new Vector3(10f, 1f, 5f);
+            floor.transform.position = new Vector3(50f, -100f, 25f);
         }
 
         private void UpdateCentroid()
@@ -202,11 +204,6 @@ namespace Gakkel.Swarm.Unity
             var sum = Vector3.zero;
             foreach (var go in _agents.Values) sum += go.transform.position;
             _centroid = sum / _agents.Count;
-
-            _floor.transform.position = new Vector3(
-                _centroid.x,
-                _centroid.y - floorDepthOffset,
-                _centroid.z);
         }
 
         private void OnDestroy()

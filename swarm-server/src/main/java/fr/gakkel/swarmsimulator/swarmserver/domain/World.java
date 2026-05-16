@@ -67,14 +67,14 @@ public final class World {
 
     public boolean isInBounds(Vector3D position) {
         return position.x() >= 0 && position.x() <= width
-                && position.y() >= 0 && position.y() <= height
+                && position.y() >= -height && position.y() <= 0
                 && position.z() >= 0 && position.z() <= depth;
     }
 
     public Vector3D clamp(Vector3D position) {
         return new Vector3D(
                 Math.clamp(position.x(), 0, width),
-                Math.clamp(position.y(), 0, height),
+                Math.clamp(position.y(), -height, 0),
                 Math.clamp(position.z(), 0, depth));
     }
 

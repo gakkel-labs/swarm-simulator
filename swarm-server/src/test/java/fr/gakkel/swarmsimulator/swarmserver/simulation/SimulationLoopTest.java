@@ -278,14 +278,16 @@ class SimulationLoopTest {
 
         @Test
         void insideBounds_velocityUnchanged() {
+            // Y=-50: valid underwater position (surface=0, floor=-100)
             var vel = new Vector3D(1, -1, 1);
-            assertEquals(vel, SimulationLoop.constrainVelocityToWalls(new Vector3D(50, 50, 25), vel, W));
+            assertEquals(vel, SimulationLoop.constrainVelocityToWalls(new Vector3D(50, -50, 25), vel, W));
         }
 
         @Test
         void belowFloor_downwardVelocityZeroed() {
+            // Y=-101: 1m below sea floor (floor at -100)
             var result = SimulationLoop.constrainVelocityToWalls(
-                    new Vector3D(50, -1, 25), new Vector3D(2, -3, 1), W);
+                    new Vector3D(50, -101, 25), new Vector3D(2, -3, 1), W);
             assertEquals(0.0, result.y(), 1e-9);
             assertEquals(2.0, result.x(), 1e-9);
             assertEquals(1.0, result.z(), 1e-9);
@@ -293,14 +295,16 @@ class SimulationLoopTest {
 
         @Test
         void belowFloor_upwardVelocityPreserved() {
+            // Y=-101: below floor but moving up → allowed
             var vel = new Vector3D(0, 3, 0);
-            assertEquals(vel, SimulationLoop.constrainVelocityToWalls(new Vector3D(50, -1, 25), vel, W));
+            assertEquals(vel, SimulationLoop.constrainVelocityToWalls(new Vector3D(50, -101, 25), vel, W));
         }
 
         @Test
-        void aboveCeiling_upwardVelocityZeroed() {
+        void aboveSurface_upwardVelocityZeroed() {
+            // Y=1: 1m above water surface (surface at Y=0)
             var result = SimulationLoop.constrainVelocityToWalls(
-                    new Vector3D(50, 101, 25), new Vector3D(1, 5, 0), W);
+                    new Vector3D(50, 1, 25), new Vector3D(1, 5, 0), W);
             assertEquals(0.0, result.y(), 1e-9);
         }
 

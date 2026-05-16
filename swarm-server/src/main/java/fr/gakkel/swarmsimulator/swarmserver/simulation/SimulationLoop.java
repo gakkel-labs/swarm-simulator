@@ -263,11 +263,12 @@ public class SimulationLoop {
     static Vector3D constrainVelocityToWalls(Vector3D position, Vector3D velocity, World world) {
         double vx = velocity.x();
         double vy = velocity.y();
-        double vz = velocity.z();
+        double
+                vz = velocity.z();
         if (position.x() < 0              && vx < 0) vx = 0;
         if (position.x() > world.width()  && vx > 0) vx = 0;
-        if (position.y() < 0              && vy < 0) vy = 0;
-        if (position.y() > world.height() && vy > 0) vy = 0;
+        if (position.y() < -world.height() && vy < 0) vy = 0;
+        if (position.y() > 0              && vy > 0) vy = 0;
         if (position.z() < 0              && vz < 0) vz = 0;
         if (position.z() > world.depth()  && vz > 0) vz = 0;
         if (vx == velocity.x() && vy == velocity.y() && vz == velocity.z()) return velocity;
@@ -283,7 +284,7 @@ public class SimulationLoop {
         for (int i = 0; i < agentCount; i++) {
             Vector3D pos = new Vector3D(
                     rng.nextDouble(0, DEFAULT_WORLD_WIDTH),
-                    rng.nextDouble(0, DEFAULT_WORLD_HEIGHT),
+                    rng.nextDouble(-DEFAULT_WORLD_HEIGHT, 0),
                     rng.nextDouble(0, DEFAULT_WORLD_DEPTH));
             Vector3D vel = new Vector3D(
                     rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
@@ -291,9 +292,9 @@ public class SimulationLoop {
                     rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
             world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
         }
-        world.addObstacle(new Obstacle(new Vector3D(50, 50, 25), 8.0));
-        world.addObstacle(new Obstacle(new Vector3D(25, 70, 25), 5.0));
-        world.addObstacle(new Obstacle(new Vector3D(75, 30, 25), 6.0));
+        world.addObstacle(new Obstacle(new Vector3D(50, -50, 25), 8.0));
+        world.addObstacle(new Obstacle(new Vector3D(25, -70, 25), 5.0));
+        world.addObstacle(new Obstacle(new Vector3D(75, -30, 25), 6.0));
         return world;
     }
 

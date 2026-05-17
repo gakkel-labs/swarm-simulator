@@ -32,6 +32,8 @@ namespace Gakkel.Swarm.Unity
         private readonly Dictionary<string, LineRenderer> _agentVelocityLines = new();
         private readonly Dictionary<int, GameObject> _groupCentroidSpheres = new();
         private readonly List<GameObject> _obstacles = new();
+        private readonly Dictionary<string, Vector3> _agentPositions = new();
+        private readonly Vector3[] _velocityLinePositions = new Vector3[5];
 
         private Material _isolatedMaterial;
         private Material _obstacleMaterial;
@@ -40,6 +42,8 @@ namespace Gakkel.Swarm.Unity
         private Material _trailMaterial;
         private Material[] _groupMaterials;
         private Material[] _groupCentroidMaterials;
+        private Gradient[] _groupTrailGradients;
+        private Gradient _isolatedTrailGradient;
 
         private bool _obstaclesSpawned;
         private Vector3 _centroid;
@@ -57,11 +61,14 @@ namespace Gakkel.Swarm.Unity
 
             _groupMaterials = new Material[GroupColors.Length];
             _groupCentroidMaterials = new Material[GroupColors.Length];
+            _groupTrailGradients = new Gradient[GroupColors.Length];
             for (int i = 0; i < GroupColors.Length; i++)
             {
                 _groupMaterials[i] = new Material(shader) { color = GroupColors[i] };
                 _groupCentroidMaterials[i] = new Material(particleShader) { color = GroupColors[i] };
+                _groupTrailGradients[i] = MakeTrailGradient(GroupColors[i]);
             }
+            _isolatedTrailGradient = MakeTrailGradient(Color.gray);
 
             SpawnMothership();
             SpawnFloor();
@@ -77,13 +84,13 @@ namespace Gakkel.Swarm.Unity
             }
             UpdateCentroid();
 
-            var positions = new Dictionary<string, Vector3>(ws.Agents.Count);
-            foreach (var a in ws.Agents) positions[a.Id] = NedToUnity(a.PositionXyz);
-            var groupIds = GroupDetector.Compute(positions, groupingRadius);
+            _agentPositions.Clear();
+            foreach (var a in ws.Agents) _agentPositions[a.Id] = NedToUnity(a.PositionXyz);
+            var groupIds = GroupDetector.Compute(_agentPositions, groupingRadius);
             var groupSizes = ComputeGroupSizes(groupIds);
 
             ColorByGroup(ws.Agents, groupIds, groupSizes);
-            UpdateGroupCentroids(positions, groupIds, groupSizes);
+            UpdateGroupCentroids(_agentPositions, groupIds, groupSizes);
             UpdateVelocityVectors(ws.Agents);
         }
 
@@ -133,10 +140,7 @@ namespace Gakkel.Swarm.Unity
                 rend.material = inGroup ? _groupMaterials[g % _groupMaterials.Length] : _isolatedMaterial;
 
                 if (_agentTrails.TryGetValue(agent.Id, out var trail))
-                {
-                    Color trailColor = inGroup ? GroupColors[g % GroupColors.Length] : Color.gray;
-                    trail.colorGradient = MakeTrailGradient(trailColor);
-                }
+                    trail.colorGradient = inGroup ? _groupTrailGradients[g % _groupTrailGradients.Length] : _isolatedTrailGradient;
             }
         }
 
@@ -181,16 +185,16 @@ namespace Gakkel.Swarm.Unity
         {
             var root = new GameObject($"Centroid_G{g}");
             var mat = _groupCentroidMaterials[g % _groupCentroidMaterials.Length];
-            float half = 1f;
-            AddCrossArm(root, mat, -Vector3.right   * half, Vector3.right   * half);
-            AddCrossArm(root, mat, -Vector3.up      * half, Vector3.up      * half);
-            AddCrossArm(root, mat, -Vector3.forward * half, Vector3.forward * half);
+            float armHalfLength = 1f;
+            AddCrossArm(root, mat, -Vector3.right   * armHalfLength, Vector3.right   * armHalfLength, "Arm_X");
+            AddCrossArm(root, mat, -Vector3.up      * armHalfLength, Vector3.up      * armHalfLength, "Arm_Y");
+            AddCrossArm(root, mat, -Vector3.forward * armHalfLength, Vector3.forward * armHalfLength, "Arm_Z");
             return root;
         }
 
-        private static void AddCrossArm(GameObject parent, Material mat, Vector3 from, Vector3 to)
+        private static void AddCrossArm(GameObject parent, Material mat, Vector3 from, Vector3 to, string armName)
         {
-            var child = new GameObject();
+            var child = new GameObject(armName);
             child.transform.SetParent(parent.transform, false);
             var lr = child.AddComponent<LineRenderer>();
             lr.positionCount = 2;
@@ -204,7 +208,6 @@ namespace Gakkel.Swarm.Unity
 
         private void UpdateVelocityVectors(IList<AgentState> agents)
         {
-            if (!showVelocityVectors) return;
             foreach (var agent in agents)
             {
                 if (!_agentVelocityLines.TryGetValue(agent.Id, out var line)) continue;
@@ -213,15 +216,22 @@ namespace Gakkel.Swarm.Unity
                 var dir = tip - origin;
                 if (dir.sqrMagnitude < 1e-6f)
                 {
-                    line.SetPositions(new[] { origin, origin, origin, origin, origin });
-                    continue;
+                    for (int i = 0; i < 5; i++) _velocityLinePositions[i] = origin;
                 }
-                dir.Normalize();
-                var perp = Vector3.Cross(dir, Vector3.up);
-                if (perp.sqrMagnitude < 0.01f) perp = Vector3.Cross(dir, Vector3.right);
-                perp = perp.normalized * 0.15f;
-                var headBase = tip - dir * 0.3f;
-                line.SetPositions(new[] { origin, tip, headBase + perp, tip, headBase - perp });
+                else
+                {
+                    dir.Normalize();
+                    var perp = Vector3.Cross(dir, Vector3.up);
+                    if (perp.sqrMagnitude < 0.01f) perp = Vector3.Cross(dir, Vector3.right);
+                    perp = perp.normalized * 0.15f;
+                    var headBase = tip - dir * 0.3f;
+                    _velocityLinePositions[0] = origin;
+                    _velocityLinePositions[1] = tip;
+                    _velocityLinePositions[2] = headBase + perp;
+                    _velocityLinePositions[3] = tip;
+                    _velocityLinePositions[4] = headBase - perp;
+                }
+                line.SetPositions(_velocityLinePositions);
             }
         }
 

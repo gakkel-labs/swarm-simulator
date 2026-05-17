@@ -17,12 +17,18 @@ namespace Gakkel.Swarm.Unity
         private enum CameraMode { Orbital, Free }
         private CameraMode _mode = CameraMode.Orbital;
 
+        private float _defaultDistance;
         private float _yaw;
         private float _pitch = 30f;
 
         private Vector3 _freePosition;
         private float _freeYaw;
         private float _freePitch;
+
+        private void Awake()
+        {
+            _defaultDistance = distance;
+        }
 
         private void LateUpdate()
         {
@@ -57,7 +63,7 @@ namespace Gakkel.Swarm.Unity
             {
                 _yaw = 0f;
                 _pitch = 30f;
-                distance = 25f;
+                distance = _defaultDistance;
             }
 
             var mouse = Mouse.current;

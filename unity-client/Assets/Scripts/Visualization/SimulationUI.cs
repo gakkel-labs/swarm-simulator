@@ -28,7 +28,7 @@ namespace Gakkel.Swarm.Unity
 
         private void Update()
         {
-            if (hudText == null) return;
+            if (visualizer == null || hudText == null) return;
 
             _fpsAccum += Time.unscaledDeltaTime;
             _fpsFrames++;

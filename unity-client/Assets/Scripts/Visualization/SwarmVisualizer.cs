@@ -239,6 +239,7 @@ namespace Gakkel.Swarm.Unity
                 if (!_agents.TryGetValue(agent.Id, out var go))
                 {
                     go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                    Destroy(go.GetComponent<Collider>());
                     var shortId = agent.Id.Length >= 8 ? agent.Id[..8] : agent.Id;
                     go.name = $"Agent_{shortId}";
                     var rend = go.GetComponent<Renderer>();
@@ -305,6 +306,7 @@ namespace Gakkel.Swarm.Unity
             foreach (var obs in obstacles)
             {
                 var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                Destroy(go.GetComponent<Collider>());
                 go.name = "Obstacle";
                 go.GetComponent<Renderer>().material = _obstacleMaterial;
                 float diameter = obs.RadiusM * 2f;
@@ -317,6 +319,7 @@ namespace Gakkel.Swarm.Unity
         private void SpawnMothership()
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(go.GetComponent<Collider>());
             go.name = "Mothership";
             go.GetComponent<Renderer>().material = _mothershipMaterial;
             go.transform.localScale = new Vector3(2f, 1f, 2f);
@@ -329,6 +332,7 @@ namespace Gakkel.Swarm.Unity
             // Sea floor is at server Y=0 → NED.Down=100 → Unity Y=-100 (100m below surface).
             // Water surface is at Unity Y=0 (NED.Down=0, server Y=100).
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            Destroy(floor.GetComponent<Collider>());
             floor.name = "SeaFloor";
             floor.GetComponent<Renderer>().material = _floorMaterial;
             floor.transform.localScale = new Vector3(10f, 1f, 5f);

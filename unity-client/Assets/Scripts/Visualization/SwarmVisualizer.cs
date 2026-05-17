@@ -21,10 +21,14 @@ namespace Gakkel.Swarm.Unity
 
         [SerializeField] private float trailTime = 2f;
         [SerializeField] private float trailStartWidth = 0.15f;
+        [SerializeField] private bool showTrails = true;
+        [SerializeField] private bool showVelocityVectors = false;
+        [SerializeField] private float velocityVectorScale = 0.67f;
 
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
         private readonly Dictionary<string, TrailRenderer> _agentTrails = new();
+        private readonly Dictionary<string, LineRenderer> _agentVelocityLines = new();
         private readonly List<GameObject> _obstacles = new();
 
         private Material _isolatedMaterial;
@@ -65,9 +69,47 @@ namespace Gakkel.Swarm.Unity
             }
             UpdateCentroid();
             ColorByGroup(ws.Agents);
+            UpdateVelocityVectors(ws.Agents);
         }
 
         public Vector3 GetCentroid() => _centroid;
+
+        public void SetShowTrails(bool value)
+        {
+            showTrails = value;
+            foreach (var trail in _agentTrails.Values)
+                trail.enabled = value;
+        }
+
+        public void SetShowVelocityVectors(bool value)
+        {
+            showVelocityVectors = value;
+            foreach (var line in _agentVelocityLines.Values)
+                line.enabled = value;
+        }
+
+        private void UpdateVelocityVectors(IList<AgentState> agents)
+        {
+            if (!showVelocityVectors) return;
+            foreach (var agent in agents)
+            {
+                if (!_agentVelocityLines.TryGetValue(agent.Id, out var line)) continue;
+                var origin = NedToUnity(agent.PositionXyz);
+                var tip = origin + NedToUnity(agent.VelocityMps) * velocityVectorScale;
+                var dir = (tip - origin);
+                if (dir.sqrMagnitude < 1e-6f)
+                {
+                    line.SetPositions(new[] { origin, origin, origin, origin, origin });
+                    continue;
+                }
+                dir.Normalize();
+                var perp = Vector3.Cross(dir, Vector3.up);
+                if (perp.sqrMagnitude < 0.01f) perp = Vector3.Cross(dir, Vector3.right);
+                perp = perp.normalized * 0.15f;
+                var headBase = tip - dir * 0.3f;
+                line.SetPositions(new[] { origin, tip, headBase + perp, tip, headBase - perp });
+            }
+        }
 
         /// <summary>Converts NED (North/East/Down) to Unity (East/Up/North) coordinates.</summary>
         private static Vector3 NedToUnity(Vec3 ned) => new(ned.Y, -ned.Z, ned.X);
@@ -97,9 +139,20 @@ namespace Gakkel.Swarm.Unity
                     trail.colorGradient = MakeTrailGradient(Color.gray);
                     trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
+                    trail.enabled = showTrails;
+
+                    var line = go.AddComponent<LineRenderer>();
+                    line.positionCount = 5;
+                    line.startWidth = 0.1f;
+                    line.endWidth = 0.05f;
+                    line.material = _trailMaterial;
+                    line.useWorldSpace = true;
+                    line.enabled = showVelocityVectors;
+
                     _agents[agent.Id] = go;
                     _agentRenderers[agent.Id] = rend;
                     _agentTrails[agent.Id] = trail;
+                    _agentVelocityLines[agent.Id] = line;
                 }
 
                 go.transform.position = NedToUnity(agent.PositionXyz);
@@ -119,6 +172,7 @@ namespace Gakkel.Swarm.Unity
                 _agents.Remove(id);
                 _agentRenderers.Remove(id);
                 _agentTrails.Remove(id);
+                _agentVelocityLines.Remove(id);
             }
         }
 

@@ -73,6 +73,8 @@ namespace Gakkel.Swarm.Unity
         }
 
         public Vector3 GetCentroid() => _centroid;
+        public int AgentCount => _agents.Count;
+        public int ObstacleCount => _obstacles.Count;
 
         public void SetShowTrails(bool value)
         {

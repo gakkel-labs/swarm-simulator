@@ -24,11 +24,13 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private bool showTrails = true;
         [SerializeField] private bool showVelocityVectors = false;
         [SerializeField] private float velocityVectorScale = 0.67f;
+        [SerializeField] private bool showCentroids = false;
 
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
         private readonly Dictionary<string, TrailRenderer> _agentTrails = new();
         private readonly Dictionary<string, LineRenderer> _agentVelocityLines = new();
+        private readonly Dictionary<int, GameObject> _groupCentroidSpheres = new();
         private readonly List<GameObject> _obstacles = new();
 
         private Material _isolatedMaterial;
@@ -37,6 +39,7 @@ namespace Gakkel.Swarm.Unity
         private Material _floorMaterial;
         private Material _trailMaterial;
         private Material[] _groupMaterials;
+        private Material[] _groupCentroidMaterials;
 
         private bool _obstaclesSpawned;
         private Vector3 _centroid;
@@ -44,16 +47,21 @@ namespace Gakkel.Swarm.Unity
         private void Awake()
         {
             var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var particleShader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
 
             _isolatedMaterial   = new Material(shader) { color = Color.gray };
             _obstacleMaterial   = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
             _mothershipMaterial = new Material(shader) { color = Color.gray };
             _floorMaterial      = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
-            _trailMaterial      = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+            _trailMaterial      = new Material(particleShader);
 
             _groupMaterials = new Material[GroupColors.Length];
+            _groupCentroidMaterials = new Material[GroupColors.Length];
             for (int i = 0; i < GroupColors.Length; i++)
+            {
                 _groupMaterials[i] = new Material(shader) { color = GroupColors[i] };
+                _groupCentroidMaterials[i] = new Material(particleShader) { color = GroupColors[i] };
+            }
 
             SpawnMothership();
             SpawnFloor();
@@ -68,7 +76,14 @@ namespace Gakkel.Swarm.Unity
                 _obstaclesSpawned = true;
             }
             UpdateCentroid();
-            ColorByGroup(ws.Agents);
+
+            var positions = new Dictionary<string, Vector3>(ws.Agents.Count);
+            foreach (var a in ws.Agents) positions[a.Id] = NedToUnity(a.PositionXyz);
+            var groupIds = GroupDetector.Compute(positions, groupingRadius);
+            var groupSizes = ComputeGroupSizes(groupIds);
+
+            ColorByGroup(ws.Agents, groupIds, groupSizes);
+            UpdateGroupCentroids(positions, groupIds, groupSizes);
             UpdateVelocityVectors(ws.Agents);
         }
 
@@ -90,6 +105,103 @@ namespace Gakkel.Swarm.Unity
                 line.enabled = value;
         }
 
+        public void SetShowCentroids(bool value)
+        {
+            showCentroids = value;
+            foreach (var sphere in _groupCentroidSpheres.Values)
+                sphere.SetActive(value);
+        }
+
+        private static Dictionary<int, int> ComputeGroupSizes(Dictionary<string, int> groupIds)
+        {
+            var sizes = new Dictionary<int, int>();
+            foreach (var g in groupIds.Values)
+            {
+                sizes.TryGetValue(g, out int count);
+                sizes[g] = count + 1;
+            }
+            return sizes;
+        }
+
+        private void ColorByGroup(IList<AgentState> agents, Dictionary<string, int> groupIds, Dictionary<int, int> groupSizes)
+        {
+            foreach (var agent in agents)
+            {
+                if (!_agentRenderers.TryGetValue(agent.Id, out var rend)) continue;
+                int g = groupIds[agent.Id];
+                bool inGroup = groupSizes[g] > 1;
+                rend.material = inGroup ? _groupMaterials[g % _groupMaterials.Length] : _isolatedMaterial;
+
+                if (_agentTrails.TryGetValue(agent.Id, out var trail))
+                {
+                    Color trailColor = inGroup ? GroupColors[g % GroupColors.Length] : Color.gray;
+                    trail.colorGradient = MakeTrailGradient(trailColor);
+                }
+            }
+        }
+
+        private void UpdateGroupCentroids(Dictionary<string, Vector3> positions, Dictionary<string, int> groupIds, Dictionary<int, int> groupSizes)
+        {
+            var groupPositionSums = new Dictionary<int, Vector3>();
+            foreach (var (id, pos) in positions)
+            {
+                int g = groupIds[id];
+                if (groupSizes[g] <= 1) continue;
+                groupPositionSums.TryGetValue(g, out var sum);
+                groupPositionSums[g] = sum + pos;
+            }
+
+            var activeGroups = new HashSet<int>();
+            foreach (var (g, sum) in groupPositionSums)
+            {
+                activeGroups.Add(g);
+                var centroidPos = sum / groupSizes[g];
+
+                if (!_groupCentroidSpheres.TryGetValue(g, out var marker))
+                {
+                    marker = CreateCentroidCross(g);
+                    _groupCentroidSpheres[g] = marker;
+                }
+
+                marker.transform.position = centroidPos;
+                marker.SetActive(showCentroids);
+            }
+
+            var toRemove = new List<int>();
+            foreach (var g in _groupCentroidSpheres.Keys)
+                if (!activeGroups.Contains(g)) toRemove.Add(g);
+            foreach (var g in toRemove)
+            {
+                Destroy(_groupCentroidSpheres[g]);
+                _groupCentroidSpheres.Remove(g);
+            }
+        }
+
+        private GameObject CreateCentroidCross(int g)
+        {
+            var root = new GameObject($"Centroid_G{g}");
+            var mat = _groupCentroidMaterials[g % _groupCentroidMaterials.Length];
+            float half = 1f;
+            AddCrossArm(root, mat, -Vector3.right   * half, Vector3.right   * half);
+            AddCrossArm(root, mat, -Vector3.up      * half, Vector3.up      * half);
+            AddCrossArm(root, mat, -Vector3.forward * half, Vector3.forward * half);
+            return root;
+        }
+
+        private static void AddCrossArm(GameObject parent, Material mat, Vector3 from, Vector3 to)
+        {
+            var child = new GameObject();
+            child.transform.SetParent(parent.transform, false);
+            var lr = child.AddComponent<LineRenderer>();
+            lr.positionCount = 2;
+            lr.SetPosition(0, from);
+            lr.SetPosition(1, to);
+            lr.startWidth = lr.endWidth = 0.2f;
+            lr.material = mat;
+            lr.useWorldSpace = false;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
         private void UpdateVelocityVectors(IList<AgentState> agents)
         {
             if (!showVelocityVectors) return;
@@ -98,7 +210,7 @@ namespace Gakkel.Swarm.Unity
                 if (!_agentVelocityLines.TryGetValue(agent.Id, out var line)) continue;
                 var origin = NedToUnity(agent.PositionXyz);
                 var tip = origin + NedToUnity(agent.VelocityMps) * velocityVectorScale;
-                var dir = (tip - origin);
+                var dir = tip - origin;
                 if (dir.sqrMagnitude < 1e-6f)
                 {
                     line.SetPositions(new[] { origin, origin, origin, origin, origin });
@@ -140,7 +252,6 @@ namespace Gakkel.Swarm.Unity
                     trail.material = _trailMaterial;
                     trail.colorGradient = MakeTrailGradient(Color.gray);
                     trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
                     trail.enabled = showTrails;
 
                     var line = go.AddComponent<LineRenderer>();
@@ -175,35 +286,6 @@ namespace Gakkel.Swarm.Unity
                 _agentRenderers.Remove(id);
                 _agentTrails.Remove(id);
                 _agentVelocityLines.Remove(id);
-            }
-        }
-
-        private void ColorByGroup(IList<AgentState> agents)
-        {
-            var positions = new Dictionary<string, Vector3>(agents.Count);
-            foreach (var a in agents) positions[a.Id] = NedToUnity(a.PositionXyz);
-
-            var groupIds = GroupDetector.Compute(positions, groupingRadius);
-
-            var groupSizes = new Dictionary<int, int>();
-            foreach (var g in groupIds.Values)
-            {
-                groupSizes.TryGetValue(g, out int count);
-                groupSizes[g] = count + 1;
-            }
-
-            foreach (var agent in agents)
-            {
-                if (!_agentRenderers.TryGetValue(agent.Id, out var rend)) continue;
-                int g = groupIds[agent.Id];
-                bool inGroup = groupSizes[g] > 1;
-                rend.material = inGroup ? _groupMaterials[g % _groupMaterials.Length] : _isolatedMaterial;
-
-                if (_agentTrails.TryGetValue(agent.Id, out var trail))
-                {
-                    Color trailColor = inGroup ? GroupColors[g % GroupColors.Length] : Color.gray;
-                    trail.colorGradient = MakeTrailGradient(trailColor);
-                }
             }
         }
 
@@ -269,6 +351,7 @@ namespace Gakkel.Swarm.Unity
             Destroy(_floorMaterial);
             Destroy(_trailMaterial);
             foreach (var mat in _groupMaterials) Destroy(mat);
+            foreach (var mat in _groupCentroidMaterials) Destroy(mat);
         }
     }
 }

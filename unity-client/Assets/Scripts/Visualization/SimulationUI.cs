@@ -9,6 +9,7 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private SwarmVisualizer visualizer;
         [SerializeField] private Toggle trailToggle;
         [SerializeField] private Toggle velocityVectorToggle;
+        [SerializeField] private Toggle centroidToggle;
         [SerializeField] private TextMeshProUGUI hudText;
 
         private float _fpsAccum;
@@ -21,6 +22,8 @@ namespace Gakkel.Swarm.Unity
                 trailToggle.onValueChanged.AddListener(visualizer.SetShowTrails);
             if (velocityVectorToggle != null)
                 velocityVectorToggle.onValueChanged.AddListener(visualizer.SetShowVelocityVectors);
+            if (centroidToggle != null)
+                centroidToggle.onValueChanged.AddListener(visualizer.SetShowCentroids);
         }
 
         private void Update()

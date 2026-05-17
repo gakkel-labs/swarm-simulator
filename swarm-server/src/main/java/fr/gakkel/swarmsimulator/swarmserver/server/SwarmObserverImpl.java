@@ -26,6 +26,7 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(SwarmObserverImpl.class);
     static final int STREAM_RATE_HZ = 20;
+    public static final String CLIENT_ID = "client_id";
 
     private final World world;
     private final Set<ServerCallStreamObserver<WorldState>> subscribers = ConcurrentHashMap.newKeySet();
@@ -49,23 +50,23 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     @Override
     public void subscribeWorldState(SubscribeRequest request, StreamObserver<WorldState> responseObserver) {
         String clientId = request.getClientId();
-        MDC.put("client_id", clientId);
+        MDC.put(CLIENT_ID, clientId);
         try {
             ServerCallStreamObserver<WorldState> obs = (ServerCallStreamObserver<WorldState>) responseObserver;
             subscribers.add(obs);
             LOG.info("client subscribed — {} total", subscribers.size());
 
             obs.setOnCancelHandler(() -> {
-                MDC.put("client_id", clientId);
+                MDC.put(CLIENT_ID, clientId);
                 try {
                     subscribers.remove(obs);
                     LOG.info("client disconnected — {} remaining", subscribers.size());
                 } finally {
-                    MDC.remove("client_id");
+                    MDC.remove(CLIENT_ID);
                 }
             });
         } finally {
-            MDC.remove("client_id");
+            MDC.remove(CLIENT_ID);
         }
     }
 
@@ -120,10 +121,13 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     }
 
     private Vec3 toVec3(Vector3D v) {
+        // Server uses Y=0 at the water surface; negative Y is underwater (AUVs), positive Y is above (drones).
+        // Proto contract is NED (North=X, East=Y, Down=Z): Down = -server.Y maps naturally to this convention
+        // (surface: server.Y=0 → NED.Down=0; sea floor: server.Y=-depth → NED.Down=depth).
         return Vec3.newBuilder()
-                .setX((float) v.x())
-                .setY((float) v.y())
-                .setZ((float) v.z())
+                .setX((float)  v.z())
+                .setY((float)  v.x())
+                .setZ((float) -v.y())
                 .build();
     }
 

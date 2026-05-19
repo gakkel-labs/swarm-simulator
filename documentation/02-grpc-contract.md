@@ -123,13 +123,32 @@ A static spherical obstacle. Re-sent on every frame even though it is immutable 
 
 Obstacles have no `id`. Clients should re-key them by `(position, radius)` or just rebuild the visual list each frame.
 
-### 3.5 `WorldState`
+### 3.5 `PredatorState`
+
+```proto
+message PredatorState {
+  string id           = 1;
+  Vec3   position_xyz = 2;
+  Vec3   velocity_mps = 3;
+}
+```
+
+Snapshot of the autonomous predator at the broadcast instant.
+
+- `id` — fixed string `"predator-0"` in v0.1 (single predator). Multiple predators would use distinct IDs — clients should key by `id` for stateful rendering.
+- `position_xyz` — predator center, meters, NED. Same coordinate frame as `AgentState.position_xyz`.
+- `velocity_mps` — instantaneous velocity, m/s, NED. Magnitude bounded by `Predator.SPEED` (3.0 m/s — intentionally slower than boids for dramatic tension).
+
+No orientation field — visual heading is derived client-side from `velocity_mps`.
+
+### 3.6 `WorldState`
 
 ```proto
 message WorldState {
-  int64                timestamp_unix_ms = 1;
-  repeated AgentState  agents            = 2;
-  repeated Obstacle    obstacles         = 3;
+  int64                    timestamp_unix_ms = 1;
+  repeated AgentState      agents            = 2;
+  repeated Obstacle        obstacles         = 3;
+  repeated PredatorState   predators         = 4;
 }
 ```
 
@@ -138,10 +157,11 @@ Full snapshot of the simulated world at instant `timestamp_unix_ms`.
 - `timestamp_unix_ms` — server wall clock at the moment the frame was built (`System.currentTimeMillis()`). See §5.3.
 - `agents` — every agent in the world. Order is **not** guaranteed; clients must key by `id`.
 - `obstacles` — every obstacle in the world. Empty list is legal.
+- `predators` — every predator in the world. Contains exactly **1 entry** in v0.1. Empty list is legal (predator-free scenarios). Clients must handle an empty list gracefully — destroy the predator GameObject when the list becomes empty.
 
 Each frame is **self-contained** — no diffing, no deltas. A client that connects mid-simulation receives a complete picture on its very first frame.
 
-### 3.6 `SubscribeRequest`
+### 3.7 `SubscribeRequest`
 
 ```proto
 message SubscribeRequest {
@@ -274,7 +294,7 @@ If that overhead matters in v0.4+ (e.g. 200 agents), the field can be migrated t
 | Server-side service    | `swarm-server/.../server/SwarmObserverImpl.java`                                          |
 | gRPC server bootstrap  | `swarm-server/.../server/SwarmServer.java` (`PORT = 50051`)                               |
 | Frame source           | `swarm-server/.../simulation/SimulationLoop.java` (30 Hz Boids tick → `World`)            |
-| Domain → proto mapping | `SwarmObserverImpl.toAgentState()` / `toVec3()` / `toProtoType()` / `toProtoObstacle()`   |
+| Domain → proto mapping | `SwarmObserverImpl.toAgentState()` / `toVec3()` / `toProtoType()` / `toProtoObstacle()` / `toPredatorState()` |
 
 To exercise the stream manually:
 
@@ -293,7 +313,7 @@ The contract is intentionally minimal so future iterations slot in without break
 
 | Future need                           | Likely extension                                                                |
 | ------------------------------------- | ------------------------------------------------------------------------------- |
-| Threats (v0.1 SAR scenario)           | New `repeated Threat threats = 4` field on `WorldState`                         |
+| Threats (v0.1 SAR scenario)           | ✅ **Done** — `repeated PredatorState predators = 4` on `WorldState`. Autonomous predator chases agents; Unity renders it as a red sphere (see `PredatorRenderer.cs`). |
 | Differentiated drones (v0.4)          | Existing `AgentType` enum already covers `OPERATOR` / `CARRIER`                 |
 | Pi-agent command channel (v0.3)       | **New** service (`SwarmController`), separate RPC — keep observer read-only    |
 | Per-agent telemetry (battery, health) | New `optional` fields on `AgentState` (proto3 `optional` is wire-compatible)    |

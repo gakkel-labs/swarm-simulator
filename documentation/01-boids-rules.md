@@ -24,10 +24,12 @@ flowchart LR
     P --> AL[Rule 2: Alignment<br/>match velocity]
     P --> C[Rule 3: Cohesion<br/>stay grouped]
     P --> B[Rule 4: BoundaryRepulsion<br/>avoid world edges]
+    P --> F[Rule 5: PredatorFlee<br/>escape predator]
     S -->|× w_sep| SUM((Σ))
     AL -->|× w_align| SUM
     C -->|× w_coh| SUM
     B -->|× w_boundary| SUM
+    F -->|× w_flee| SUM
     SUM --> V[Update velocity<br/>v = clamp(v + steer·dt, MAX_SPEED)]
     V --> POS[Update position<br/>p += v · dt]
 ```
@@ -40,13 +42,13 @@ ASCII version for terminals:
                     │  (perceptionRadius) │
                     └──────────┬──────────┘
                                │
-         ┌──────────────┬──────┴───────┬──────────────┐
-         ▼              ▼              ▼              ▼
-      SEPARATION    ALIGNMENT       COHESION       BOUNDARY
-     (push away)  (match heading)  (centroid)    (avoid edges)
-         │              │              │              │
-       × w_sep      × w_align       × w_coh      × w_boundary
-         └──────────────┴──────┬───────┴──────────────┘
+         ┌──────────────┬──────┴───────┬──────────────┬─────────────┐
+         ▼              ▼              ▼              ▼             ▼
+      SEPARATION    ALIGNMENT       COHESION       BOUNDARY     PREDATOR
+     (push away)  (match heading)  (centroid)    (avoid edges)   FLEE
+         │              │              │              │             │
+       × w_sep      × w_align       × w_coh      × w_boundary  × w_flee
+         └──────────────┴──────┬───────┴──────────────┴─────────────┘
                                ▼
                           Σ steering
                                │
@@ -145,6 +147,25 @@ function boundaryRepulsion(agent, world):
 
 ---
 
+## 5.5 Rule 5 — PredatorFlee *(threat response, outside the Reynolds model)*
+
+**Goal:** repel each agent away from the autonomous predator when it enters `threatFleeRadius`. The predator is a **single moving threat**, not a flock neighbor — it is handled separately from the `perceptionRadius` neighbor list.
+
+**Principle:** inverse-square repulsion (same kernel as Separation). The rule is **not normalized** — raw magnitude grows as the predator closes in, giving a reactive emergency flee rather than a constant drift.
+
+```text
+function predatorFlee(agent, predator):
+    away = agent.position - predator.position
+    d = away.magnitude()
+    if d > threatFleeRadius or d < ε:
+        return (0, 0, 0)              # predator out of range, or co-located (degenerate)
+    return away / (d * d)             # NOT normalized — magnitude encodes urgency
+```
+
+> **Difference from Separation:** `separation` is normalized (always unit magnitude); `predatorFlee` is not. Combined with `threatFleeWeight = 200.0`, the flee force overwhelms all flocking forces within a few meters — panic overrides formation. Outside `threatFleeRadius` the force is exactly zero.
+
+---
+
 ## 6. Composition
 
 The total steering vector applied to the agent every tick:
@@ -154,13 +175,14 @@ steer = w_sep      * separation(agent, neighbors)
       + w_align    * alignment(neighbors)
       + w_coh      * cohesion(agent, neighbors)
       + w_boundary * boundaryRepulsion(agent, world)
+      + w_flee     * predatorFlee(agent, predator)    # only if predator != null and in range
 
 agent.velocity += steer * dt
 agent.velocity  = clamp(agent.velocity, MAX_SPEED)   # only cap applied
 agent.position += agent.velocity * dt
 ```
 
-> **Note:** rules return unit vectors (magnitude = 1). There is no `clamp(steer, MAX_FORCE)` — the total magnitude of `steer` is upper-bounded by the sum of weights (by the triangle inequality), reached only when all vectors are collinear.
+> **Note:** rules 1–4 return unit vectors (magnitude = 1). `predatorFlee` (rule 5) returns an un-normalized vector — its magnitude grows as 1/d² inside `threatFleeRadius`. There is no `clamp(steer, MAX_FORCE)` — the total magnitude of `steer` is practically bounded by the sum of weights plus the flee term, which decays to zero outside the flee radius.
 
 ---
 
@@ -177,6 +199,8 @@ Default values (`BoidsConfig` class):
 | `maxSpeed`                 | `5.0`             | Maximum agent speed                                             | Faster, more reactive flock                  |
 | `boundaryRepulsionRadius`  | `15.0`            | Distance from walls below which repulsion kicks in              | Larger safety margin at edges                |
 | `boundaryRepulsionWeight`  | `2.0`             | Weight of boundary repulsion                                    | Agents bounce off walls earlier/harder       |
+| `threatFleeRadius`         | `15.0`            | Predator detection radius — flee activates within this distance | Wider panic zone                             |
+| `threatFleeWeight`         | `200.0`           | Weight of predatorFlee in the final sum                         | Stronger/weaker panic response               |
 | `dt` *(simulation loop)*   | `1/30 s ≈ 33 ms`  | Integration timestep (30 Hz)                                    | Larger steps → numerical instability         |
 | `ε` *(numerical guard)*    | `1e-6`            | Threshold below which a vector is considered zero               | Too large → rules ineffective near zero      |
 
@@ -200,7 +224,7 @@ Default values (`BoidsConfig` class):
 | **No goal-seeking**       | A flock has no objective. It moves but goes nowhere in particular.                                          | Not mitigated. Leader, waypoint, or external attraction force possible. |
 | **Timestep sensitivity**  | Numerical integration (`p += v·dt`) becomes unstable at large `dt`.                                          | Mitigated: `dt` fixed at 33 ms by the 30 Hz loop. Sub-stepping if needed. |
 | **2D vs 3D**              | Formulas are identical, but tuning differs: 3D requires lower weights (more space available).               | To tune if we switch to 3D.                                      |
-| **No predator**           | Reynolds 1987 mentions an "avoid predator" rule as a natural extension. Our model (3 + boundary) has no escape mechanism. | Not mitigated. Additional rule post-MVP if needed.               |
+| **No predator**           | Reynolds 1987 mentions an "avoid predator" rule as a natural extension. | ✅ **Resolved in v0.1** via `predatorFlee` (§5.5). An autonomous predator steers toward the nearest agent at 3 m/s; boids within 15 m flee with inverse-square repulsion (`w_flee = 200`). Caught agents respawn 5 s later far from the predator. |
 
 ---
 
@@ -216,8 +240,8 @@ Default values (`BoidsConfig` class):
 
 - Rules are implemented in `BoidsRules.java` (`swarm-server` module).
 - Coefficients live in `BoidsConfig.java` (Java 21 record) and will be hot-reloadable post-MVP.
-- Unit tests in `BoidsRulesTest.java` (see issue #7) cover the 3 Reynolds rules in isolation plus `boundaryRepulsion`.
-- The simulation loop applies the 4 rules at 30 Hz (see issue #6).
+- Unit tests in `BoidsRulesTest.java` cover all 5 rules in isolation (separation, alignment, cohesion, boundaryRepulsion, predatorFlee).
+- The simulation loop applies all 5 rules at 30 Hz; the `Predator` domain class handles steering, eating, and respawn scheduling.
 
 ---
 

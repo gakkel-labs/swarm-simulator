@@ -9,7 +9,9 @@ public record BoidsConfig(
         double boundaryRepulsionRadius,
         double boundaryRepulsionWeight,
         double obstacleAvoidanceRadius,
-        double obstacleAvoidanceWeight) {
+        double obstacleAvoidanceWeight,
+        double threatFleeRadius,
+        double threatFleeWeight) {
 
     public BoidsConfig {
         if (perceptionRadius <= 0) {
@@ -33,6 +35,12 @@ public record BoidsConfig(
         if (obstacleAvoidanceWeight < 0) {
             throw new IllegalArgumentException("obstacleAvoidanceWeight must be >= 0");
         }
+        if (threatFleeRadius <= 0) {
+            throw new IllegalArgumentException("threatFleeRadius must be positive");
+        }
+        if (threatFleeWeight < 0) {
+            throw new IllegalArgumentException("threatFleeWeight must be >= 0");
+        }
     }
 
     public static Builder builder() {
@@ -50,6 +58,8 @@ public record BoidsConfig(
         private double boundaryRepulsionWeight = 2.0;
         private double obstacleAvoidanceRadius = 8.0;
         private double obstacleAvoidanceWeight = 4.0;
+        private double threatFleeRadius        = 15.0;
+        private double threatFleeWeight        = 200.0;
 
         private Builder() {}
 
@@ -62,11 +72,14 @@ public record BoidsConfig(
         public Builder boundaryRepulsionWeight(double v) { boundaryRepulsionWeight = v; return this; }
         public Builder obstacleAvoidanceRadius(double v) { obstacleAvoidanceRadius = v; return this; }
         public Builder obstacleAvoidanceWeight(double v) { obstacleAvoidanceWeight = v; return this; }
+        public Builder threatFleeRadius(double v)        { threatFleeRadius = v;        return this; }
+        public Builder threatFleeWeight(double v)        { threatFleeWeight = v;        return this; }
 
         public BoidsConfig build() {
             return new BoidsConfig(perceptionRadius, separationWeight, alignmentWeight,
                     cohesionWeight, maxSpeed, boundaryRepulsionRadius, boundaryRepulsionWeight,
-                    obstacleAvoidanceRadius, obstacleAvoidanceWeight);
+                    obstacleAvoidanceRadius, obstacleAvoidanceWeight,
+                    threatFleeRadius, threatFleeWeight);
         }
     }
 }

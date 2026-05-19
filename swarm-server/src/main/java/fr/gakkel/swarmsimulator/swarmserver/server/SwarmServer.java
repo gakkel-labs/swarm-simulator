@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class SwarmServer {
 
@@ -21,7 +23,12 @@ public class SwarmServer {
         World world = SimulationLoop.createDefaultWorld();
         BoidsConfig boids = BoidsConfig.builder().build();
         DiagnosticsConfig diag = DiagnosticsConfig.builder().build();
-        SimulationLoop sim = new SimulationLoop(world, boids, diag);
+        ScheduledExecutorService simExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "sim-loop");
+            t.setDaemon(true);
+            return t;
+        });
+        SimulationLoop sim = new SimulationLoop(world, boids, diag, simExecutor);
 
         SwarmObserverImpl observer = new SwarmObserverImpl(world);
 

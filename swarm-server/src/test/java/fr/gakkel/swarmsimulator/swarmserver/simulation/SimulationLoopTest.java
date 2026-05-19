@@ -5,17 +5,23 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class SimulationLoopTest {
 
@@ -28,7 +34,7 @@ class SimulationLoopTest {
     @BeforeEach
     void setUp() {
         world = SimulationLoop.createWorld(10, new Random(0L));
-        loop = new SimulationLoop(world, CONFIG, DIAGNOSTICS);
+        loop = new SimulationLoop(world, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
     }
 
     @Test
@@ -205,7 +211,7 @@ class SimulationLoopTest {
     @Test
     void tick_agentsNeverInsideObstaclesAfterManyTicks() {
         World w = SimulationLoop.createWorld(20, new Random(42L));
-        SimulationLoop sl = new SimulationLoop(w, CONFIG, DIAGNOSTICS);
+        SimulationLoop sl = new SimulationLoop(w, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
         for (int i = 0; i < 600; i++) sl.tick();
         long penetrations = SimulationLoop.countAgentsInsideObstacles(w.agents(), w.obstacles());
         assertEquals(0, penetrations, "agents should not be inside obstacles after 600 ticks");
@@ -313,6 +319,41 @@ class SimulationLoopTest {
             var result = SimulationLoop.constrainVelocityToWalls(
                     new Vector3D(101, 50, 25), new Vector3D(4, 1, 0), W);
             assertEquals(0.0, result.x(), 1e-9);
+        }
+    }
+
+    @Test
+    void createDefaultWorld_hasPredator() {
+        assertNotNull(SimulationLoop.createDefaultWorld().predator());
+    }
+
+    @Nested
+    class ScheduleRespawn {
+
+        @Test
+        void agentReappearsAfterDelayExpires() {
+            var testWorld = new World(100, 100, 50);
+            var predator  = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
+            var agent     = Agent.create(AgentType.EXPLORER,
+                    new Vector3D(10.5, -50, 25)); // within EAT_RADIUS (1.5)
+            testWorld.addAgent(agent);
+            testWorld.setPredator(predator);
+
+            ScheduledExecutorService mockExecutor = mock(ScheduledExecutorService.class);
+            var loop = new SimulationLoop(testWorld, CONFIG, DIAGNOSTICS, mockExecutor);
+
+            loop.tick();
+
+            // agent eaten — world is empty
+            assertEquals(0, testWorld.agentCount());
+
+            // capture and run the respawn task
+            ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+            verify(mockExecutor).schedule(captor.capture(),
+                    eq(SimulationLoop.BOID_RESPAWN_DELAY_MS), eq(TimeUnit.MILLISECONDS));
+            captor.getValue().run();
+
+            assertEquals(1, testWorld.agentCount());
         }
     }
 

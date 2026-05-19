@@ -26,7 +26,7 @@ public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
     public static final int  TICK_RATE_HZ          = 30;
-    static final  long BOID_RESPAWN_DELAY_MS  = 5_000L;
+    private static final long BOID_RESPAWN_DELAY_MS = 5_000L;
     private static final double RESPAWN_MIN_DIST  = 30.0;
     private static final double DT = 1.0 / TICK_RATE_HZ;
     // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics

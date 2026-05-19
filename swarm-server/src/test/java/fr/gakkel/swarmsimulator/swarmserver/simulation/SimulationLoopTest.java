@@ -350,7 +350,7 @@ class SimulationLoopTest {
             // capture and run the respawn task
             ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
             verify(mockExecutor).schedule(captor.capture(),
-                    eq(SimulationLoop.BOID_RESPAWN_DELAY_MS), eq(TimeUnit.MILLISECONDS));
+                    eq(5_000L), eq(TimeUnit.MILLISECONDS));
             captor.getValue().run();
 
             assertEquals(1, testWorld.agentCount());

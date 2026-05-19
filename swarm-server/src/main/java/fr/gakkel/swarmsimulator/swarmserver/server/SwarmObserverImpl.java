@@ -2,10 +2,12 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.AgentState;
 import io.gakkel.swarm.contracts.v1.AgentType;
+import io.gakkel.swarm.contracts.v1.PredatorState;
 import io.gakkel.swarm.contracts.v1.SubscribeRequest;
 import io.gakkel.swarm.contracts.v1.SwarmObserverGrpc;
 import io.gakkel.swarm.contracts.v1.Vec3;
@@ -100,7 +102,19 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
         for (Obstacle obstacle : world.obstacles()) {
             builder.addObstacles(toProtoObstacle(obstacle));
         }
+        Predator predator = world.predator();
+        if (predator != null) {
+            builder.addPredators(toPredatorState(predator));
+        }
         return builder.build();
+    }
+
+    PredatorState toPredatorState(Predator predator) {
+        return PredatorState.newBuilder()
+                .setId("predator-0")
+                .setPositionXyz(toVec3(predator.position()))
+                .setVelocityMps(toVec3(predator.velocity()))
+                .build();
     }
 
     AgentState toAgentState(Agent agent) {

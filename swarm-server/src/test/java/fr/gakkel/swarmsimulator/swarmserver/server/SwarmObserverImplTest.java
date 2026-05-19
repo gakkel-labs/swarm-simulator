@@ -2,6 +2,7 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.AgentState;
@@ -159,6 +160,28 @@ class SwarmObserverImplTest {
         WorldState state = impl.buildWorldState();
 
         assertThat(state.getObstaclesCount()).isZero();
+    }
+
+    @Test
+    void buildWorldState_withPredator_predatorMappedToProto() {
+        // predator at server(10, -20, 5) → NED proto(x=5, y=10, z=20)
+        world.setPredator(new Predator(new Vector3D(10, -20, 5), Vector3D.ZERO));
+
+        WorldState state = impl.buildWorldState();
+
+        assertThat(state.getPredatorsCount()).isEqualTo(1);
+        var ps = state.getPredators(0);
+        assertThat(ps.getId()).isEqualTo("predator-0");
+        assertThat(ps.getPositionXyz().getX()).isEqualTo(5.0f);
+        assertThat(ps.getPositionXyz().getY()).isEqualTo(10.0f);
+        assertThat(ps.getPositionXyz().getZ()).isEqualTo(20.0f);
+    }
+
+    @Test
+    void buildWorldState_noPredator_predatorsListEmpty() {
+        WorldState state = impl.buildWorldState();
+
+        assertThat(state.getPredatorsCount()).isZero();
     }
 
     @Test

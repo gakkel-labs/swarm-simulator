@@ -96,6 +96,15 @@ public final class BoidsRules {
         return total;
     }
 
+    // Inverse-square repulsion (same pattern as obstacleAvoidance: not normalised so force grows
+    // sharply as predator closes in, giving a reactive flee rather than a constant drift).
+    public Vector3D predatorFlee(Agent agent, Predator predator) {
+        Vector3D away = agent.position().subtract(predator.position());
+        double dist = away.magnitude();
+        if (dist > config.threatFleeRadius() || dist < MIN_SEPARATION_DISTANCE) return Vector3D.ZERO;
+        return away.scale(1.0 / (dist * dist));
+    }
+
     public Vector3D steer(Agent agent, List<Agent> neighbors) {
         return separation(agent, neighbors).scale(config.separationWeight())
                 .add(alignment(neighbors).scale(config.alignmentWeight()))
@@ -103,8 +112,12 @@ public final class BoidsRules {
     }
 
     public Vector3D steer(Agent agent, List<Agent> neighbors, World world) {
-        return steer(agent, neighbors)
+        Vector3D result = steer(agent, neighbors)
                 .add(boundaryRepulsion(agent, world).scale(config.boundaryRepulsionWeight()))
                 .add(obstacleAvoidance(agent, world.obstacles()).scale(config.obstacleAvoidanceWeight()));
+        if (world.predator() != null) {
+            result = result.add(predatorFlee(agent, world.predator()).scale(config.threatFleeWeight()));
+        }
+        return result;
     }
 }

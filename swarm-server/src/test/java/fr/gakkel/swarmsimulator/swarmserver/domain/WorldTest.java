@@ -165,4 +165,27 @@ class WorldTest {
     void addObstacle_nullObstacle_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> world.addObstacle(null));
     }
+
+    @Test
+    void predator_defaultIsNull() {
+        assertNull(world.predator());
+    }
+
+    @Test
+    void setPredator_predatorAppearsInPredatorField() {
+        var predator = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
+
+        world.setPredator(predator);
+
+        assertSame(predator, world.predator());
+    }
+
+    @Test
+    void setPredator_nullClearsPredator() {
+        world.setPredator(new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO));
+
+        world.setPredator(null);
+
+        assertNull(world.predator());
+    }
 }

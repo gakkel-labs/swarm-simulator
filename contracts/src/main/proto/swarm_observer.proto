@@ -32,10 +32,17 @@ message Obstacle {
   float radius_m     = 2;
 }
 
+message PredatorState {
+  string id           = 1;
+  Vec3   position_xyz = 2;
+  Vec3   velocity_mps = 3;
+}
+
 message WorldState {
-  int64                timestamp_unix_ms = 1;
-  repeated AgentState  agents            = 2;
-  repeated Obstacle    obstacles         = 3;
+  int64                    timestamp_unix_ms = 1;
+  repeated AgentState      agents            = 2;
+  repeated Obstacle        obstacles         = 3;
+  repeated PredatorState   predators         = 4;
 }
 
 // Sent once by the client to open the stream.

@@ -5,6 +5,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
@@ -24,7 +25,9 @@ import java.util.concurrent.TimeUnit;
 public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
-    public static final int TICK_RATE_HZ = 30;
+    public static final int  TICK_RATE_HZ          = 30;
+    private static final long BOID_RESPAWN_DELAY_MS = 5_000L;
+    private static final double RESPAWN_MIN_DIST  = 30.0;
     private static final double DT = 1.0 / TICK_RATE_HZ;
     // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics
     private static final int LOG_INTERVAL_TICKS = 5 * TICK_RATE_HZ;
@@ -40,6 +43,7 @@ public class SimulationLoop {
     private final BoidsConfig config;
     private final DiagnosticsConfig diagnosticsConfig;
     private final ScheduledExecutorService executor;
+    private final Random rng = new Random();
 
     // All fields below are written exclusively on the sim-loop thread (via tick()).
     // Add synchronisation before exposing any of them to an external observer (e.g. gRPC handler).
@@ -50,16 +54,13 @@ public class SimulationLoop {
     private final List<Double> recentSigmas = new ArrayList<>();
     private volatile boolean flockingConfirmed = false; // volatile: may be polled by future observers
 
-    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig) {
+    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
+                          ScheduledExecutorService executor) {
         this.world = Objects.requireNonNull(world, "world");
         this.config = Objects.requireNonNull(config, "config");
         this.diagnosticsConfig = Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig");
         this.rules = new BoidsRules(config);
-        this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "sim-loop");
-            t.setDaemon(true);
-            return t;
-        });
+        this.executor = Objects.requireNonNull(executor, "executor");
     }
 
     public void start() {
@@ -82,7 +83,7 @@ public class SimulationLoop {
     void tick() {
         MDC.put("simulation_tick", String.valueOf(tickCount));
         try {
-            List<Agent> agents = world.agents();
+            List<Agent> agents = List.copyOf(world.agents());
             List<Vector3D> steers = new ArrayList<>(agents.size());
             for (Agent agent : agents) {
                 List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
@@ -102,6 +103,16 @@ public class SimulationLoop {
                 newPosition = world.clamp(newPosition);
                 agent.update(newPosition, newVelocity);
             }
+            Predator predator = world.predator();
+            if (predator != null) {
+                predator.update(world, DT);
+                Agent eaten = predator.tryEat(world);
+                if (eaten != null) {
+                    LOG.info("agent {} eaten — respawn in {}ms", eaten.id(), BOID_RESPAWN_DELAY_MS);
+                    scheduleRespawn(eaten, predator);
+                }
+            }
+
             tickCount++;
             if (tickCount % LOG_INTERVAL_TICKS == 0) {
                 logCentroid();
@@ -109,6 +120,30 @@ public class SimulationLoop {
         } finally {
             MDC.remove("simulation_tick");
         }
+    }
+
+    private void scheduleRespawn(Agent agent, Predator predator) {
+        executor.schedule(() -> {
+            Vector3D pos = findRespawnPosition(predator);
+            Vector3D vel = new Vector3D(
+                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                    rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
+            agent.update(pos, vel);
+            world.addAgent(agent);
+            LOG.info("agent {} respawned", agent.id());
+        }, BOID_RESPAWN_DELAY_MS, TimeUnit.MILLISECONDS);
+    }
+
+    private Vector3D findRespawnPosition(Predator predator) {
+        for (int i = 0; i < 20; i++) {
+            Vector3D pos = new Vector3D(
+                    rng.nextDouble(0, DEFAULT_WORLD_WIDTH),
+                    rng.nextDouble(-DEFAULT_WORLD_HEIGHT, 0),
+                    rng.nextDouble(0, DEFAULT_WORLD_DEPTH));
+            if (pos.distanceTo(predator.position()) >= RESPAWN_MIN_DIST) return pos;
+        }
+        return new Vector3D(DEFAULT_WORLD_WIDTH / 2, -DEFAULT_WORLD_HEIGHT / 2, DEFAULT_WORLD_DEPTH / 2);
     }
 
     private void logCentroid() {
@@ -295,6 +330,7 @@ public class SimulationLoop {
         world.addObstacle(new Obstacle(new Vector3D(50, -50, 25), 8.0));
         world.addObstacle(new Obstacle(new Vector3D(25, -70, 25), 5.0));
         world.addObstacle(new Obstacle(new Vector3D(75, -30, 25), 6.0));
+        world.setPredator(new Predator(new Vector3D(5, -5, 5), Vector3D.ZERO));
         return world;
     }
 
@@ -302,7 +338,12 @@ public class SimulationLoop {
         BoidsConfig config = BoidsConfig.builder().build();
         DiagnosticsConfig diagnostics = DiagnosticsConfig.builder().build();
         World world = createDefaultWorld();
-        SimulationLoop loop = new SimulationLoop(world, config, diagnostics);
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "sim-loop");
+            t.setDaemon(true);
+            return t;
+        });
+        SimulationLoop loop = new SimulationLoop(world, config, diagnostics, executor);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try { loop.stop(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }

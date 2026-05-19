@@ -318,4 +318,42 @@ class BoidsRulesTest {
             assertEquals(0.0, force.z(), DELTA);
         }
     }
+
+    @Nested
+    class PredatorFlee {
+
+        @Test
+        void whenAgentInRange_returnsRepulsionVector() {
+            var agent    = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
+            var predator = new Predator(Vector3D.ZERO, Vector3D.ZERO);
+
+            var result = rules.predatorFlee(agent, predator);
+
+            assertTrue(result.x() > 0, "repulsion should point away from predator (x+)");
+            assertEquals(0.0, result.y(), DELTA);
+            assertEquals(0.0, result.z(), DELTA);
+        }
+
+        @Test
+        void whenAgentOutsideFleeRadius_returnsZero() {
+            var config = BoidsConfig.builder().threatFleeRadius(15.0).build();
+            var localRules = new BoidsRules(config);
+            var agent    = Agent.create(AgentType.EXPLORER, new Vector3D(20, 0, 0));
+            var predator = new Predator(Vector3D.ZERO, Vector3D.ZERO);
+
+            var result = localRules.predatorFlee(agent, predator);
+
+            assertEquals(Vector3D.ZERO, result);
+        }
+
+        @Test
+        void coLocatedWithPredator_returnsZero() {
+            var agent    = Agent.create(AgentType.EXPLORER, Vector3D.ZERO);
+            var predator = new Predator(Vector3D.ZERO, Vector3D.ZERO);
+
+            var result = rules.predatorFlee(agent, predator);
+
+            assertEquals(Vector3D.ZERO, result);
+        }
+    }
 }

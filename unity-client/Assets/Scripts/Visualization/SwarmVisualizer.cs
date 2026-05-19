@@ -8,6 +8,7 @@ namespace Gakkel.Swarm.Unity
     {
         [SerializeField] private float groupingRadius = 15f;
         [SerializeField] private float obstacleHeightM = 5f;
+        [SerializeField] private PredatorRenderer predatorRenderer;
 
         private static readonly Color[] GroupColors =
         {
@@ -92,6 +93,7 @@ namespace Gakkel.Swarm.Unity
             ColorByGroup(ws.Agents, groupIds, groupSizes);
             UpdateGroupCentroids(_agentPositions, groupIds, groupSizes);
             UpdateVelocityVectors(ws.Agents);
+            predatorRenderer?.Apply(ws.Predators);
         }
 
         public Vector3 GetCentroid() => _centroid;

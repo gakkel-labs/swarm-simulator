@@ -83,7 +83,7 @@ public class SimulationLoop {
     void tick() {
         MDC.put("simulation_tick", String.valueOf(tickCount));
         try {
-            List<Agent> agents = world.agents();
+            List<Agent> agents = List.copyOf(world.agents());
             List<Vector3D> steers = new ArrayList<>(agents.size());
             for (Agent agent : agents) {
                 List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());

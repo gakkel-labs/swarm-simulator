@@ -1,15 +1,15 @@
 package fr.gakkel.swarmsimulator.swarmserver.domain;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class Target {
 
+    record FoundRecord(String agentId, double foundAtElapsedS) {}
+
     private final Vector3D position;
     private final long placedAtNanos;
-
-    private volatile boolean found;
-    private volatile String foundByAgentId;
-    private volatile double foundAtElapsedS;
+    private final AtomicReference<FoundRecord> foundRecord = new AtomicReference<>();
 
     public Target(Vector3D position) {
         this.position = Objects.requireNonNull(position, "position");
@@ -17,10 +17,7 @@ public final class Target {
     }
 
     public void markFound(String agentId) {
-        if (found) return;
-        this.foundAtElapsedS = elapsedSeconds();
-        this.foundByAgentId = agentId;
-        this.found = true;
+        foundRecord.compareAndSet(null, new FoundRecord(agentId, elapsedSeconds()));
     }
 
     public double elapsedSeconds() {
@@ -28,7 +25,7 @@ public final class Target {
     }
 
     public Vector3D position()      { return position; }
-    public boolean isFound()        { return found; }
-    public String foundByAgentId()  { return foundByAgentId; }
-    public double foundAtElapsedS() { return foundAtElapsedS; }
+    public boolean isFound()        { return foundRecord.get() != null; }
+    public String foundByAgentId()  { FoundRecord record = foundRecord.get(); return record != null ? record.agentId() : null; }
+    public double foundAtElapsedS() { FoundRecord record = foundRecord.get(); return record != null ? record.foundAtElapsedS() : 0.0; }
 }

@@ -357,6 +357,74 @@ class SimulationLoopTest {
         }
     }
 
+    @Nested
+    class CheckTargetDetection {
+
+        private World detectionWorld;
+        private SimulationLoop detectionLoop;
+
+        @BeforeEach
+        void setUp() {
+            detectionWorld = new World(100, 100, 50);
+            detectionLoop = new SimulationLoop(detectionWorld, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
+        }
+
+        @Test
+        void agentWithinSensorRadius_marksTargetFound() {
+            Vector3D targetPosition = new Vector3D(50, -50, 25);
+            detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
+            Agent nearAgent = agent(new Vector3D(50 + SimulationLoop.SENSOR_RADIUS - 1, -50, 25));
+            detectionWorld.addAgent(nearAgent);
+
+            detectionLoop.tick();
+
+            assertTrue(detectionWorld.target().isFound());
+            assertEquals(nearAgent.id().toString(), detectionWorld.target().foundByAgentId());
+        }
+
+        @Test
+        void agentBeyondSensorRadius_doesNotMarkFound() {
+            Vector3D targetPosition = new Vector3D(50, -50, 25);
+            detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
+            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationLoop.SENSOR_RADIUS + 1, -50, 25)));
+
+            detectionLoop.tick();
+
+            assertFalse(detectionWorld.target().isFound());
+        }
+
+        @Test
+        void agentExactlyAtSensorRadius_marksTargetFound() {
+            Vector3D targetPosition = new Vector3D(50, -50, 25);
+            detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
+            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationLoop.SENSOR_RADIUS, -50, 25)));
+
+            detectionLoop.tick();
+
+            assertTrue(detectionWorld.target().isFound());
+        }
+
+        @Test
+        void alreadyFoundTarget_notDetectedAgain() {
+            var target = new fr.gakkel.swarmsimulator.swarmserver.domain.Target(new Vector3D(50, -50, 25));
+            target.markFound("first-agent");
+            detectionWorld.setTarget(target);
+            Agent secondAgent = agent(new Vector3D(50, -50, 25));
+            detectionWorld.addAgent(secondAgent);
+
+            detectionLoop.tick();
+
+            assertEquals("first-agent", detectionWorld.target().foundByAgentId());
+        }
+
+        @Test
+        void noTarget_tickRunsWithoutError() {
+            detectionWorld.addAgent(agent(new Vector3D(50, -50, 25)));
+
+            assertDoesNotThrow(() -> detectionLoop.tick());
+        }
+    }
+
     private static Agent agent(Vector3D position) {
         return new Agent(UUID.randomUUID(), AgentType.EXPLORER, position, Vector3D.ZERO);
     }

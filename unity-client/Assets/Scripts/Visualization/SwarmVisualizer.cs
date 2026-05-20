@@ -48,6 +48,8 @@ namespace Gakkel.Swarm.Unity
 
         private bool _obstaclesSpawned;
         private Vector3 _centroid;
+        private string _blinkAgentId;
+        private float _blinkAgentStartTime;
 
         private void Awake()
         {
@@ -94,6 +96,12 @@ namespace Gakkel.Swarm.Unity
             UpdateGroupCentroids(_agentPositions, groupIds, groupSizes);
             UpdateVelocityVectors(ws.Agents);
             predatorRenderer?.Apply(ws.Predators);
+
+            if (ws.SearchStatus != null && ws.SearchStatus.FoundEvent != null && _blinkAgentId == null)
+            {
+                _blinkAgentId        = ws.SearchStatus.FoundEvent.AgentId;
+                _blinkAgentStartTime = Time.time;
+            }
         }
 
         public Vector3 GetCentroid() => _centroid;
@@ -136,13 +144,18 @@ namespace Gakkel.Swarm.Unity
         {
             foreach (var agent in agents)
             {
-                if (!_agentRenderers.TryGetValue(agent.Id, out var rend)) continue;
-                int g = groupIds[agent.Id];
-                bool inGroup = groupSizes[g] > 1;
-                rend.material = inGroup ? _groupMaterials[g % _groupMaterials.Length] : _isolatedMaterial;
+                if (!_agentRenderers.TryGetValue(agent.Id, out var agentRenderer)) continue;
+                int groupId = groupIds[agent.Id];
+                bool inGroup = groupSizes[groupId] > 1;
+                Color baseColor = inGroup ? GroupColors[groupId % GroupColors.Length] : Color.gray;
+
+                if (agent.Id == _blinkAgentId)
+                    agentRenderer.material.color = TargetRenderer.ComputeBlinkColor(baseColor, _blinkAgentStartTime);
+                else
+                    agentRenderer.material = inGroup ? _groupMaterials[groupId % _groupMaterials.Length] : _isolatedMaterial;
 
                 if (_agentTrails.TryGetValue(agent.Id, out var trail))
-                    trail.colorGradient = inGroup ? _groupTrailGradients[g % _groupTrailGradients.Length] : _isolatedTrailGradient;
+                    trail.colorGradient = inGroup ? _groupTrailGradients[groupId % _groupTrailGradients.Length] : _isolatedTrailGradient;
             }
         }
 

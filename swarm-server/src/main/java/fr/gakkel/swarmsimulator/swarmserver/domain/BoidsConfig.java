@@ -53,8 +53,8 @@ public record BoidsConfig(
         private double perceptionRadius        = 25.0;
         private double separationWeight        = 1.8;
         private double alignmentWeight         = 1.5;
-        private double cohesionWeight          = 0.8;
-        private double wanderWeight            = 0.5;
+        private double cohesionWeight          = 1.5;
+        private double wanderWeight            = 0.0;
         private double maxSpeed                = 5.0;
         private double boundaryRepulsionRadius = 15.0;
         private double boundaryRepulsionWeight = 2.0;

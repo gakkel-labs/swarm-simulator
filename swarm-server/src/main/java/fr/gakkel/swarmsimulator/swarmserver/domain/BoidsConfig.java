@@ -5,6 +5,7 @@ public record BoidsConfig(
         double separationWeight,
         double alignmentWeight,
         double cohesionWeight,
+        double wanderWeight,
         double maxSpeed,
         double boundaryRepulsionRadius,
         double boundaryRepulsionWeight,
@@ -17,7 +18,7 @@ public record BoidsConfig(
         if (perceptionRadius <= 0) {
             throw new IllegalArgumentException("perceptionRadius must be positive");
         }
-        if (separationWeight < 0 || alignmentWeight < 0 || cohesionWeight < 0) {
+        if (separationWeight < 0 || alignmentWeight < 0 || cohesionWeight < 0 || wanderWeight < 0) {
             throw new IllegalArgumentException("weights must be >= 0");
         }
         if (maxSpeed <= 0) {
@@ -52,7 +53,8 @@ public record BoidsConfig(
         private double perceptionRadius        = 25.0;
         private double separationWeight        = 1.8;
         private double alignmentWeight         = 1.5;
-        private double cohesionWeight          = 1.5;
+        private double cohesionWeight          = 0.8;
+        private double wanderWeight            = 0.5;
         private double maxSpeed                = 5.0;
         private double boundaryRepulsionRadius = 15.0;
         private double boundaryRepulsionWeight = 2.0;
@@ -67,6 +69,7 @@ public record BoidsConfig(
         public Builder separationWeight(double v)        { separationWeight = v;        return this; }
         public Builder alignmentWeight(double v)         { alignmentWeight = v;         return this; }
         public Builder cohesionWeight(double v)          { cohesionWeight = v;          return this; }
+        public Builder wanderWeight(double v)            { wanderWeight = v;            return this; }
         public Builder maxSpeed(double v)                { maxSpeed = v;                return this; }
         public Builder boundaryRepulsionRadius(double v) { boundaryRepulsionRadius = v; return this; }
         public Builder boundaryRepulsionWeight(double v) { boundaryRepulsionWeight = v; return this; }
@@ -77,7 +80,8 @@ public record BoidsConfig(
 
         public BoidsConfig build() {
             return new BoidsConfig(perceptionRadius, separationWeight, alignmentWeight,
-                    cohesionWeight, maxSpeed, boundaryRepulsionRadius, boundaryRepulsionWeight,
+                    cohesionWeight, wanderWeight, maxSpeed,
+                    boundaryRepulsionRadius, boundaryRepulsionWeight,
                     obstacleAvoidanceRadius, obstacleAvoidanceWeight,
                     threatFleeRadius, threatFleeWeight);
         }

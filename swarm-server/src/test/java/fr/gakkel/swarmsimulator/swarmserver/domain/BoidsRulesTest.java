@@ -178,10 +178,14 @@ class BoidsRulesTest {
             // alignment  → ( 0,1,0)*1.5 = ( 0.0,1.5,0)
             // cohesion   → ( 1,0,0)*1.5 = ( 1.5, 0,0)
             // steer      → (-0.3, 1.5, 0.0)
+            var config = BoidsConfig.builder()
+                    .separationWeight(1.8).alignmentWeight(1.5).cohesionWeight(1.5)
+                    .boundaryRepulsionWeight(0.0).build();
+            var fixedRules = new BoidsRules(config);
             var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
             neighbor.update(neighbor.position(), new Vector3D(0, 1, 0));
 
-            var steer = rules.steer(agent, List.of(neighbor));
+            var steer = fixedRules.steer(agent, List.of(neighbor));
 
             assertEquals(-0.3, steer.x(), DELTA);
             assertEquals( 1.5, steer.y(), DELTA);

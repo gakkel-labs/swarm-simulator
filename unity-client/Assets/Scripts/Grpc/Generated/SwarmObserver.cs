@@ -33,19 +33,29 @@ namespace Gakkel.Swarm.Contracts.V1 {
             "ASgLMhUuZ2Fra2VsLnN3YXJtLnYxLlZlYzMSEAoIcmFkaXVzX20YAiABKAIi",
             "dQoNUHJlZGF0b3JTdGF0ZRIKCgJpZBgBIAEoCRIrCgxwb3NpdGlvbl94eXoY",
             "AiABKAsyFS5nYWtrZWwuc3dhcm0udjEuVmVjMxIrCgx2ZWxvY2l0eV9tcHMY",
-            "AyABKAsyFS5nYWtrZWwuc3dhcm0udjEuVmVjMyK1AQoKV29ybGRTdGF0ZRIZ",
-            "ChF0aW1lc3RhbXBfdW5peF9tcxgBIAEoAxIrCgZhZ2VudHMYAiADKAsyGy5n",
-            "YWtrZWwuc3dhcm0udjEuQWdlbnRTdGF0ZRIsCglvYnN0YWNsZXMYAyADKAsy",
-            "GS5nYWtrZWwuc3dhcm0udjEuT2JzdGFjbGUSMQoJcHJlZGF0b3JzGAQgAygL",
-            "Mh4uZ2Fra2VsLnN3YXJtLnYxLlByZWRhdG9yU3RhdGUiJQoQU3Vic2NyaWJl",
-            "UmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkqcQoJQWdlbnRUeXBlEhoKFkFH",
-            "RU5UX1RZUEVfVU5TUEVDSUZJRUQQABIXChNBR0VOVF9UWVBFX0VYUExPUkVS",
-            "EAESFwoTQUdFTlRfVFlQRV9PUEVSQVRPUhACEhYKEkFHRU5UX1RZUEVfQ0FS",
-            "UklFUhADMmgKDVN3YXJtT2JzZXJ2ZXISVwoTU3Vic2NyaWJlV29ybGRTdGF0",
-            "ZRIhLmdha2tlbC5zd2FybS52MS5TdWJzY3JpYmVSZXF1ZXN0GhsuZ2Fra2Vs",
-            "LnN3YXJtLnYxLldvcmxkU3RhdGUwAUI8Chxpby5nYWtrZWwuc3dhcm0uY29u",
-            "dHJhY3RzLnYxUAGqAhlHYWtrZWwuU3dhcm0uQ29udHJhY3RzLlYxYgZwcm90",
-            "bzM="));
+            "AyABKAsyFS5nYWtrZWwuc3dhcm0udjEuVmVjMyI7ChBUYXJnZXRGb3VuZEV2",
+            "ZW50EhAKCGFnZW50X2lkGAEgASgJEhUKDWVsYXBzZWRfc2ltX3MYAiABKAIi",
+            "pAEKDFNlYXJjaFN0YXR1cxIVCg10YXJnZXRfcGxhY2VkGAEgASgIEi4KD3Rh",
+            "cmdldF9wb3NpdGlvbhgCIAEoCzIVLmdha2tlbC5zd2FybS52MS5WZWMzEhUK",
+            "DWVsYXBzZWRfc2ltX3MYAyABKAISNgoLZm91bmRfZXZlbnQYBCABKAsyIS5n",
+            "YWtrZWwuc3dhcm0udjEuVGFyZ2V0Rm91bmRFdmVudCI9ChJQbGFjZVRhcmdl",
+            "dFJlcXVlc3QSJwoIcG9zaXRpb24YASABKAsyFS5nYWtrZWwuc3dhcm0udjEu",
+            "VmVjMyIVChNQbGFjZVRhcmdldFJlc3BvbnNlIusBCgpXb3JsZFN0YXRlEhkK",
+            "EXRpbWVzdGFtcF91bml4X21zGAEgASgDEisKBmFnZW50cxgCIAMoCzIbLmdh",
+            "a2tlbC5zd2FybS52MS5BZ2VudFN0YXRlEiwKCW9ic3RhY2xlcxgDIAMoCzIZ",
+            "Lmdha2tlbC5zd2FybS52MS5PYnN0YWNsZRIxCglwcmVkYXRvcnMYBCADKAsy",
+            "Hi5nYWtrZWwuc3dhcm0udjEuUHJlZGF0b3JTdGF0ZRI0Cg1zZWFyY2hfc3Rh",
+            "dHVzGAUgASgLMh0uZ2Fra2VsLnN3YXJtLnYxLlNlYXJjaFN0YXR1cyIlChBT",
+            "dWJzY3JpYmVSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCSpxCglBZ2VudFR5",
+            "cGUSGgoWQUdFTlRfVFlQRV9VTlNQRUNJRklFRBAAEhcKE0FHRU5UX1RZUEVf",
+            "RVhQTE9SRVIQARIXChNBR0VOVF9UWVBFX09QRVJBVE9SEAISFgoSQUdFTlRf",
+            "VFlQRV9DQVJSSUVSEAMyaAoNU3dhcm1PYnNlcnZlchJXChNTdWJzY3JpYmVX",
+            "b3JsZFN0YXRlEiEuZ2Fra2VsLnN3YXJtLnYxLlN1YnNjcmliZVJlcXVlc3Qa",
+            "Gy5nYWtrZWwuc3dhcm0udjEuV29ybGRTdGF0ZTABMm0KEVNpbXVsYXRpb25D",
+            "b250cm9sElgKC1BsYWNlVGFyZ2V0EiMuZ2Fra2VsLnN3YXJtLnYxLlBsYWNl",
+            "VGFyZ2V0UmVxdWVzdBokLmdha2tlbC5zd2FybS52MS5QbGFjZVRhcmdldFJl",
+            "c3BvbnNlQjwKHGlvLmdha2tlbC5zd2FybS5jb250cmFjdHMudjFQAaoCGUdh",
+            "a2tlbC5Td2FybS5Db250cmFjdHMuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Gakkel.Swarm.Contracts.V1.AgentType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -53,7 +63,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.AgentState), global::Gakkel.Swarm.Contracts.V1.AgentState.Parser, new[]{ "Id", "Type", "PositionXyz", "VelocityMps" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.Obstacle), global::Gakkel.Swarm.Contracts.V1.Obstacle.Parser, new[]{ "PositionXyz", "RadiusM" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.PredatorState), global::Gakkel.Swarm.Contracts.V1.PredatorState.Parser, new[]{ "Id", "PositionXyz", "VelocityMps" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.WorldState), global::Gakkel.Swarm.Contracts.V1.WorldState.Parser, new[]{ "TimestampUnixMs", "Agents", "Obstacles", "Predators" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.TargetFoundEvent), global::Gakkel.Swarm.Contracts.V1.TargetFoundEvent.Parser, new[]{ "AgentId", "ElapsedSimS" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.SearchStatus), global::Gakkel.Swarm.Contracts.V1.SearchStatus.Parser, new[]{ "TargetPlaced", "TargetPosition", "ElapsedSimS", "FoundEvent" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.PlaceTargetRequest), global::Gakkel.Swarm.Contracts.V1.PlaceTargetRequest.Parser, new[]{ "Position" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.PlaceTargetResponse), global::Gakkel.Swarm.Contracts.V1.PlaceTargetResponse.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.WorldState), global::Gakkel.Swarm.Contracts.V1.WorldState.Parser, new[]{ "TimestampUnixMs", "Agents", "Obstacles", "Predators", "SearchStatus" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.SubscribeRequest), global::Gakkel.Swarm.Contracts.V1.SubscribeRequest.Parser, new[]{ "ClientId" }, null, null, null, null)
           }));
     }
@@ -288,7 +302,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -315,7 +333,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -596,7 +618,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -633,7 +659,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -857,7 +887,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -883,7 +917,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1125,7 +1163,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1158,7 +1200,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1188,6 +1234,945 @@ namespace Gakkel.Swarm.Contracts.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class TargetFoundEvent : pb::IMessage<TargetFoundEvent>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<TargetFoundEvent> _parser = new pb::MessageParser<TargetFoundEvent>(() => new TargetFoundEvent());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<TargetFoundEvent> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[4]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TargetFoundEvent() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TargetFoundEvent(TargetFoundEvent other) : this() {
+      agentId_ = other.agentId_;
+      elapsedSimS_ = other.elapsedSimS_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TargetFoundEvent Clone() {
+      return new TargetFoundEvent(this);
+    }
+
+    /// <summary>Field number for the "agent_id" field.</summary>
+    public const int AgentIdFieldNumber = 1;
+    private string agentId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string AgentId {
+      get { return agentId_; }
+      set {
+        agentId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "elapsed_sim_s" field.</summary>
+    public const int ElapsedSimSFieldNumber = 2;
+    private float elapsedSimS_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public float ElapsedSimS {
+      get { return elapsedSimS_; }
+      set {
+        elapsedSimS_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as TargetFoundEvent);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(TargetFoundEvent other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (AgentId != other.AgentId) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(ElapsedSimS, other.ElapsedSimS)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (AgentId.Length != 0) hash ^= AgentId.GetHashCode();
+      if (ElapsedSimS != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(ElapsedSimS);
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (AgentId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(AgentId);
+      }
+      if (ElapsedSimS != 0F) {
+        output.WriteRawTag(21);
+        output.WriteFloat(ElapsedSimS);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (AgentId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(AgentId);
+      }
+      if (ElapsedSimS != 0F) {
+        output.WriteRawTag(21);
+        output.WriteFloat(ElapsedSimS);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (AgentId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(AgentId);
+      }
+      if (ElapsedSimS != 0F) {
+        size += 1 + 4;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(TargetFoundEvent other) {
+      if (other == null) {
+        return;
+      }
+      if (other.AgentId.Length != 0) {
+        AgentId = other.AgentId;
+      }
+      if (other.ElapsedSimS != 0F) {
+        ElapsedSimS = other.ElapsedSimS;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            AgentId = input.ReadString();
+            break;
+          }
+          case 21: {
+            ElapsedSimS = input.ReadFloat();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            AgentId = input.ReadString();
+            break;
+          }
+          case 21: {
+            ElapsedSimS = input.ReadFloat();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class SearchStatus : pb::IMessage<SearchStatus>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<SearchStatus> _parser = new pb::MessageParser<SearchStatus>(() => new SearchStatus());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<SearchStatus> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SearchStatus() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SearchStatus(SearchStatus other) : this() {
+      targetPlaced_ = other.targetPlaced_;
+      targetPosition_ = other.targetPosition_ != null ? other.targetPosition_.Clone() : null;
+      elapsedSimS_ = other.elapsedSimS_;
+      foundEvent_ = other.foundEvent_ != null ? other.foundEvent_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SearchStatus Clone() {
+      return new SearchStatus(this);
+    }
+
+    /// <summary>Field number for the "target_placed" field.</summary>
+    public const int TargetPlacedFieldNumber = 1;
+    private bool targetPlaced_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool TargetPlaced {
+      get { return targetPlaced_; }
+      set {
+        targetPlaced_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "target_position" field.</summary>
+    public const int TargetPositionFieldNumber = 2;
+    private global::Gakkel.Swarm.Contracts.V1.Vec3 targetPosition_;
+    /// <summary>
+    /// NED; valid only when target_placed = true
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Gakkel.Swarm.Contracts.V1.Vec3 TargetPosition {
+      get { return targetPosition_; }
+      set {
+        targetPosition_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "elapsed_sim_s" field.</summary>
+    public const int ElapsedSimSFieldNumber = 3;
+    private float elapsedSimS_;
+    /// <summary>
+    /// seconds since placement; 0 when not placed
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public float ElapsedSimS {
+      get { return elapsedSimS_; }
+      set {
+        elapsedSimS_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "found_event" field.</summary>
+    public const int FoundEventFieldNumber = 4;
+    private global::Gakkel.Swarm.Contracts.V1.TargetFoundEvent foundEvent_;
+    /// <summary>
+    /// absent until a drone detects the target
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Gakkel.Swarm.Contracts.V1.TargetFoundEvent FoundEvent {
+      get { return foundEvent_; }
+      set {
+        foundEvent_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as SearchStatus);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(SearchStatus other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (TargetPlaced != other.TargetPlaced) return false;
+      if (!object.Equals(TargetPosition, other.TargetPosition)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(ElapsedSimS, other.ElapsedSimS)) return false;
+      if (!object.Equals(FoundEvent, other.FoundEvent)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (TargetPlaced != false) hash ^= TargetPlaced.GetHashCode();
+      if (targetPosition_ != null) hash ^= TargetPosition.GetHashCode();
+      if (ElapsedSimS != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(ElapsedSimS);
+      if (foundEvent_ != null) hash ^= FoundEvent.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (TargetPlaced != false) {
+        output.WriteRawTag(8);
+        output.WriteBool(TargetPlaced);
+      }
+      if (targetPosition_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(TargetPosition);
+      }
+      if (ElapsedSimS != 0F) {
+        output.WriteRawTag(29);
+        output.WriteFloat(ElapsedSimS);
+      }
+      if (foundEvent_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(FoundEvent);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (TargetPlaced != false) {
+        output.WriteRawTag(8);
+        output.WriteBool(TargetPlaced);
+      }
+      if (targetPosition_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(TargetPosition);
+      }
+      if (ElapsedSimS != 0F) {
+        output.WriteRawTag(29);
+        output.WriteFloat(ElapsedSimS);
+      }
+      if (foundEvent_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(FoundEvent);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (TargetPlaced != false) {
+        size += 1 + 1;
+      }
+      if (targetPosition_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(TargetPosition);
+      }
+      if (ElapsedSimS != 0F) {
+        size += 1 + 4;
+      }
+      if (foundEvent_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(FoundEvent);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(SearchStatus other) {
+      if (other == null) {
+        return;
+      }
+      if (other.TargetPlaced != false) {
+        TargetPlaced = other.TargetPlaced;
+      }
+      if (other.targetPosition_ != null) {
+        if (targetPosition_ == null) {
+          TargetPosition = new global::Gakkel.Swarm.Contracts.V1.Vec3();
+        }
+        TargetPosition.MergeFrom(other.TargetPosition);
+      }
+      if (other.ElapsedSimS != 0F) {
+        ElapsedSimS = other.ElapsedSimS;
+      }
+      if (other.foundEvent_ != null) {
+        if (foundEvent_ == null) {
+          FoundEvent = new global::Gakkel.Swarm.Contracts.V1.TargetFoundEvent();
+        }
+        FoundEvent.MergeFrom(other.FoundEvent);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            TargetPlaced = input.ReadBool();
+            break;
+          }
+          case 18: {
+            if (targetPosition_ == null) {
+              TargetPosition = new global::Gakkel.Swarm.Contracts.V1.Vec3();
+            }
+            input.ReadMessage(TargetPosition);
+            break;
+          }
+          case 29: {
+            ElapsedSimS = input.ReadFloat();
+            break;
+          }
+          case 34: {
+            if (foundEvent_ == null) {
+              FoundEvent = new global::Gakkel.Swarm.Contracts.V1.TargetFoundEvent();
+            }
+            input.ReadMessage(FoundEvent);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            TargetPlaced = input.ReadBool();
+            break;
+          }
+          case 18: {
+            if (targetPosition_ == null) {
+              TargetPosition = new global::Gakkel.Swarm.Contracts.V1.Vec3();
+            }
+            input.ReadMessage(TargetPosition);
+            break;
+          }
+          case 29: {
+            ElapsedSimS = input.ReadFloat();
+            break;
+          }
+          case 34: {
+            if (foundEvent_ == null) {
+              FoundEvent = new global::Gakkel.Swarm.Contracts.V1.TargetFoundEvent();
+            }
+            input.ReadMessage(FoundEvent);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class PlaceTargetRequest : pb::IMessage<PlaceTargetRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<PlaceTargetRequest> _parser = new pb::MessageParser<PlaceTargetRequest>(() => new PlaceTargetRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<PlaceTargetRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PlaceTargetRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PlaceTargetRequest(PlaceTargetRequest other) : this() {
+      position_ = other.position_ != null ? other.position_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PlaceTargetRequest Clone() {
+      return new PlaceTargetRequest(this);
+    }
+
+    /// <summary>Field number for the "position" field.</summary>
+    public const int PositionFieldNumber = 1;
+    private global::Gakkel.Swarm.Contracts.V1.Vec3 position_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Gakkel.Swarm.Contracts.V1.Vec3 Position {
+      get { return position_; }
+      set {
+        position_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as PlaceTargetRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(PlaceTargetRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(Position, other.Position)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (position_ != null) hash ^= Position.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (position_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Position);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (position_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Position);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (position_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Position);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(PlaceTargetRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.position_ != null) {
+        if (position_ == null) {
+          Position = new global::Gakkel.Swarm.Contracts.V1.Vec3();
+        }
+        Position.MergeFrom(other.Position);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (position_ == null) {
+              Position = new global::Gakkel.Swarm.Contracts.V1.Vec3();
+            }
+            input.ReadMessage(Position);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            if (position_ == null) {
+              Position = new global::Gakkel.Swarm.Contracts.V1.Vec3();
+            }
+            input.ReadMessage(Position);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class PlaceTargetResponse : pb::IMessage<PlaceTargetResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<PlaceTargetResponse> _parser = new pb::MessageParser<PlaceTargetResponse>(() => new PlaceTargetResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<PlaceTargetResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[7]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PlaceTargetResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PlaceTargetResponse(PlaceTargetResponse other) : this() {
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PlaceTargetResponse Clone() {
+      return new PlaceTargetResponse(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as PlaceTargetResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(PlaceTargetResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(PlaceTargetResponse other) {
+      if (other == null) {
+        return;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class WorldState : pb::IMessage<WorldState>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1202,7 +2187,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1226,6 +2211,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       agents_ = other.agents_.Clone();
       obstacles_ = other.obstacles_.Clone();
       predators_ = other.predators_.Clone();
+      searchStatus_ = other.searchStatus_ != null ? other.searchStatus_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1280,6 +2266,18 @@ namespace Gakkel.Swarm.Contracts.V1 {
       get { return predators_; }
     }
 
+    /// <summary>Field number for the "search_status" field.</summary>
+    public const int SearchStatusFieldNumber = 5;
+    private global::Gakkel.Swarm.Contracts.V1.SearchStatus searchStatus_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Gakkel.Swarm.Contracts.V1.SearchStatus SearchStatus {
+      get { return searchStatus_; }
+      set {
+        searchStatus_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1299,6 +2297,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       if(!agents_.Equals(other.agents_)) return false;
       if(!obstacles_.Equals(other.obstacles_)) return false;
       if(!predators_.Equals(other.predators_)) return false;
+      if (!object.Equals(SearchStatus, other.SearchStatus)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1310,6 +2309,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       hash ^= agents_.GetHashCode();
       hash ^= obstacles_.GetHashCode();
       hash ^= predators_.GetHashCode();
+      if (searchStatus_ != null) hash ^= SearchStatus.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1335,6 +2335,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
       agents_.WriteTo(output, _repeated_agents_codec);
       obstacles_.WriteTo(output, _repeated_obstacles_codec);
       predators_.WriteTo(output, _repeated_predators_codec);
+      if (searchStatus_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(SearchStatus);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1352,6 +2356,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
       agents_.WriteTo(ref output, _repeated_agents_codec);
       obstacles_.WriteTo(ref output, _repeated_obstacles_codec);
       predators_.WriteTo(ref output, _repeated_predators_codec);
+      if (searchStatus_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(SearchStatus);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1368,6 +2376,9 @@ namespace Gakkel.Swarm.Contracts.V1 {
       size += agents_.CalculateSize(_repeated_agents_codec);
       size += obstacles_.CalculateSize(_repeated_obstacles_codec);
       size += predators_.CalculateSize(_repeated_predators_codec);
+      if (searchStatus_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(SearchStatus);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1386,6 +2397,12 @@ namespace Gakkel.Swarm.Contracts.V1 {
       agents_.Add(other.agents_);
       obstacles_.Add(other.obstacles_);
       predators_.Add(other.predators_);
+      if (other.searchStatus_ != null) {
+        if (searchStatus_ == null) {
+          SearchStatus = new global::Gakkel.Swarm.Contracts.V1.SearchStatus();
+        }
+        SearchStatus.MergeFrom(other.SearchStatus);
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1397,7 +2414,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1417,6 +2438,13 @@ namespace Gakkel.Swarm.Contracts.V1 {
             predators_.AddEntriesFrom(input, _repeated_predators_codec);
             break;
           }
+          case 42: {
+            if (searchStatus_ == null) {
+              SearchStatus = new global::Gakkel.Swarm.Contracts.V1.SearchStatus();
+            }
+            input.ReadMessage(SearchStatus);
+            break;
+          }
         }
       }
     #endif
@@ -1428,7 +2456,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1446,6 +2478,13 @@ namespace Gakkel.Swarm.Contracts.V1 {
           }
           case 34: {
             predators_.AddEntriesFrom(ref input, _repeated_predators_codec);
+            break;
+          }
+          case 42: {
+            if (searchStatus_ == null) {
+              SearchStatus = new global::Gakkel.Swarm.Contracts.V1.SearchStatus();
+            }
+            input.ReadMessage(SearchStatus);
             break;
           }
         }
@@ -1473,7 +2512,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Gakkel.Swarm.Contracts.V1.SwarmObserverReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1617,7 +2656,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1636,7 +2679,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

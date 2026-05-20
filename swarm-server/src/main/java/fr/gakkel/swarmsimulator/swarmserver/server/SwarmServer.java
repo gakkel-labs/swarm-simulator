@@ -4,6 +4,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationLoop;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionServiceV1;
@@ -29,12 +30,14 @@ public class SwarmServer {
             return t;
         });
         SimulationLoop sim = new SimulationLoop(world, boids, diag, simExecutor);
+        SimulationService simulationService = new SimulationService(world);
 
         SwarmObserverImpl observer = new SwarmObserverImpl(world);
 
         Server server = ServerBuilder.forPort(PORT)
                 .addService(new PingServiceImpl())
                 .addService(observer)
+                .addService(new SimulationControlImpl(simulationService))
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build()
                 .start();

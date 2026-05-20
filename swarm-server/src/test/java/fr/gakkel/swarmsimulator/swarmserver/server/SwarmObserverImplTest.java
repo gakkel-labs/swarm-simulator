@@ -3,6 +3,7 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.AgentState;
@@ -182,6 +183,41 @@ class SwarmObserverImplTest {
         WorldState state = impl.buildWorldState();
 
         assertThat(state.getPredatorsCount()).isZero();
+    }
+
+    @Test
+    void buildWorldState_withTarget_includesSearchStatus() {
+        world.setTarget(new Target(new Vector3D(50, -30, 25)));
+
+        WorldState state = impl.buildWorldState();
+
+        assertThat(state.hasSearchStatus()).isTrue();
+        assertThat(state.getSearchStatus().getTargetPlaced()).isTrue();
+        assertThat(state.getSearchStatus().getElapsedSimS()).isGreaterThanOrEqualTo(0f);
+        // server(50,-30,25) → NED proto(x=25, y=50, z=30)
+        assertThat(state.getSearchStatus().getTargetPosition().getX()).isEqualTo(25.0f);
+        assertThat(state.getSearchStatus().getTargetPosition().getY()).isEqualTo(50.0f);
+        assertThat(state.getSearchStatus().getTargetPosition().getZ()).isEqualTo(30.0f);
+    }
+
+    @Test
+    void buildWorldState_withFoundTarget_includesFoundEvent() {
+        Target target = new Target(new Vector3D(50, -30, 25));
+        target.markFound("drone-007");
+        world.setTarget(target);
+
+        WorldState state = impl.buildWorldState();
+
+        assertThat(state.getSearchStatus().hasFoundEvent()).isTrue();
+        assertThat(state.getSearchStatus().getFoundEvent().getAgentId()).isEqualTo("drone-007");
+        assertThat(state.getSearchStatus().getFoundEvent().getElapsedSimS()).isGreaterThanOrEqualTo(0f);
+    }
+
+    @Test
+    void buildWorldState_noTarget_searchStatusAbsent() {
+        WorldState state = impl.buildWorldState();
+
+        assertThat(state.hasSearchStatus()).isFalse();
     }
 
     @Test

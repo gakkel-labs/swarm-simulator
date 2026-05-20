@@ -45,4 +45,17 @@ class SimulationServiceTest {
         assertThrows(NullPointerException.class,
                 () -> simulationService.placeTarget(null, TriggerSource.OPERATOR_CLICK));
     }
+
+    @Test
+    void placeTarget_replacesFoundTarget_newTargetIsNotFound() {
+        Vector3D firstPosition = new Vector3D(10, -10, 5);
+        simulationService.placeTarget(firstPosition, TriggerSource.OPERATOR_CLICK);
+        world.target().markFound("some-agent");
+
+        Vector3D secondPosition = new Vector3D(80, -50, 40);
+        simulationService.placeTarget(secondPosition, TriggerSource.OPERATOR_CLICK);
+
+        assertFalse(world.target().isFound());
+        assertEquals(secondPosition, world.target().position());
+    }
 }

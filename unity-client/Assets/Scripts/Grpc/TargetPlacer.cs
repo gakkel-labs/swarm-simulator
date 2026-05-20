@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Cysharp.Net.Http;
 using Gakkel.Swarm.Contracts.V1;
@@ -46,16 +47,23 @@ namespace Gakkel.Swarm.Unity
             };
 
             var request = new PlaceTargetRequest { Position = nedPosition };
-            var task = _client.PlaceTargetAsync(request).ResponseAsync;
-            task.ContinueWith(OnPlaceTargetCompleted);
-
+#if UNITY_EDITOR
             Debug.Log($"[PlaceTarget] unity={unityPosition:F1}");
+#endif
+            _ = PlaceTargetAsync(request);
         }
 
-        private static void OnPlaceTargetCompleted(Task<PlaceTargetResponse> task)
+        private async Task PlaceTargetAsync(PlaceTargetRequest request)
         {
-            if (task.IsFaulted)
-                Debug.LogError($"[PlaceTarget] RPC failed: {task.Exception?.InnerException?.Message}");
+            try
+            {
+                await _client.PlaceTargetAsync(request).ResponseAsync;
+            }
+            catch (Exception exception)
+            {
+                MainThreadDispatcher.Enqueue(() =>
+                    Debug.LogError($"[PlaceTarget] RPC failed: {exception.Message}"));
+            }
         }
 
         private void OnDestroy()

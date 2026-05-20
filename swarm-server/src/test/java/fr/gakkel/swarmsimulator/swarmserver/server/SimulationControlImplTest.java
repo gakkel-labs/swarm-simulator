@@ -6,6 +6,8 @@ import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationService;
 import io.gakkel.swarm.contracts.v1.PlaceTargetRequest;
 import io.gakkel.swarm.contracts.v1.PlaceTargetResponse;
 import io.gakkel.swarm.contracts.v1.Vec3;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,11 +66,15 @@ class SimulationControlImplTest {
     @Test
     void placeTarget_missingPosition_returnsInvalidArgument() {
         PlaceTargetRequest request = PlaceTargetRequest.newBuilder().build();
+        ArgumentCaptor<Throwable> errorCaptor = ArgumentCaptor.forClass(Throwable.class);
 
         simulationControl.placeTarget(request, mockResponseObserver);
 
-        verify(mockResponseObserver).onError(any());
+        verify(mockResponseObserver).onError(errorCaptor.capture());
         verify(mockResponseObserver, never()).onNext(any());
         verifyNoInteractions(mockSimulationService);
+        assertThat(errorCaptor.getValue()).isInstanceOf(StatusRuntimeException.class);
+        assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
+                .isEqualTo(Status.INVALID_ARGUMENT.getCode());
     }
 }

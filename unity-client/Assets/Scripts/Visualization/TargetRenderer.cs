@@ -25,7 +25,9 @@ namespace Gakkel.Swarm.Unity
             Destroy(_sphere.GetComponent<Collider>());
             _sphere.name = "SAR_Target";
             _sphereRenderer = _sphere.GetComponent<Renderer>();
-            _sphereRenderer.material = new Material(Shader.Find("Universal Render Pipeline/Lit")) { color = TargetColor };
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null) Debug.LogWarning("[TargetRenderer] URP/Lit shader not found — check URP package.");
+            _sphereRenderer.material = new Material(shader != null ? shader : Shader.Find("Standard")) { color = TargetColor };
             _sphere.transform.localScale = Vector3.one * 3f;
             _sphere.SetActive(false);
         }

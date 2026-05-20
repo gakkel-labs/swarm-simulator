@@ -276,6 +276,7 @@ MonoBehaviour:
   zoomSensitivity: 2
   minDistance: 5
   maxDistance: 100
+  freeMoveSpeed: 20
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -415,6 +416,7 @@ GameObject:
   - component: {fileID: 464768035}
   - component: {fileID: 464768034}
   - component: {fileID: 464768036}
+  - component: {fileID: 464768037}
   m_Layer: 0
   m_Name: GrpcManager
   m_TagString: Untagged
@@ -452,6 +454,7 @@ MonoBehaviour:
   serverAddress: http://localhost:50051
   retryDelaySeconds: 3
   visualizer: {fileID: 464768036}
+  targetRenderer: {fileID: 1944852773}
 --- !u!114 &464768035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -478,12 +481,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.SwarmVisualizer
   groupingRadius: 15
   obstacleHeightM: 5
+  predatorRenderer: {fileID: 464768037}
   trailTime: 2
   trailStartWidth: 0.15
   showTrails: 1
   showVelocityVectors: 0
   velocityVectorScale: 0.67
   showCentroids: 0
+--- !u!114 &464768037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 464768031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74edd781f6be99e498e99cbcbec2150d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.PredatorRenderer
 --- !u!1 &730027346
 GameObject:
   m_ObjectHideFlags: 0
@@ -1754,6 +1770,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.SimulationUI
   visualizer: {fileID: 464768036}
+  targetRenderer: {fileID: 1944852773}
   trailToggle: {fileID: 1521157124}
   velocityVectorToggle: {fileID: 1670229504}
   centroidToggle: {fileID: 1266866885}
@@ -1765,6 +1782,66 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1859037225}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -626.0791, y: 1308.6088, z: -146.64621}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1944852772
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1944852775}
+  - component: {fileID: 1944852774}
+  - component: {fileID: 1944852773}
+  m_Layer: 0
+  m_Name: SarManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1944852773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944852772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c845e62b81e5844a8ff927dedf9f74f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.TargetRenderer
+--- !u!114 &1944852774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944852772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5ae2fc80354b9347b4015275f068ae9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.TargetPlacer
+  serverAddress: http://localhost:50051
+  operatorCamera: {fileID: 0}
+  placementDistance: 50
+--- !u!4 &1944852775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944852772}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -626.0791, y: 1308.6088, z: -146.64621}
@@ -1863,3 +1940,4 @@ SceneRoots:
   - {fileID: 818660256}
   - {fileID: 730027349}
   - {fileID: 1859037227}
+  - {fileID: 1944852775}

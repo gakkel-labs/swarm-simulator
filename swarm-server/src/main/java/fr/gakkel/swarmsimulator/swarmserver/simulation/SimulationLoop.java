@@ -27,7 +27,7 @@ public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
     public static final int  TICK_RATE_HZ          = 30;
-    static final double      SENSOR_RADIUS          = 8.0;
+    static final double      SENSOR_RADIUS          = 20.0;
     private static final long BOID_RESPAWN_DELAY_MS = 5_000L;
     private static final double RESPAWN_MIN_DIST  = 30.0;
     private static final double DT = 1.0 / TICK_RATE_HZ;

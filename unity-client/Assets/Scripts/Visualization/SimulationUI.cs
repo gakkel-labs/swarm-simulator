@@ -7,6 +7,7 @@ namespace Gakkel.Swarm.Unity
     public class SimulationUI : MonoBehaviour
     {
         [SerializeField] private SwarmVisualizer visualizer;
+        [SerializeField] private TargetRenderer targetRenderer;
         [SerializeField] private Toggle trailToggle;
         [SerializeField] private Toggle velocityVectorToggle;
         [SerializeField] private Toggle centroidToggle;
@@ -39,7 +40,23 @@ namespace Gakkel.Swarm.Unity
                 _fpsFrames = 0;
             }
 
-            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_fpsCurrent:F0}";
+            string sarLine = BuildSarLine();
+            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_fpsCurrent:F0}{sarLine}";
+        }
+
+        private string BuildSarLine()
+        {
+            if (targetRenderer == null || !targetRenderer.IsPlaced) return string.Empty;
+
+            if (targetRenderer.IsFound)
+            {
+                string shortId = targetRenderer.FoundByAgentId.Length >= 8
+                    ? targetRenderer.FoundByAgentId[..8]
+                    : targetRenderer.FoundByAgentId;
+                return $"\nFound by {shortId} in {targetRenderer.FoundAtElapsedS:F1}s";
+            }
+
+            return $"\nSearching... {targetRenderer.ElapsedSimS:F1}s";
         }
     }
 }

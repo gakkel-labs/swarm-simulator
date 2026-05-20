@@ -1852,6 +1852,9 @@ namespace Gakkel.Swarm.Contracts.V1 {
     /// <summary>Field number for the "position" field.</summary>
     public const int PositionFieldNumber = 1;
     private global::Gakkel.Swarm.Contracts.V1.Vec3 position_;
+    /// <summary>
+    /// NED, meters
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::Gakkel.Swarm.Contracts.V1.Vec3 Position {

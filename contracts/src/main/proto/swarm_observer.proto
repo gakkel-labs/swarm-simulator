@@ -50,7 +50,10 @@ message SearchStatus {
   TargetFoundEvent found_event     = 4; // absent until a drone detects the target
 }
 
-message PlaceTargetRequest  { Vec3 position = 1; }
+message PlaceTargetRequest {
+  Vec3 position = 1; // NED, meters
+}
+
 message PlaceTargetResponse {}
 
 message WorldState {

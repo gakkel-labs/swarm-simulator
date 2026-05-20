@@ -172,7 +172,7 @@ class BoidsRulesTest {
         }
 
         @Test
-        void allRulesActive_producesExpectedSteeringVector() {
+        void steer_twoArg_withNeighbors_producesExpectedVector() {
             // agent at origin, neighbor at (5,0,0) moving up (0,1,0)
             // separation → (-1,0,0)*1.8 = (-1.8, 0,0)
             // alignment  → ( 0,1,0)*1.5 = ( 0.0,1.5,0)

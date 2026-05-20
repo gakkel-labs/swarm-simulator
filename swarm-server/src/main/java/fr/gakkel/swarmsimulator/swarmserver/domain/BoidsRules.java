@@ -107,6 +107,7 @@ public final class BoidsRules {
         double dx = rng.nextDouble(-1, 1);
         double dy = rng.nextDouble(-1, 1);
         double dz = rng.nextDouble(-1, 1);
+        // normalize() returns ZERO if all components are 0 (probability ≈ 0) — silent no-op is acceptable
         return new Vector3D(dx, dy, dz).normalize();
     }
 

@@ -344,7 +344,7 @@ namespace Gakkel.Swarm.Unity
             // Sea floor is at server Y=0 → NED.Down=100 → Unity Y=-100 (100m below surface).
             // Water surface is at Unity Y=0 (NED.Down=0, server Y=100).
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            // Collider kept intentionally — TargetPlacer uses Physics.Raycast against the floor.
+            Destroy(floor.GetComponent<Collider>());
             floor.name = "SeaFloor";
             floor.GetComponent<Renderer>().material = _floorMaterial;
             floor.transform.localScale = new Vector3(10f, 1f, 5f);

@@ -30,7 +30,7 @@ namespace Gakkel.Swarm.Unity
         private void Update()
         {
             if (Mouse.current == null) return;
-            if (!Mouse.current.rightButton.wasPressedThisFrame) return;
+            if (!Mouse.current.leftButton.wasPressedThisFrame) return;
 
             Camera activeCamera = operatorCamera != null ? operatorCamera : Camera.main;
             if (activeCamera == null) return;

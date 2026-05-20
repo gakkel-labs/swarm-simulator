@@ -6,6 +6,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
@@ -26,6 +27,7 @@ public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
     public static final int  TICK_RATE_HZ          = 30;
+    static final double      SENSOR_RADIUS          = 8.0;
     private static final long BOID_RESPAWN_DELAY_MS = 5_000L;
     private static final double RESPAWN_MIN_DIST  = 30.0;
     private static final double DT = 1.0 / TICK_RATE_HZ;
@@ -113,12 +115,26 @@ public class SimulationLoop {
                 }
             }
 
+            checkTargetDetection(agents);
+
             tickCount++;
             if (tickCount % LOG_INTERVAL_TICKS == 0) {
                 logCentroid();
             }
         } finally {
             MDC.remove("simulation_tick");
+        }
+    }
+
+    private void checkTargetDetection(List<Agent> agents) {
+        Target target = world.target();
+        if (target == null || target.isFound()) return;
+        for (Agent agent : agents) {
+            if (agent.position().distanceTo(target.position()) <= SENSOR_RADIUS) {
+                target.markFound(agent.id().toString());
+                LOG.info("Target found by agent {} in {}s", agent.id(), String.format("%.1f", target.foundAtElapsedS()));
+                break;
+            }
         }
     }
 

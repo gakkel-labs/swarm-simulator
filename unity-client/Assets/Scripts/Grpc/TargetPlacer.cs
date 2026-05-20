@@ -4,6 +4,7 @@ using Cysharp.Net.Http;
 using Gakkel.Swarm.Contracts.V1;
 using Grpc.Net.Client;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Gakkel.Swarm.Unity
 {
@@ -27,12 +28,12 @@ namespace Gakkel.Swarm.Unity
 
         private void Update()
         {
-            if (!Input.GetMouseButtonDown(0)) return;
+            if (Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame) return;
 
             Camera activeCamera = operatorCamera != null ? operatorCamera : Camera.main;
             if (activeCamera == null) return;
 
-            Ray ray = activeCamera.ScreenPointToRay(Input.mousePosition);
+            Ray ray = activeCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (!Physics.Raycast(ray, out RaycastHit hit)) return;
 
             Vector3 unityPosition = hit.point;

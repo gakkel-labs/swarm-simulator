@@ -81,7 +81,7 @@ namespace Gakkel.Swarm.Unity
         private void OnWorldStateReceived(WorldState ws)
         {
             visualizer?.Apply(ws);
-            targetRenderer?.Apply(ws.HasSearchStatus ? ws.SearchStatus : null);
+            targetRenderer?.Apply(ws.SearchStatus);
 #if UNITY_EDITOR
             Debug.Log($"[gRPC] WorldState t={ws.TimestampUnixMs} agents={ws.Agents.Count}");
 #endif

@@ -38,7 +38,7 @@ namespace Gakkel.Swarm.Unity
             _sphere.transform.position = NedToUnity(searchStatus.TargetPosition);
             _sphere.SetActive(true);
 
-            if (searchStatus.HasFoundEvent)
+            if (searchStatus.FoundEvent != null)
             {
                 IsFound          = true;
                 FoundByAgentId   = searchStatus.FoundEvent.AgentId;

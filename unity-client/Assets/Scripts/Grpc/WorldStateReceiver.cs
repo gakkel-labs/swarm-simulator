@@ -15,6 +15,7 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private string serverAddress = "http://localhost:50051";
         [SerializeField] private float retryDelaySeconds = 3f;
         [SerializeField] private SwarmVisualizer visualizer;
+        [SerializeField] private TargetRenderer targetRenderer;
 
         private const string ClientId = "unity-client";
 
@@ -80,6 +81,7 @@ namespace Gakkel.Swarm.Unity
         private void OnWorldStateReceived(WorldState ws)
         {
             visualizer?.Apply(ws);
+            targetRenderer?.Apply(ws.HasSearchStatus ? ws.SearchStatus : null);
 #if UNITY_EDITOR
             Debug.Log($"[gRPC] WorldState t={ws.TimestampUnixMs} agents={ws.Agents.Count}");
 #endif

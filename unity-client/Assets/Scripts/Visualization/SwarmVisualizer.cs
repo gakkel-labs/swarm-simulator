@@ -26,11 +26,13 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private bool showVelocityVectors = false;
         [SerializeField] private float velocityVectorScale = 0.67f;
         [SerializeField] private bool showCentroids = false;
+        [SerializeField] private bool showDetectionZones = false;
 
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
         private readonly Dictionary<string, TrailRenderer> _agentTrails = new();
         private readonly Dictionary<string, LineRenderer> _agentVelocityLines = new();
+        private readonly Dictionary<string, GameObject> _agentDetectionSpheres = new();
         private readonly Dictionary<int, GameObject> _groupCentroidSpheres = new();
         private readonly List<GameObject> _obstacles = new();
         private readonly Dictionary<string, Vector3> _agentPositions = new();
@@ -41,8 +43,10 @@ namespace Gakkel.Swarm.Unity
         private Material _mothershipMaterial;
         private Material _floorMaterial;
         private Material _trailMaterial;
+        private Material _isolatedDetectionMaterial;
         private Material[] _groupMaterials;
         private Material[] _groupCentroidMaterials;
+        private Material[] _groupDetectionMaterials;
         private Gradient[] _groupTrailGradients;
         private Gradient _isolatedTrailGradient;
 
@@ -50,25 +54,32 @@ namespace Gakkel.Swarm.Unity
         private Vector3 _centroid;
         private string _blinkAgentId;
         private float _blinkAgentStartTime;
+        private float _sensorRadiusM = 20f;
+
+        private const float DetectionZoneAlpha = 0.08f;
 
         private void Awake()
         {
             var shader = Shader.Find("Universal Render Pipeline/Lit");
             var particleShader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
 
-            _isolatedMaterial   = new Material(shader) { color = Color.gray };
-            _obstacleMaterial   = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
-            _mothershipMaterial = new Material(shader) { color = Color.gray };
-            _floorMaterial      = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
-            _trailMaterial      = new Material(particleShader);
+            _isolatedMaterial      = new Material(shader) { color = Color.gray };
+            _obstacleMaterial      = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
+            _mothershipMaterial    = new Material(shader) { color = Color.gray };
+            _floorMaterial         = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
+            _trailMaterial         = new Material(particleShader);
+            _isolatedDetectionMaterial = MakeTransparentMaterial(shader, new Color(0.5f, 0.5f, 0.5f, DetectionZoneAlpha));
 
             _groupMaterials = new Material[GroupColors.Length];
             _groupCentroidMaterials = new Material[GroupColors.Length];
+            _groupDetectionMaterials = new Material[GroupColors.Length];
             _groupTrailGradients = new Gradient[GroupColors.Length];
             for (int i = 0; i < GroupColors.Length; i++)
             {
                 _groupMaterials[i] = new Material(shader) { color = GroupColors[i] };
                 _groupCentroidMaterials[i] = new Material(particleShader) { color = GroupColors[i] };
+                var c = GroupColors[i];
+                _groupDetectionMaterials[i] = MakeTransparentMaterial(shader, new Color(c.r, c.g, c.b, DetectionZoneAlpha));
                 _groupTrailGradients[i] = MakeTrailGradient(GroupColors[i]);
             }
             _isolatedTrailGradient = MakeTrailGradient(Color.gray);
@@ -77,8 +88,30 @@ namespace Gakkel.Swarm.Unity
             SpawnFloor();
         }
 
+        // URP/Lit needs explicit setup to render transparent: surface type, blend modes, ZWrite off,
+        // keyword toggle, transparent render queue. _BaseColor is the URP-native property (color falls
+        // back to it via name aliasing but we set both for safety).
+        private static Material MakeTransparentMaterial(Shader litShader, Color color)
+        {
+            var mat = new Material(litShader);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 0f);
+            mat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.DisableKeyword("_ALPHAMODULATE_ON");
+            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            mat.SetColor("_BaseColor", color);
+            mat.color = color;
+            return mat;
+        }
+
         public void Apply(WorldState ws)
         {
+            if (ws.SensorRadiusM > 0f) _sensorRadiusM = ws.SensorRadiusM;
             SyncAgents(ws.Agents);
             if (!_obstaclesSpawned && ws.Obstacles.Count > 0)
             {
@@ -129,6 +162,13 @@ namespace Gakkel.Swarm.Unity
                 sphere.SetActive(value);
         }
 
+        public void SetShowDetectionZones(bool value)
+        {
+            showDetectionZones = value;
+            foreach (var sphere in _agentDetectionSpheres.Values)
+                sphere.SetActive(value);
+        }
+
         private static Dictionary<int, int> ComputeGroupSizes(Dictionary<string, int> groupIds)
         {
             var sizes = new Dictionary<int, int>();
@@ -156,6 +196,14 @@ namespace Gakkel.Swarm.Unity
 
                 if (_agentTrails.TryGetValue(agent.Id, out var trail))
                     trail.colorGradient = inGroup ? _groupTrailGradients[groupId % _groupTrailGradients.Length] : _isolatedTrailGradient;
+
+                if (_agentDetectionSpheres.TryGetValue(agent.Id, out var detectionSphere))
+                {
+                    var detectionMat = inGroup
+                        ? _groupDetectionMaterials[groupId % _groupDetectionMaterials.Length]
+                        : _isolatedDetectionMaterial;
+                    detectionSphere.GetComponent<Renderer>().sharedMaterial = detectionMat;
+                }
             }
         }
 
@@ -288,13 +336,27 @@ namespace Gakkel.Swarm.Unity
                     line.useWorldSpace = true;
                     line.enabled = showVelocityVectors;
 
+                    var detectionSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    Destroy(detectionSphere.GetComponent<Collider>());
+                    detectionSphere.name = $"Detection_{shortId}";
+                    var detectionRenderer = detectionSphere.GetComponent<Renderer>();
+                    detectionRenderer.sharedMaterial = _isolatedDetectionMaterial;
+                    detectionRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    float diameter = _sensorRadiusM * 2f;
+                    detectionSphere.transform.localScale = new Vector3(diameter, diameter, diameter);
+                    detectionSphere.SetActive(showDetectionZones);
+
                     _agents[agent.Id] = go;
                     _agentRenderers[agent.Id] = rend;
                     _agentTrails[agent.Id] = trail;
                     _agentVelocityLines[agent.Id] = line;
+                    _agentDetectionSpheres[agent.Id] = detectionSphere;
                 }
 
-                go.transform.position = NedToUnity(agent.PositionXyz);
+                var unityPos = NedToUnity(agent.PositionXyz);
+                go.transform.position = unityPos;
+                if (_agentDetectionSpheres.TryGetValue(agent.Id, out var sphereGo))
+                    sphereGo.transform.position = unityPos;
             }
 
             var toRemove = new List<string>();
@@ -303,6 +365,8 @@ namespace Gakkel.Swarm.Unity
                 if (!activeIds.Contains(id))
                 {
                     Destroy(go);
+                    if (_agentDetectionSpheres.TryGetValue(id, out var sphere))
+                        Destroy(sphere);
                     toRemove.Add(id);
                 }
             }
@@ -312,6 +376,7 @@ namespace Gakkel.Swarm.Unity
                 _agentRenderers.Remove(id);
                 _agentTrails.Remove(id);
                 _agentVelocityLines.Remove(id);
+                _agentDetectionSpheres.Remove(id);
             }
         }
 
@@ -379,8 +444,10 @@ namespace Gakkel.Swarm.Unity
             Destroy(_mothershipMaterial);
             Destroy(_floorMaterial);
             Destroy(_trailMaterial);
+            Destroy(_isolatedDetectionMaterial);
             foreach (var mat in _groupMaterials) Destroy(mat);
             foreach (var mat in _groupCentroidMaterials) Destroy(mat);
+            foreach (var mat in _groupDetectionMaterials) Destroy(mat);
         }
     }
 }

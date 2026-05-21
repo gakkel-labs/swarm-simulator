@@ -6,6 +6,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 import io.gakkel.swarm.contracts.v1.AgentState;
 import io.gakkel.swarm.contracts.v1.AgentType;
 import io.gakkel.swarm.contracts.v1.PredatorState;
@@ -98,7 +99,8 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
 
     WorldState buildWorldState() {
         WorldState.Builder worldStateBuilder = WorldState.newBuilder()
-                .setTimestampUnixMs(System.currentTimeMillis());
+                .setTimestampUnixMs(System.currentTimeMillis())
+                .setSensorRadiusM((float) SimulationConstants.SENSOR_RADIUS_M);
         for (Agent agent : world.agents()) {
             worldStateBuilder.addAgents(toAgentState(agent));
         }

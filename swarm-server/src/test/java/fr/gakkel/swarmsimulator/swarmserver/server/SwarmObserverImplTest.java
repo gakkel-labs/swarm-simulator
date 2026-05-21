@@ -79,6 +79,16 @@ class SwarmObserverImplTest {
     }
 
     @Test
+    void buildWorldState_alwaysIncludesSensorRadius() {
+        // Act
+        WorldState state = impl.buildWorldState();
+
+        // Assert — clients need this to size the detection-zone overlay
+        assertThat(state.getSensorRadiusM())
+                .isEqualTo((float) fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants.SENSOR_RADIUS_M);
+    }
+
+    @Test
     void toAgentState_carrierAgent_mapsToProtoCarrierType() {
         // Arrange
         Agent agent = new Agent(UUID.randomUUID(),

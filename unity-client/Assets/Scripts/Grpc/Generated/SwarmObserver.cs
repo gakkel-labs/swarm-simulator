@@ -40,22 +40,23 @@ namespace Gakkel.Swarm.Contracts.V1 {
             "DWVsYXBzZWRfc2ltX3MYAyABKAISNgoLZm91bmRfZXZlbnQYBCABKAsyIS5n",
             "YWtrZWwuc3dhcm0udjEuVGFyZ2V0Rm91bmRFdmVudCI9ChJQbGFjZVRhcmdl",
             "dFJlcXVlc3QSJwoIcG9zaXRpb24YASABKAsyFS5nYWtrZWwuc3dhcm0udjEu",
-            "VmVjMyIVChNQbGFjZVRhcmdldFJlc3BvbnNlIusBCgpXb3JsZFN0YXRlEhkK",
+            "VmVjMyIVChNQbGFjZVRhcmdldFJlc3BvbnNlIoQCCgpXb3JsZFN0YXRlEhkK",
             "EXRpbWVzdGFtcF91bml4X21zGAEgASgDEisKBmFnZW50cxgCIAMoCzIbLmdh",
             "a2tlbC5zd2FybS52MS5BZ2VudFN0YXRlEiwKCW9ic3RhY2xlcxgDIAMoCzIZ",
             "Lmdha2tlbC5zd2FybS52MS5PYnN0YWNsZRIxCglwcmVkYXRvcnMYBCADKAsy",
             "Hi5nYWtrZWwuc3dhcm0udjEuUHJlZGF0b3JTdGF0ZRI0Cg1zZWFyY2hfc3Rh",
-            "dHVzGAUgASgLMh0uZ2Fra2VsLnN3YXJtLnYxLlNlYXJjaFN0YXR1cyIlChBT",
-            "dWJzY3JpYmVSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCSpxCglBZ2VudFR5",
-            "cGUSGgoWQUdFTlRfVFlQRV9VTlNQRUNJRklFRBAAEhcKE0FHRU5UX1RZUEVf",
-            "RVhQTE9SRVIQARIXChNBR0VOVF9UWVBFX09QRVJBVE9SEAISFgoSQUdFTlRf",
-            "VFlQRV9DQVJSSUVSEAMyaAoNU3dhcm1PYnNlcnZlchJXChNTdWJzY3JpYmVX",
-            "b3JsZFN0YXRlEiEuZ2Fra2VsLnN3YXJtLnYxLlN1YnNjcmliZVJlcXVlc3Qa",
-            "Gy5nYWtrZWwuc3dhcm0udjEuV29ybGRTdGF0ZTABMm0KEVNpbXVsYXRpb25D",
-            "b250cm9sElgKC1BsYWNlVGFyZ2V0EiMuZ2Fra2VsLnN3YXJtLnYxLlBsYWNl",
-            "VGFyZ2V0UmVxdWVzdBokLmdha2tlbC5zd2FybS52MS5QbGFjZVRhcmdldFJl",
-            "c3BvbnNlQjwKHGlvLmdha2tlbC5zd2FybS5jb250cmFjdHMudjFQAaoCGUdh",
-            "a2tlbC5Td2FybS5Db250cmFjdHMuVjFiBnByb3RvMw=="));
+            "dHVzGAUgASgLMh0uZ2Fra2VsLnN3YXJtLnYxLlNlYXJjaFN0YXR1cxIXCg9z",
+            "ZW5zb3JfcmFkaXVzX20YBiABKAIiJQoQU3Vic2NyaWJlUmVxdWVzdBIRCglj",
+            "bGllbnRfaWQYASABKAkqcQoJQWdlbnRUeXBlEhoKFkFHRU5UX1RZUEVfVU5T",
+            "UEVDSUZJRUQQABIXChNBR0VOVF9UWVBFX0VYUExPUkVSEAESFwoTQUdFTlRf",
+            "VFlQRV9PUEVSQVRPUhACEhYKEkFHRU5UX1RZUEVfQ0FSUklFUhADMmgKDVN3",
+            "YXJtT2JzZXJ2ZXISVwoTU3Vic2NyaWJlV29ybGRTdGF0ZRIhLmdha2tlbC5z",
+            "d2FybS52MS5TdWJzY3JpYmVSZXF1ZXN0GhsuZ2Fra2VsLnN3YXJtLnYxLldv",
+            "cmxkU3RhdGUwATJtChFTaW11bGF0aW9uQ29udHJvbBJYCgtQbGFjZVRhcmdl",
+            "dBIjLmdha2tlbC5zd2FybS52MS5QbGFjZVRhcmdldFJlcXVlc3QaJC5nYWtr",
+            "ZWwuc3dhcm0udjEuUGxhY2VUYXJnZXRSZXNwb25zZUI8Chxpby5nYWtrZWwu",
+            "c3dhcm0uY29udHJhY3RzLnYxUAGqAhlHYWtrZWwuU3dhcm0uQ29udHJhY3Rz",
+            "LlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Gakkel.Swarm.Contracts.V1.AgentType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -67,7 +68,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.SearchStatus), global::Gakkel.Swarm.Contracts.V1.SearchStatus.Parser, new[]{ "TargetPlaced", "TargetPosition", "ElapsedSimS", "FoundEvent" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.PlaceTargetRequest), global::Gakkel.Swarm.Contracts.V1.PlaceTargetRequest.Parser, new[]{ "Position" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.PlaceTargetResponse), global::Gakkel.Swarm.Contracts.V1.PlaceTargetResponse.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.WorldState), global::Gakkel.Swarm.Contracts.V1.WorldState.Parser, new[]{ "TimestampUnixMs", "Agents", "Obstacles", "Predators", "SearchStatus" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.WorldState), global::Gakkel.Swarm.Contracts.V1.WorldState.Parser, new[]{ "TimestampUnixMs", "Agents", "Obstacles", "Predators", "SearchStatus", "SensorRadiusM" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.SubscribeRequest), global::Gakkel.Swarm.Contracts.V1.SubscribeRequest.Parser, new[]{ "ClientId" }, null, null, null, null)
           }));
     }
@@ -2215,6 +2216,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       obstacles_ = other.obstacles_.Clone();
       predators_ = other.predators_.Clone();
       searchStatus_ = other.searchStatus_ != null ? other.searchStatus_.Clone() : null;
+      sensorRadiusM_ = other.sensorRadiusM_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2281,6 +2283,21 @@ namespace Gakkel.Swarm.Contracts.V1 {
       }
     }
 
+    /// <summary>Field number for the "sensor_radius_m" field.</summary>
+    public const int SensorRadiusMFieldNumber = 6;
+    private float sensorRadiusM_;
+    /// <summary>
+    /// detection radius shared by all agents, meters
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public float SensorRadiusM {
+      get { return sensorRadiusM_; }
+      set {
+        sensorRadiusM_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -2301,6 +2318,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       if(!obstacles_.Equals(other.obstacles_)) return false;
       if(!predators_.Equals(other.predators_)) return false;
       if (!object.Equals(SearchStatus, other.SearchStatus)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(SensorRadiusM, other.SensorRadiusM)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2313,6 +2331,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       hash ^= obstacles_.GetHashCode();
       hash ^= predators_.GetHashCode();
       if (searchStatus_ != null) hash ^= SearchStatus.GetHashCode();
+      if (SensorRadiusM != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(SensorRadiusM);
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2342,6 +2361,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
         output.WriteRawTag(42);
         output.WriteMessage(SearchStatus);
       }
+      if (SensorRadiusM != 0F) {
+        output.WriteRawTag(53);
+        output.WriteFloat(SensorRadiusM);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2363,6 +2386,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
         output.WriteRawTag(42);
         output.WriteMessage(SearchStatus);
       }
+      if (SensorRadiusM != 0F) {
+        output.WriteRawTag(53);
+        output.WriteFloat(SensorRadiusM);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -2381,6 +2408,9 @@ namespace Gakkel.Swarm.Contracts.V1 {
       size += predators_.CalculateSize(_repeated_predators_codec);
       if (searchStatus_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(SearchStatus);
+      }
+      if (SensorRadiusM != 0F) {
+        size += 1 + 4;
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -2405,6 +2435,9 @@ namespace Gakkel.Swarm.Contracts.V1 {
           SearchStatus = new global::Gakkel.Swarm.Contracts.V1.SearchStatus();
         }
         SearchStatus.MergeFrom(other.SearchStatus);
+      }
+      if (other.SensorRadiusM != 0F) {
+        SensorRadiusM = other.SensorRadiusM;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -2448,6 +2481,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
             input.ReadMessage(SearchStatus);
             break;
           }
+          case 53: {
+            SensorRadiusM = input.ReadFloat();
+            break;
+          }
         }
       }
     #endif
@@ -2488,6 +2525,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
               SearchStatus = new global::Gakkel.Swarm.Contracts.V1.SearchStatus();
             }
             input.ReadMessage(SearchStatus);
+            break;
+          }
+          case 53: {
+            SensorRadiusM = input.ReadFloat();
             break;
           }
         }

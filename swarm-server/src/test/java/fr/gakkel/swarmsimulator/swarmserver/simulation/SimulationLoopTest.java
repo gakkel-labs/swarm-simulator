@@ -6,7 +6,6 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
-import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.BeforeEach;
@@ -340,9 +339,9 @@ class SimulationLoopTest {
             testWorld.setPredator(predator);
 
             ScheduledExecutorService mockExecutor = mock(ScheduledExecutorService.class);
-            var loop = new SimulationLoop(testWorld, CONFIG, DIAGNOSTICS, mockExecutor);
+            var testLoop = new SimulationLoop(testWorld, CONFIG, DIAGNOSTICS, mockExecutor);
 
-            loop.tick();
+            testLoop.tick();
 
             // agent eaten — world is empty
             assertEquals(0, testWorld.agentCount());
@@ -373,7 +372,7 @@ class SimulationLoopTest {
         void agentWithinSensorRadius_marksTargetFound() {
             Vector3D targetPosition = new Vector3D(50, -50, 25);
             detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            Agent nearAgent = agent(new Vector3D(50 + SimulationLoop.SENSOR_RADIUS - 1, -50, 25));
+            Agent nearAgent = agent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M - 1, -50, 25));
             detectionWorld.addAgent(nearAgent);
 
             detectionLoop.tick();
@@ -386,7 +385,7 @@ class SimulationLoopTest {
         void agentBeyondSensorRadius_doesNotMarkFound() {
             Vector3D targetPosition = new Vector3D(50, -50, 25);
             detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationLoop.SENSOR_RADIUS + 1, -50, 25)));
+            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M + 1, -50, 25)));
 
             detectionLoop.tick();
 
@@ -397,7 +396,7 @@ class SimulationLoopTest {
         void agentExactlyAtSensorRadius_marksTargetFound() {
             Vector3D targetPosition = new Vector3D(50, -50, 25);
             detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationLoop.SENSOR_RADIUS, -50, 25)));
+            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M, -50, 25)));
 
             detectionLoop.tick();
 

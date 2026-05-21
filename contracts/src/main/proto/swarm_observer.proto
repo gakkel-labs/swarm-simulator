@@ -62,6 +62,7 @@ message WorldState {
   repeated Obstacle        obstacles         = 3;
   repeated PredatorState   predators         = 4;
   SearchStatus             search_status     = 5;
+  float                    sensor_radius_m   = 6; // detection radius shared by all agents, meters
 }
 
 // Sent once by the client to open the stream.

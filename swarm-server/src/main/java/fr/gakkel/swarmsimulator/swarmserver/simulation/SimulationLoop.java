@@ -27,7 +27,6 @@ public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
     public static final int  TICK_RATE_HZ          = 30;
-    static final double      SENSOR_RADIUS          = 20.0;
     private static final long BOID_RESPAWN_DELAY_MS = 5_000L;
     private static final double RESPAWN_MIN_DIST  = 30.0;
     private static final double DT = 1.0 / TICK_RATE_HZ;
@@ -130,9 +129,13 @@ public class SimulationLoop {
         Target target = world.target();
         if (target == null || target.isFound()) return;
         for (Agent agent : agents) {
-            if (agent.position().distanceTo(target.position()) <= SENSOR_RADIUS) {
+            if (agent.position().distanceTo(target.position()) <= SimulationConstants.SENSOR_RADIUS_M) {
                 target.markFound(agent.id().toString());
-                LOG.info("Target found by agent {} in {}s", agent.id(), String.format("%.1f", target.foundAtElapsedS()));
+                LOG.atInfo()
+                   .setMessage("Target found by agent {} in {}s")
+                   .addArgument(agent.id())
+                   .addArgument(() -> String.format("%.1f", target.foundAtElapsedS()))
+                   .log();
                 break;
             }
         }

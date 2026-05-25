@@ -44,6 +44,7 @@ namespace Gakkel.Swarm.Unity
             {
                 _sphere.SetActive(false);
                 IsPlaced = false;
+                IsFound  = false;
                 return;
             }
 
@@ -52,7 +53,14 @@ namespace Gakkel.Swarm.Unity
             _sphere.transform.position = NedToUnity(searchStatus.TargetPosition);
             _sphere.SetActive(true);
 
-            if (searchStatus.FoundEvent != null && !IsFound)
+            if (searchStatus.FoundEvent == null)
+            {
+                IsFound        = false;
+                FoundByAgentId = null;
+                return;
+            }
+
+            if (!IsFound)
             {
                 IsFound          = true;
                 FoundByAgentId   = searchStatus.FoundEvent.AgentId;

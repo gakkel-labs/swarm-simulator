@@ -42,25 +42,18 @@ public class SimulationLoop {
     private final World world;
     private final BoidsRules rules;
     private final BoidsConfig config;
-    private final DiagnosticsConfig diagnosticsConfig;
+    private final FlockingDiagnostician diagnostician;
     private final ScheduledExecutorService executor;
     private final Random rng = new Random();
 
-    // All fields below are written exclusively on the sim-loop thread (via tick()).
-    // Add synchronisation before exposing any of them to an external observer (e.g. gRPC handler).
     private int tickCount = 0;
-    private Vector3D lastCentroid = null;
-    private double previousPositionStandardDeviation = 0;
-    private int consecutiveStandardDeviationIncreases = 0;
-    private final List<Double> recentSigmas = new ArrayList<>();
-    private volatile boolean flockingConfirmed = false; // volatile: may be polled by future observers
 
     public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
                           ScheduledExecutorService executor) {
         this.world = Objects.requireNonNull(world, "world");
         this.config = Objects.requireNonNull(config, "config");
-        this.diagnosticsConfig = Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig");
         this.rules = new BoidsRules(config);
+        this.diagnostician = new FlockingDiagnostician(config, Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig"));
         this.executor = Objects.requireNonNull(executor, "executor");
     }
 
@@ -118,7 +111,9 @@ public class SimulationLoop {
 
             tickCount++;
             if (tickCount % LOG_INTERVAL_TICKS == 0) {
-                logCentroid();
+                int elapsedSeconds = tickCount / TICK_RATE_HZ;
+                double intervalSeconds = (double) LOG_INTERVAL_TICKS / TICK_RATE_HZ;
+                diagnostician.record(elapsedSeconds, intervalSeconds, world);
             }
         } finally {
             MDC.remove("simulation_tick");
@@ -165,46 +160,6 @@ public class SimulationLoop {
         return new Vector3D(DEFAULT_WORLD_WIDTH / 2, -DEFAULT_WORLD_HEIGHT / 2, DEFAULT_WORLD_DEPTH / 2);
     }
 
-    private void logCentroid() {
-        List<Agent> agents = world.agents();
-        if (agents.isEmpty()) return;
-
-        Vector3D centroid = computeCentroid(agents);
-        double positionStandardDeviation = computePositionStandardDeviation(agents, centroid);
-        int elapsed = tickCount / TICK_RATE_HZ;
-        double standardDeviationRounded = Math.round(positionStandardDeviation * 10) / 10.0;
-
-        if (lastCentroid == null) {
-            LOG.info("t={}s | premier releve | σ={} u", elapsed, standardDeviationRounded);
-        } else {
-            double intervalSeconds = (double) LOG_INTERVAL_TICKS / TICK_RATE_HZ;
-            double drift = centroid.distanceTo(lastCentroid) / intervalSeconds;
-            double driftRounded = Math.round(drift * 100) / 100.0;
-            LOG.info("t={}s | drift={} u/s | σ={} u", elapsed, driftRounded, standardDeviationRounded);
-            checkAlerts(elapsed, drift, driftRounded, positionStandardDeviation, standardDeviationRounded);
-            checkFlocking(elapsed, positionStandardDeviation, standardDeviationRounded);
-        }
-
-        if (!world.obstacles().isEmpty()) {
-            logObstacleAvoidance(elapsed);
-        }
-
-        lastCentroid = centroid;
-        previousPositionStandardDeviation = positionStandardDeviation;
-    }
-
-    private void logObstacleAvoidance(int elapsed) {
-        List<Agent> agents = world.agents();
-        long penetrations = countAgentsInsideObstacles(agents, world.obstacles());
-        double gap = minObstacleGap(agents, world.obstacles());
-        double gapRounded = Math.round(gap * 10) / 10.0;
-        if (penetrations > 0) {
-            LOG.warn("t={}s | ALERTE {} agent(s) dans obstacle (gap min={} u)", elapsed, penetrations, gapRounded);
-        } else {
-            LOG.info("t={}s | min obstacle gap={} u", elapsed, gapRounded);
-        }
-    }
-
     static Vector3D computeCentroid(List<Agent> agents) {
         Vector3D sum = Vector3D.ZERO;
         for (Agent a : agents) sum = sum.add(a.position());
@@ -237,61 +192,6 @@ public class SimulationLoop {
             sumSq += dist * dist;
         }
         return Math.sqrt(sumSq / agents.size());
-    }
-
-    private void checkAlerts(int elapsed, double drift, double driftRounded, double positionStandardDeviation, double standardDeviationRounded) {
-        if (drift < config.maxSpeed() * diagnosticsConfig.immobileThresholdFraction()) {
-            LOG.warn("t={}s | ALERTE essaim immobile (drift={} u/s)", elapsed, driftRounded);
-        }
-
-        if (!flockingConfirmed) {
-            double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth()))
-                    * diagnosticsConfig.dispersalLimitFraction();
-            if (positionStandardDeviation > standardDeviationLimit) {
-                LOG.warn("t={}s | ALERTE essaim disperse (σ={} u > {} u)", elapsed, standardDeviationRounded, (int) standardDeviationLimit);
-            }
-        }
-
-        if (positionStandardDeviation > previousPositionStandardDeviation) {
-            consecutiveStandardDeviationIncreases++;
-            if (consecutiveStandardDeviationIncreases >= diagnosticsConfig.stabilitySamples()) {
-                LOG.warn("t={}s | ALERTE divergence ({} relevés en hausse)", elapsed, consecutiveStandardDeviationIncreases);
-            }
-        } else {
-            consecutiveStandardDeviationIncreases = 0;
-        }
-
-        long frozenCount = world.agents().stream()
-                .filter(a -> a.velocity().magnitude() < config.maxSpeed() * diagnosticsConfig.frozenThresholdFraction())
-                .count();
-        if (frozenCount > 0) {
-            LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsed, frozenCount);
-        }
-    }
-
-    private void checkFlocking(int elapsed, double positionStandardDeviation, double standardDeviationRounded) {
-        if (flockingConfirmed) {
-            double criticalLimit = Math.min(world.width(), Math.min(world.height(), world.depth()))
-                    * diagnosticsConfig.flockingLostFraction();
-            if (positionStandardDeviation > criticalLimit) {
-                flockingConfirmed = false;
-                recentSigmas.clear();
-                LOG.warn("t={}s | flocking lost — σ={} u depasse seuil critique ({} u)",
-                        elapsed, standardDeviationRounded, (int) criticalLimit);
-            }
-            return;
-        }
-        recentSigmas.add(positionStandardDeviation);
-        int samples = diagnosticsConfig.stabilitySamples();
-        if (recentSigmas.size() > samples) recentSigmas.removeFirst();
-        if (recentSigmas.size() == samples) {
-            double max = recentSigmas.stream().mapToDouble(Double::doubleValue).max().orElse(0);
-            double min = recentSigmas.stream().mapToDouble(Double::doubleValue).min().orElse(0);
-            if (max > 0 && (max - min) / max < diagnosticsConfig.stabilityTolerance()) {
-                flockingConfirmed = true;
-                LOG.info("t={}s | flocking confirmed — σ stable à {} u", elapsed, standardDeviationRounded);
-            }
-        }
     }
 
     static Vector3D clampSpeed(Vector3D velocity, double maxSpeed) {

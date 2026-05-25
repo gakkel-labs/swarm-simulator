@@ -2,6 +2,7 @@ package fr.gakkel.swarmsimulator.swarmserver.domain;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 public final class BoidsRules {
 
@@ -9,9 +10,15 @@ public final class BoidsRules {
     private static final double OBSTACLE_FALLOFF = 5.0;
 
     private final BoidsConfig config;
+    private final Random rng;
 
     public BoidsRules(BoidsConfig config) {
+        this(config, new Random());
+    }
+
+    BoidsRules(BoidsConfig config, Random rng) {
         this.config = Objects.requireNonNull(config, "config");
+        this.rng    = Objects.requireNonNull(rng, "rng");
     }
 
     public Vector3D separation(Agent agent, List<Agent> neighbors) {
@@ -96,6 +103,14 @@ public final class BoidsRules {
         return total;
     }
 
+    public Vector3D wander() {
+        double dx = rng.nextDouble(-1, 1);
+        double dy = rng.nextDouble(-1, 1);
+        double dz = rng.nextDouble(-1, 1);
+        // normalize() returns ZERO if all components are 0 (probability ≈ 0) — silent no-op is acceptable
+        return new Vector3D(dx, dy, dz).normalize();
+    }
+
     // Inverse-square repulsion (same pattern as obstacleAvoidance: not normalised so force grows
     // sharply as predator closes in, giving a reactive flee rather than a constant drift).
     public Vector3D predatorFlee(Agent agent, Predator predator) {
@@ -118,6 +133,7 @@ public final class BoidsRules {
         if (world.predator() != null) {
             result = result.add(predatorFlee(agent, world.predator()).scale(config.threatFleeWeight()));
         }
+        result = result.add(wander().scale(config.wanderWeight()));
         return result;
     }
 }

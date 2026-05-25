@@ -3,13 +3,17 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 import io.gakkel.swarm.contracts.v1.AgentState;
 import io.gakkel.swarm.contracts.v1.AgentType;
 import io.gakkel.swarm.contracts.v1.PredatorState;
+import io.gakkel.swarm.contracts.v1.SearchStatus;
 import io.gakkel.swarm.contracts.v1.SubscribeRequest;
 import io.gakkel.swarm.contracts.v1.SwarmObserverGrpc;
+import io.gakkel.swarm.contracts.v1.TargetFoundEvent;
 import io.gakkel.swarm.contracts.v1.Vec3;
 import io.gakkel.swarm.contracts.v1.WorldState;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -94,19 +98,34 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     }
 
     WorldState buildWorldState() {
-        WorldState.Builder builder = WorldState.newBuilder()
-                .setTimestampUnixMs(System.currentTimeMillis());
+        WorldState.Builder worldStateBuilder = WorldState.newBuilder()
+                .setTimestampUnixMs(System.currentTimeMillis())
+                .setSensorRadiusM((float) SimulationConstants.SENSOR_RADIUS_M);
         for (Agent agent : world.agents()) {
-            builder.addAgents(toAgentState(agent));
+            worldStateBuilder.addAgents(toAgentState(agent));
         }
         for (Obstacle obstacle : world.obstacles()) {
-            builder.addObstacles(toProtoObstacle(obstacle));
+            worldStateBuilder.addObstacles(toProtoObstacle(obstacle));
         }
         Predator predator = world.predator();
         if (predator != null) {
-            builder.addPredators(toPredatorState(predator));
+            worldStateBuilder.addPredators(toPredatorState(predator));
         }
-        return builder.build();
+        Target target = world.target();
+        if (target != null) {
+            SearchStatus.Builder statusBuilder = SearchStatus.newBuilder()
+                    .setTargetPlaced(true)
+                    .setTargetPosition(toVec3(target.position()))
+                    .setElapsedSimS((float) target.elapsedSeconds());
+            if (target.isFound()) {
+                statusBuilder.setFoundEvent(TargetFoundEvent.newBuilder()
+                        .setAgentId(target.foundByAgentId())
+                        .setElapsedSimS((float) target.foundAtElapsedS())
+                        .build());
+            }
+            worldStateBuilder.setSearchStatus(statusBuilder.build());
+        }
+        return worldStateBuilder.build();
     }
 
     PredatorState toPredatorState(Predator predator) {

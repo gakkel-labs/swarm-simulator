@@ -69,7 +69,7 @@ namespace Gakkel.Swarm.Unity
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            if (mouse.leftButton.isPressed)
+            if (mouse.rightButton.isPressed)
             {
                 var delta = mouse.delta.ReadValue();
                 _yaw   += delta.x * mouseSensitivity;
@@ -95,7 +95,7 @@ namespace Gakkel.Swarm.Unity
             var mouse = Mouse.current;
             if (mouse != null)
             {
-                if (mouse.leftButton.isPressed)
+                if (mouse.rightButton.isPressed)
                 {
                     var delta = mouse.delta.ReadValue();
                     _freeYaw   += delta.x * mouseSensitivity;

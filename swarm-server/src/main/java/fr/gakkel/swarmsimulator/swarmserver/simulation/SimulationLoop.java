@@ -6,6 +6,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
@@ -113,12 +114,30 @@ public class SimulationLoop {
                 }
             }
 
+            checkTargetDetection(agents);
+
             tickCount++;
             if (tickCount % LOG_INTERVAL_TICKS == 0) {
                 logCentroid();
             }
         } finally {
             MDC.remove("simulation_tick");
+        }
+    }
+
+    private void checkTargetDetection(List<Agent> agents) {
+        Target target = world.target();
+        if (target == null || target.isFound()) return;
+        for (Agent agent : agents) {
+            if (agent.position().distanceTo(target.position()) <= SimulationConstants.SENSOR_RADIUS_M) {
+                target.markFound(agent.id().toString());
+                LOG.atInfo()
+                   .setMessage("Target found by agent {} in {}s")
+                   .addArgument(agent.id())
+                   .addArgument(() -> String.format("%.1f", target.foundAtElapsedS()))
+                   .log();
+                break;
+            }
         }
     }
 

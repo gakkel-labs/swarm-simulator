@@ -13,6 +13,7 @@ public final class World {
     private final List<Agent> agents;
     private final List<Obstacle> obstacles;
     private volatile Predator predator;
+    private volatile Target target;
 
     public World(double width, double height, double depth) {
         if (width <= 0 || height <= 0 || depth <= 0) {
@@ -58,6 +59,9 @@ public final class World {
 
     public Predator predator() { return predator; }
     public void setPredator(Predator predator) { this.predator = predator; }
+
+    public Target target() { return target; }
+    public void setTarget(Target newTarget) { this.target = newTarget; }
 
     // squared-distance filter avoids sqrt in the Boids hot loop
     public List<Agent> neighbors(Agent agent, double radius) {

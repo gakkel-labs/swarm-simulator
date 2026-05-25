@@ -7,7 +7,7 @@ namespace Gakkel.Swarm.Unity
     public class SwarmVisualizer : MonoBehaviour
     {
         [SerializeField] private float groupingRadius = 15f;
-        [SerializeField] private float obstacleHeightM = 5f;
+        [SerializeField] private float obstacleHeightMetres = 5f;
         [SerializeField] private PredatorRenderer predatorRenderer;
 
         private static readonly Color[] GroupColors =
@@ -26,48 +26,63 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private bool showVelocityVectors = false;
         [SerializeField] private float velocityVectorScale = 0.67f;
         [SerializeField] private bool showCentroids = false;
+        [SerializeField] private bool showDetectionZones = false;
 
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
         private readonly Dictionary<string, TrailRenderer> _agentTrails = new();
         private readonly Dictionary<string, LineRenderer> _agentVelocityLines = new();
+        private readonly Dictionary<string, GameObject> _agentDetectionSpheres = new();
+        private readonly Dictionary<string, Renderer> _agentDetectionRenderers = new();
         private readonly Dictionary<int, GameObject> _groupCentroidSpheres = new();
         private readonly List<GameObject> _obstacles = new();
         private readonly Dictionary<string, Vector3> _agentPositions = new();
-        private readonly Vector3[] _velocityLinePositions = new Vector3[5];
+        private readonly Vector3[] _velocityLinePositions = new Vector3[VelocityArrowPointCount];
 
         private Material _isolatedMaterial;
         private Material _obstacleMaterial;
         private Material _mothershipMaterial;
         private Material _floorMaterial;
         private Material _trailMaterial;
+        private Material _isolatedDetectionMaterial;
         private Material[] _groupMaterials;
         private Material[] _groupCentroidMaterials;
+        private Material[] _groupDetectionMaterials;
         private Gradient[] _groupTrailGradients;
         private Gradient _isolatedTrailGradient;
 
         private bool _obstaclesSpawned;
         private Vector3 _centroid;
+        private string _blinkAgentId;
+        private float _blinkAgentStartTime;
+        private float _sensorRadiusMetres = 20f;
+
+        private const float DetectionZoneAlpha = 0.08f;
+        private const int VelocityArrowPointCount = 5;
 
         private void Awake()
         {
             var shader = Shader.Find("Universal Render Pipeline/Lit");
             var particleShader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
 
-            _isolatedMaterial   = new Material(shader) { color = Color.gray };
-            _obstacleMaterial   = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
-            _mothershipMaterial = new Material(shader) { color = Color.gray };
-            _floorMaterial      = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
-            _trailMaterial      = new Material(particleShader);
+            _isolatedMaterial      = new Material(shader) { color = Color.gray };
+            _obstacleMaterial      = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
+            _mothershipMaterial    = new Material(shader) { color = Color.gray };
+            _floorMaterial         = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
+            _trailMaterial         = new Material(particleShader);
+            _isolatedDetectionMaterial = MakeTransparentMaterial(shader, new Color(0.5f, 0.5f, 0.5f, DetectionZoneAlpha));
 
-            _groupMaterials = new Material[GroupColors.Length];
-            _groupCentroidMaterials = new Material[GroupColors.Length];
-            _groupTrailGradients = new Gradient[GroupColors.Length];
+            _groupMaterials          = new Material[GroupColors.Length];
+            _groupCentroidMaterials  = new Material[GroupColors.Length];
+            _groupDetectionMaterials = new Material[GroupColors.Length];
+            _groupTrailGradients     = new Gradient[GroupColors.Length];
             for (int i = 0; i < GroupColors.Length; i++)
             {
-                _groupMaterials[i] = new Material(shader) { color = GroupColors[i] };
+                _groupMaterials[i]         = new Material(shader) { color = GroupColors[i] };
                 _groupCentroidMaterials[i] = new Material(particleShader) { color = GroupColors[i] };
-                _groupTrailGradients[i] = MakeTrailGradient(GroupColors[i]);
+                var groupColor = GroupColors[i];
+                _groupDetectionMaterials[i] = MakeTransparentMaterial(shader, new Color(groupColor.r, groupColor.g, groupColor.b, DetectionZoneAlpha));
+                _groupTrailGradients[i]    = MakeTrailGradient(GroupColors[i]);
             }
             _isolatedTrailGradient = MakeTrailGradient(Color.gray);
 
@@ -75,29 +90,63 @@ namespace Gakkel.Swarm.Unity
             SpawnFloor();
         }
 
-        public void Apply(WorldState ws)
+        // URP/Lit needs explicit setup to render transparent: surface type, blend modes, ZWrite off,
+        // keyword toggle, transparent render queue. _BaseColor is the URP-native property (color falls
+        // back to it via name aliasing but we set both for safety).
+        private static Material MakeTransparentMaterial(Shader litShader, Color color)
         {
-            SyncAgents(ws.Agents);
-            if (!_obstaclesSpawned && ws.Obstacles.Count > 0)
+            var material = new Material(litShader);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.DisableKeyword("_ALPHAMODULATE_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            material.SetColor("_BaseColor", color);
+            material.color = color;
+            return material;
+        }
+
+        public void Apply(WorldState worldState)
+        {
+            if (worldState.SensorRadiusM > 0f) _sensorRadiusMetres = worldState.SensorRadiusM;
+            SyncAgents(worldState.Agents);
+            if (!_obstaclesSpawned && worldState.Obstacles.Count > 0)
             {
-                SpawnObstacles(ws.Obstacles);
+                SpawnObstacles(worldState.Obstacles);
                 _obstaclesSpawned = true;
             }
             UpdateCentroid();
 
             _agentPositions.Clear();
-            foreach (var a in ws.Agents) _agentPositions[a.Id] = NedToUnity(a.PositionXyz);
-            var groupIds = GroupDetector.Compute(_agentPositions, groupingRadius);
+            foreach (var agentState in worldState.Agents)
+                _agentPositions[agentState.Id] = CoordinateUtils.NedToUnity(agentState.PositionXyz);
+            var groupIds   = GroupDetector.Compute(_agentPositions, groupingRadius);
             var groupSizes = ComputeGroupSizes(groupIds);
 
-            ColorByGroup(ws.Agents, groupIds, groupSizes);
+            ColorByGroup(worldState.Agents, groupIds, groupSizes);
             UpdateGroupCentroids(_agentPositions, groupIds, groupSizes);
-            UpdateVelocityVectors(ws.Agents);
-            predatorRenderer?.Apply(ws.Predators);
+            UpdateVelocityVectors(worldState.Agents);
+            predatorRenderer?.Apply(worldState.Predators);
+
+            if (worldState.SearchStatus != null)
+            {
+                if (worldState.SearchStatus.FoundEvent == null)
+                    _blinkAgentId = null;
+                else if (_blinkAgentId == null)
+                {
+                    _blinkAgentId        = worldState.SearchStatus.FoundEvent.AgentId;
+                    _blinkAgentStartTime = Time.time;
+                }
+            }
         }
 
         public Vector3 GetCentroid() => _centroid;
-        public int AgentCount => _agents.Count;
+        public int AgentCount    => _agents.Count;
         public int ObstacleCount => _obstacles.Count;
 
         public void SetShowTrails(bool value)
@@ -110,135 +159,151 @@ namespace Gakkel.Swarm.Unity
         public void SetShowVelocityVectors(bool value)
         {
             showVelocityVectors = value;
-            foreach (var line in _agentVelocityLines.Values)
-                line.enabled = value;
+            foreach (var velocityLine in _agentVelocityLines.Values)
+                velocityLine.enabled = value;
         }
 
         public void SetShowCentroids(bool value)
         {
             showCentroids = value;
-            foreach (var sphere in _groupCentroidSpheres.Values)
-                sphere.SetActive(value);
+            foreach (var centroidSphere in _groupCentroidSpheres.Values)
+                centroidSphere.SetActive(value);
+        }
+
+        public void SetShowDetectionZones(bool value)
+        {
+            showDetectionZones = value;
+            foreach (var detectionSphere in _agentDetectionSpheres.Values)
+                detectionSphere.SetActive(value);
         }
 
         private static Dictionary<int, int> ComputeGroupSizes(Dictionary<string, int> groupIds)
         {
-            var sizes = new Dictionary<int, int>();
-            foreach (var g in groupIds.Values)
+            var groupSizes = new Dictionary<int, int>();
+            foreach (var groupId in groupIds.Values)
             {
-                sizes.TryGetValue(g, out int count);
-                sizes[g] = count + 1;
+                groupSizes.TryGetValue(groupId, out int count);
+                groupSizes[groupId] = count + 1;
             }
-            return sizes;
+            return groupSizes;
         }
 
         private void ColorByGroup(IList<AgentState> agents, Dictionary<string, int> groupIds, Dictionary<int, int> groupSizes)
         {
             foreach (var agent in agents)
             {
-                if (!_agentRenderers.TryGetValue(agent.Id, out var rend)) continue;
-                int g = groupIds[agent.Id];
-                bool inGroup = groupSizes[g] > 1;
-                rend.material = inGroup ? _groupMaterials[g % _groupMaterials.Length] : _isolatedMaterial;
+                if (!_agentRenderers.TryGetValue(agent.Id, out var agentRenderer)) continue;
+                int groupId  = groupIds[agent.Id];
+                bool inGroup = groupSizes[groupId] > 1;
+                Color baseColor = inGroup ? GroupColors[groupId % GroupColors.Length] : Color.gray;
+
+                if (agent.Id == _blinkAgentId)
+                    agentRenderer.material.color = TargetRenderer.ComputeBlinkColor(baseColor, _blinkAgentStartTime);
+                else
+                    agentRenderer.material = inGroup ? _groupMaterials[groupId % _groupMaterials.Length] : _isolatedMaterial;
 
                 if (_agentTrails.TryGetValue(agent.Id, out var trail))
-                    trail.colorGradient = inGroup ? _groupTrailGradients[g % _groupTrailGradients.Length] : _isolatedTrailGradient;
+                    trail.colorGradient = inGroup ? _groupTrailGradients[groupId % _groupTrailGradients.Length] : _isolatedTrailGradient;
+
+                if (_agentDetectionRenderers.TryGetValue(agent.Id, out var detectionRenderer))
+                {
+                    detectionRenderer.sharedMaterial = inGroup
+                        ? _groupDetectionMaterials[groupId % _groupDetectionMaterials.Length]
+                        : _isolatedDetectionMaterial;
+                }
             }
         }
 
         private void UpdateGroupCentroids(Dictionary<string, Vector3> positions, Dictionary<string, int> groupIds, Dictionary<int, int> groupSizes)
         {
             var groupPositionSums = new Dictionary<int, Vector3>();
-            foreach (var (id, pos) in positions)
+            foreach (var (agentId, agentPosition) in positions)
             {
-                int g = groupIds[id];
-                if (groupSizes[g] <= 1) continue;
-                groupPositionSums.TryGetValue(g, out var sum);
-                groupPositionSums[g] = sum + pos;
+                int groupId = groupIds[agentId];
+                if (groupSizes[groupId] <= 1) continue;
+                groupPositionSums.TryGetValue(groupId, out var positionSum);
+                groupPositionSums[groupId] = positionSum + agentPosition;
             }
 
             var activeGroups = new HashSet<int>();
-            foreach (var (g, sum) in groupPositionSums)
+            foreach (var (groupId, positionSum) in groupPositionSums)
             {
-                activeGroups.Add(g);
-                var centroidPos = sum / groupSizes[g];
+                activeGroups.Add(groupId);
+                var centroidPosition = positionSum / groupSizes[groupId];
 
-                if (!_groupCentroidSpheres.TryGetValue(g, out var marker))
+                if (!_groupCentroidSpheres.TryGetValue(groupId, out var marker))
                 {
-                    marker = CreateCentroidCross(g);
-                    _groupCentroidSpheres[g] = marker;
+                    marker = CreateCentroidCross(groupId);
+                    _groupCentroidSpheres[groupId] = marker;
                 }
 
-                marker.transform.position = centroidPos;
+                marker.transform.position = centroidPosition;
                 marker.SetActive(showCentroids);
             }
 
-            var toRemove = new List<int>();
-            foreach (var g in _groupCentroidSpheres.Keys)
-                if (!activeGroups.Contains(g)) toRemove.Add(g);
-            foreach (var g in toRemove)
+            var groupsToRemove = new List<int>();
+            foreach (var groupId in _groupCentroidSpheres.Keys)
+                if (!activeGroups.Contains(groupId)) groupsToRemove.Add(groupId);
+            foreach (var groupId in groupsToRemove)
             {
-                Destroy(_groupCentroidSpheres[g]);
-                _groupCentroidSpheres.Remove(g);
+                Destroy(_groupCentroidSpheres[groupId]);
+                _groupCentroidSpheres.Remove(groupId);
             }
         }
 
-        private GameObject CreateCentroidCross(int g)
+        private GameObject CreateCentroidCross(int groupIndex)
         {
-            var root = new GameObject($"Centroid_G{g}");
-            var mat = _groupCentroidMaterials[g % _groupCentroidMaterials.Length];
+            var root = new GameObject($"Centroid_G{groupIndex}");
+            var centroidMaterial = _groupCentroidMaterials[groupIndex % _groupCentroidMaterials.Length];
             float armHalfLength = 1f;
-            AddCrossArm(root, mat, -Vector3.right   * armHalfLength, Vector3.right   * armHalfLength, "Arm_X");
-            AddCrossArm(root, mat, -Vector3.up      * armHalfLength, Vector3.up      * armHalfLength, "Arm_Y");
-            AddCrossArm(root, mat, -Vector3.forward * armHalfLength, Vector3.forward * armHalfLength, "Arm_Z");
+            AddCrossArm(root, centroidMaterial, -Vector3.right   * armHalfLength, Vector3.right   * armHalfLength, "Arm_X");
+            AddCrossArm(root, centroidMaterial, -Vector3.up      * armHalfLength, Vector3.up      * armHalfLength, "Arm_Y");
+            AddCrossArm(root, centroidMaterial, -Vector3.forward * armHalfLength, Vector3.forward * armHalfLength, "Arm_Z");
             return root;
         }
 
-        private static void AddCrossArm(GameObject parent, Material mat, Vector3 from, Vector3 to, string armName)
+        private static void AddCrossArm(GameObject parent, Material material, Vector3 from, Vector3 to, string armName)
         {
             var child = new GameObject(armName);
             child.transform.SetParent(parent.transform, false);
-            var lr = child.AddComponent<LineRenderer>();
-            lr.positionCount = 2;
-            lr.SetPosition(0, from);
-            lr.SetPosition(1, to);
-            lr.startWidth = lr.endWidth = 0.2f;
-            lr.material = mat;
-            lr.useWorldSpace = false;
-            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var lineRenderer = child.AddComponent<LineRenderer>();
+            lineRenderer.positionCount = 2;
+            lineRenderer.SetPosition(0, from);
+            lineRenderer.SetPosition(1, to);
+            lineRenderer.startWidth = lineRenderer.endWidth = 0.2f;
+            lineRenderer.material = material;
+            lineRenderer.useWorldSpace = false;
+            lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         private void UpdateVelocityVectors(IList<AgentState> agents)
         {
             foreach (var agent in agents)
             {
-                if (!_agentVelocityLines.TryGetValue(agent.Id, out var line)) continue;
-                var origin = NedToUnity(agent.PositionXyz);
-                var tip = origin + NedToUnity(agent.VelocityMps) * velocityVectorScale;
-                var dir = tip - origin;
-                if (dir.sqrMagnitude < 1e-6f)
+                if (!_agentVelocityLines.TryGetValue(agent.Id, out var velocityLine)) continue;
+                var origin    = CoordinateUtils.NedToUnity(agent.PositionXyz);
+                var tip       = origin + CoordinateUtils.NedToUnity(agent.VelocityMps) * velocityVectorScale;
+                var direction = tip - origin;
+                if (direction.sqrMagnitude < 1e-6f)
                 {
-                    for (int i = 0; i < 5; i++) _velocityLinePositions[i] = origin;
+                    for (int i = 0; i < VelocityArrowPointCount; i++) _velocityLinePositions[i] = origin;
                 }
                 else
                 {
-                    dir.Normalize();
-                    var perp = Vector3.Cross(dir, Vector3.up);
-                    if (perp.sqrMagnitude < 0.01f) perp = Vector3.Cross(dir, Vector3.right);
-                    perp = perp.normalized * 0.15f;
-                    var headBase = tip - dir * 0.3f;
+                    direction.Normalize();
+                    var perpendicular = Vector3.Cross(direction, Vector3.up);
+                    if (perpendicular.sqrMagnitude < 0.01f) perpendicular = Vector3.Cross(direction, Vector3.right);
+                    perpendicular = perpendicular.normalized * 0.15f;
+                    var headBase = tip - direction * 0.3f;
                     _velocityLinePositions[0] = origin;
                     _velocityLinePositions[1] = tip;
-                    _velocityLinePositions[2] = headBase + perp;
+                    _velocityLinePositions[2] = headBase + perpendicular;
                     _velocityLinePositions[3] = tip;
-                    _velocityLinePositions[4] = headBase - perp;
+                    _velocityLinePositions[4] = headBase - perpendicular;
                 }
-                line.SetPositions(_velocityLinePositions);
+                velocityLine.SetPositions(_velocityLinePositions);
             }
         }
-
-        /// <summary>Converts NED (North/East/Down) to Unity (East/Up/North) coordinates.</summary>
-        private static Vector3 NedToUnity(Vec3 ned) => new(ned.Y, -ned.Z, ned.X);
 
         private void SyncAgents(IList<AgentState> incoming)
         {
@@ -248,94 +313,113 @@ namespace Gakkel.Swarm.Unity
             {
                 activeIds.Add(agent.Id);
 
-                if (!_agents.TryGetValue(agent.Id, out var go))
+                if (!_agents.TryGetValue(agent.Id, out var agentObject))
                 {
-                    go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                    Destroy(go.GetComponent<Collider>());
-                    var shortId = agent.Id.Length >= 8 ? agent.Id[..8] : agent.Id;
-                    go.name = $"Agent_{shortId}";
-                    var rend = go.GetComponent<Renderer>();
-                    rend.material = _isolatedMaterial;
-                    go.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+                    agentObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                    Destroy(agentObject.GetComponent<Collider>());
+                    var displayId = agent.Id.Length >= 8 ? agent.Id[..8] : agent.Id;
+                    agentObject.name = $"Agent_{displayId}";
+                    var agentRenderer = agentObject.GetComponent<Renderer>();
+                    agentRenderer.material = _isolatedMaterial;
+                    agentObject.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
 
-                    var trail = go.AddComponent<TrailRenderer>();
-                    trail.time = trailTime;
-                    trail.startWidth = trailStartWidth;
-                    trail.endWidth = 0f;
-                    trail.material = _trailMaterial;
-                    trail.colorGradient = MakeTrailGradient(Color.gray);
-                    trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    trail.enabled = showTrails;
+                    var trail = agentObject.AddComponent<TrailRenderer>();
+                    trail.time        = trailTime;
+                    trail.startWidth  = trailStartWidth;
+                    trail.endWidth    = 0f;
+                    trail.material    = _trailMaterial;
+                    trail.colorGradient       = MakeTrailGradient(Color.gray);
+                    trail.shadowCastingMode   = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    trail.enabled     = showTrails;
 
-                    var line = go.AddComponent<LineRenderer>();
-                    line.positionCount = 5;
-                    line.startWidth = 0.1f;
-                    line.endWidth = 0.05f;
-                    line.material = _trailMaterial;
-                    line.useWorldSpace = true;
-                    line.enabled = showVelocityVectors;
+                    var velocityLine = agentObject.AddComponent<LineRenderer>();
+                    velocityLine.positionCount      = VelocityArrowPointCount;
+                    velocityLine.startWidth         = 0.1f;
+                    velocityLine.endWidth           = 0.05f;
+                    velocityLine.material           = _trailMaterial;
+                    velocityLine.useWorldSpace      = true;
+                    velocityLine.enabled            = showVelocityVectors;
 
-                    _agents[agent.Id] = go;
-                    _agentRenderers[agent.Id] = rend;
-                    _agentTrails[agent.Id] = trail;
-                    _agentVelocityLines[agent.Id] = line;
+                    var detectionSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    Destroy(detectionSphere.GetComponent<Collider>());
+                    detectionSphere.name = $"Detection_{displayId}";
+                    var detectionRenderer = detectionSphere.GetComponent<Renderer>();
+                    detectionRenderer.sharedMaterial    = _isolatedDetectionMaterial;
+                    detectionRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    float detectionDiameter = _sensorRadiusMetres * 2f;
+                    detectionSphere.transform.localScale = new Vector3(detectionDiameter, detectionDiameter, detectionDiameter);
+                    detectionSphere.SetActive(showDetectionZones);
+
+                    _agents[agent.Id]                  = agentObject;
+                    _agentRenderers[agent.Id]           = agentRenderer;
+                    _agentTrails[agent.Id]              = trail;
+                    _agentVelocityLines[agent.Id]       = velocityLine;
+                    _agentDetectionSpheres[agent.Id]    = detectionSphere;
+                    _agentDetectionRenderers[agent.Id]  = detectionRenderer;
                 }
 
-                go.transform.position = NedToUnity(agent.PositionXyz);
+                var unityPosition = CoordinateUtils.NedToUnity(agent.PositionXyz);
+                agentObject.transform.position = unityPosition;
+                if (_agentDetectionSpheres.TryGetValue(agent.Id, out var detectionSphereObject))
+                    detectionSphereObject.transform.position = unityPosition;
             }
 
-            var toRemove = new List<string>();
-            foreach (var (id, go) in _agents)
+            var agentsToRemove = new List<string>();
+            foreach (var (agentId, agentObject) in _agents)
             {
-                if (!activeIds.Contains(id))
+                if (!activeIds.Contains(agentId))
                 {
-                    Destroy(go);
-                    toRemove.Add(id);
+                    Destroy(agentObject);
+                    if (_agentDetectionSpheres.TryGetValue(agentId, out var detectionSphere))
+                        Destroy(detectionSphere);
+                    agentsToRemove.Add(agentId);
                 }
             }
-            foreach (var id in toRemove)
+            foreach (var agentId in agentsToRemove)
             {
-                _agents.Remove(id);
-                _agentRenderers.Remove(id);
-                _agentTrails.Remove(id);
-                _agentVelocityLines.Remove(id);
+                _agents.Remove(agentId);
+                _agentRenderers.Remove(agentId);
+                _agentTrails.Remove(agentId);
+                _agentVelocityLines.Remove(agentId);
+                _agentDetectionSpheres.Remove(agentId);
+                _agentDetectionRenderers.Remove(agentId);
             }
         }
 
         // Gradient: head (0) = full opacity, tail (1) = transparent.
         private static Gradient MakeTrailGradient(Color color)
         {
-            var g = new Gradient();
-            g.SetKeys(
+            var gradient = new Gradient();
+            gradient.SetKeys(
                 new[] { new GradientColorKey(color, 0f), new GradientColorKey(color, 1f) },
                 new[] { new GradientAlphaKey(0.8f, 0f), new GradientAlphaKey(0f, 1f) }
             );
-            return g;
+            return gradient;
         }
 
         private void SpawnObstacles(IList<Obstacle> obstacles)
         {
-            foreach (var obs in obstacles)
+            foreach (var obstacle in obstacles)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                Destroy(go.GetComponent<Collider>());
-                go.name = "Obstacle";
-                go.GetComponent<Renderer>().material = _obstacleMaterial;
-                float diameter = obs.RadiusM * 2f;
-                go.transform.localScale = new Vector3(diameter, obstacleHeightM * 0.5f, diameter);
-                go.transform.position = NedToUnity(obs.PositionXyz);
-                _obstacles.Add(go);
+                var obstacleObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                Destroy(obstacleObject.GetComponent<Collider>());
+                obstacleObject.name = "Obstacle";
+                obstacleObject.GetComponent<Renderer>().material = _obstacleMaterial;
+                float diameter = obstacle.RadiusM * 2f;
+                obstacleObject.transform.localScale = new Vector3(diameter, obstacleHeightMetres * 0.5f, diameter);
+                obstacleObject.transform.position = CoordinateUtils.NedToUnity(obstacle.PositionXyz);
+                _obstacles.Add(obstacleObject);
             }
         }
 
         private void SpawnMothership()
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Destroy(go.GetComponent<Collider>());
-            go.name = "Mothership";
-            go.GetComponent<Renderer>().material = _mothershipMaterial;
-            go.transform.localScale = new Vector3(2f, 1f, 2f);
-            go.transform.position = Vector3.zero;
+            var mothershipObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(mothershipObject.GetComponent<Collider>());
+            mothershipObject.name = "Mothership";
+            mothershipObject.GetComponent<Renderer>().material = _mothershipMaterial;
+            mothershipObject.transform.localScale = new Vector3(2f, 1f, 2f);
+            mothershipObject.transform.position = Vector3.zero;
         }
 
         private void SpawnFloor()
@@ -343,20 +427,20 @@ namespace Gakkel.Swarm.Unity
             // World is 100×50 server units (X×Z); Plane default is 10×10, so scale (10,1,5).
             // Sea floor is at server Y=0 → NED.Down=100 → Unity Y=-100 (100m below surface).
             // Water surface is at Unity Y=0 (NED.Down=0, server Y=100).
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            Destroy(floor.GetComponent<Collider>());
-            floor.name = "SeaFloor";
-            floor.GetComponent<Renderer>().material = _floorMaterial;
-            floor.transform.localScale = new Vector3(10f, 1f, 5f);
-            floor.transform.position = new Vector3(50f, -100f, 25f);
+            var floorObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            Destroy(floorObject.GetComponent<Collider>());
+            floorObject.name = "SeaFloor";
+            floorObject.GetComponent<Renderer>().material = _floorMaterial;
+            floorObject.transform.localScale = new Vector3(10f, 1f, 5f);
+            floorObject.transform.position = new Vector3(50f, -100f, 25f);
         }
 
         private void UpdateCentroid()
         {
             if (_agents.Count == 0) return;
-            var sum = Vector3.zero;
-            foreach (var go in _agents.Values) sum += go.transform.position;
-            _centroid = sum / _agents.Count;
+            var positionSum = Vector3.zero;
+            foreach (var agentObject in _agents.Values) positionSum += agentObject.transform.position;
+            _centroid = positionSum / _agents.Count;
         }
 
         private void OnDestroy()
@@ -366,8 +450,10 @@ namespace Gakkel.Swarm.Unity
             Destroy(_mothershipMaterial);
             Destroy(_floorMaterial);
             Destroy(_trailMaterial);
-            foreach (var mat in _groupMaterials) Destroy(mat);
-            foreach (var mat in _groupCentroidMaterials) Destroy(mat);
+            Destroy(_isolatedDetectionMaterial);
+            foreach (var material in _groupMaterials) Destroy(material);
+            foreach (var material in _groupCentroidMaterials) Destroy(material);
+            foreach (var material in _groupDetectionMaterials) Destroy(material);
         }
     }
 }

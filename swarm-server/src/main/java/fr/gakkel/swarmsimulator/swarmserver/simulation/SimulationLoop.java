@@ -180,8 +180,8 @@ public class SimulationLoop {
 
     static long countAgentsInsideObstacles(List<Agent> agents, List<Obstacle> obstacles) {
         return agents.stream()
-                .filter(a -> obstacles.stream()
-                        .anyMatch(o -> a.position().distanceTo(o.position()) < o.radius()))
+                .filter(agent -> obstacles.stream()
+                        .anyMatch(obstacle -> agent.position().distanceTo(obstacle.position()) < obstacle.radius()))
                 .count();
     }
 

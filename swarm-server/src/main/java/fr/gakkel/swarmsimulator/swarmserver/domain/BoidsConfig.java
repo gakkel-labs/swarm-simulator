@@ -65,18 +65,18 @@ public record BoidsConfig(
 
         private Builder() {}
 
-        public Builder perceptionRadius(double v)        { perceptionRadius = v;        return this; }
-        public Builder separationWeight(double v)        { separationWeight = v;        return this; }
-        public Builder alignmentWeight(double v)         { alignmentWeight = v;         return this; }
-        public Builder cohesionWeight(double v)          { cohesionWeight = v;          return this; }
-        public Builder wanderWeight(double v)            { wanderWeight = v;            return this; }
-        public Builder maxSpeed(double v)                { maxSpeed = v;                return this; }
-        public Builder boundaryRepulsionRadius(double v) { boundaryRepulsionRadius = v; return this; }
-        public Builder boundaryRepulsionWeight(double v) { boundaryRepulsionWeight = v; return this; }
-        public Builder obstacleAvoidanceRadius(double v) { obstacleAvoidanceRadius = v; return this; }
-        public Builder obstacleAvoidanceWeight(double v) { obstacleAvoidanceWeight = v; return this; }
-        public Builder threatFleeRadius(double v)        { threatFleeRadius = v;        return this; }
-        public Builder threatFleeWeight(double v)        { threatFleeWeight = v;        return this; }
+        public Builder perceptionRadius(double value)        { perceptionRadius = value;        return this; }
+        public Builder separationWeight(double value)        { separationWeight = value;        return this; }
+        public Builder alignmentWeight(double value)         { alignmentWeight = value;         return this; }
+        public Builder cohesionWeight(double value)          { cohesionWeight = value;          return this; }
+        public Builder wanderWeight(double value)            { wanderWeight = value;            return this; }
+        public Builder maxSpeed(double value)                { maxSpeed = value;                return this; }
+        public Builder boundaryRepulsionRadius(double value) { boundaryRepulsionRadius = value; return this; }
+        public Builder boundaryRepulsionWeight(double value) { boundaryRepulsionWeight = value; return this; }
+        public Builder obstacleAvoidanceRadius(double value) { obstacleAvoidanceRadius = value; return this; }
+        public Builder obstacleAvoidanceWeight(double value) { obstacleAvoidanceWeight = value; return this; }
+        public Builder threatFleeRadius(double value)        { threatFleeRadius = value;        return this; }
+        public Builder threatFleeWeight(double value)        { threatFleeWeight = value;        return this; }
 
         public BoidsConfig build() {
             return new BoidsConfig(perceptionRadius, separationWeight, alignmentWeight,

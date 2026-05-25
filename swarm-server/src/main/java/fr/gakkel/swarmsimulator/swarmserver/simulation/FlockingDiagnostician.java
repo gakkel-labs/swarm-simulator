@@ -101,7 +101,7 @@ public class FlockingDiagnostician {
         }
 
         long frozenCount = world.agents().stream()
-                .filter(a -> a.velocity().magnitude() < boidsConfig.maxSpeed() * diagnosticsConfig.frozenThresholdFraction())
+                .filter(agent -> agent.velocity().magnitude() < boidsConfig.maxSpeed() * diagnosticsConfig.frozenThresholdFraction())
                 .count();
         if (frozenCount > 0) {
             LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsedSeconds, frozenCount);

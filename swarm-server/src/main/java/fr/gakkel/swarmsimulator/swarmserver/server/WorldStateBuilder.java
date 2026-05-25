@@ -88,21 +88,21 @@ public class WorldStateBuilder {
         };
     }
 
-    private static Vec3 toVec3(Vector3D v) {
+    private static Vec3 toVec3(Vector3D vector) {
         // Server uses Y=0 at the water surface; negative Y is underwater (AUVs), positive Y is above (drones).
         // Proto contract is NED (North=X, East=Y, Down=Z): Down = -server.Y maps naturally to this convention
         // (surface: server.Y=0 → NED.Down=0; sea floor: server.Y=-depth → NED.Down=depth).
         return Vec3.newBuilder()
-                .setX((float)  v.z())
-                .setY((float)  v.x())
-                .setZ((float) -v.y())
+                .setX((float)  vector.z())
+                .setY((float)  vector.x())
+                .setZ((float) -vector.y())
                 .build();
     }
 
-    private static io.gakkel.swarm.contracts.v1.Obstacle toProtoObstacle(Obstacle o) {
+    private static io.gakkel.swarm.contracts.v1.Obstacle toProtoObstacle(Obstacle obstacle) {
         return io.gakkel.swarm.contracts.v1.Obstacle.newBuilder()
-                .setPositionXyz(toVec3(o.position()))
-                .setRadiusM((float) o.radius())
+                .setPositionXyz(toVec3(obstacle.position()))
+                .setRadiusM((float) obstacle.radius())
                 .build();
     }
 }

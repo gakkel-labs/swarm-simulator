@@ -32,12 +32,12 @@ public record DiagnosticsConfig(
 
         private Builder() {}
 
-        public Builder immobileThresholdFraction(double v) { immobileThresholdFraction = v; return this; }
-        public Builder frozenThresholdFraction(double v)   { frozenThresholdFraction = v;   return this; }
-        public Builder dispersalLimitFraction(double v)    { dispersalLimitFraction = v;    return this; }
-        public Builder flockingLostFraction(double v)      { flockingLostFraction = v;      return this; }
-        public Builder stabilityTolerance(double v)        { stabilityTolerance = v;        return this; }
-        public Builder stabilitySamples(int v)             { stabilitySamples = v;          return this; }
+        public Builder immobileThresholdFraction(double value) { immobileThresholdFraction = value; return this; }
+        public Builder frozenThresholdFraction(double value)   { frozenThresholdFraction = value;   return this; }
+        public Builder dispersalLimitFraction(double value)    { dispersalLimitFraction = value;    return this; }
+        public Builder flockingLostFraction(double value)      { flockingLostFraction = value;      return this; }
+        public Builder stabilityTolerance(double value)        { stabilityTolerance = value;        return this; }
+        public Builder stabilitySamples(int value)             { stabilitySamples = value;          return this; }
 
         public DiagnosticsConfig build() {
             return new DiagnosticsConfig(immobileThresholdFraction, frozenThresholdFraction,

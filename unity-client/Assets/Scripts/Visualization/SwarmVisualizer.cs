@@ -149,32 +149,32 @@ namespace Gakkel.Swarm.Unity
         public int AgentCount    => _agents.Count;
         public int ObstacleCount => _obstacles.Count;
 
-        public void SetShowTrails(bool value)
+        public void SetShowTrails(bool shouldShow)
         {
-            showTrails = value;
+            showTrails = shouldShow;
             foreach (var trail in _agentTrails.Values)
-                trail.enabled = value;
+                trail.enabled = shouldShow;
         }
 
-        public void SetShowVelocityVectors(bool value)
+        public void SetShowVelocityVectors(bool shouldShow)
         {
-            showVelocityVectors = value;
+            showVelocityVectors = shouldShow;
             foreach (var velocityLine in _agentVelocityLines.Values)
-                velocityLine.enabled = value;
+                velocityLine.enabled = shouldShow;
         }
 
-        public void SetShowCentroids(bool value)
+        public void SetShowCentroids(bool shouldShow)
         {
-            showCentroids = value;
+            showCentroids = shouldShow;
             foreach (var centroidSphere in _groupCentroidSpheres.Values)
-                centroidSphere.SetActive(value);
+                centroidSphere.SetActive(shouldShow);
         }
 
-        public void SetShowDetectionZones(bool value)
+        public void SetShowDetectionZones(bool shouldShow)
         {
-            showDetectionZones = value;
+            showDetectionZones = shouldShow;
             foreach (var detectionSphere in _agentDetectionSpheres.Values)
-                detectionSphere.SetActive(value);
+                detectionSphere.SetActive(shouldShow);
         }
 
         private static Dictionary<int, int> ComputeGroupSizes(Dictionary<string, int> groupIds)

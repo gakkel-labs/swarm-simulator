@@ -73,10 +73,13 @@ public final class BoidsRules {
         return force.normalize();
     }
 
+    // (nx, ny, nz) is already a unit vector — passed literally as (±1, 0, 0) etc. by boundaryRepulsion.
+    // Scaling by 1/dist (instead of normalizing) is intentional: an inverse-distance force grows as the
+    // agent approaches the wall, producing a smooth turn rather than a constant push.
     private static Vector3D wallForce(double dist, double nx, double ny, double nz, double radius) {
         if (dist >= radius || dist < MIN_SEPARATION_DISTANCE) return Vector3D.ZERO;
-        double magnitude = 1.0 / dist;
-        return new Vector3D(nx * magnitude, ny * magnitude, nz * magnitude);
+        double inverseDistanceMagnitude = 1.0 / dist;
+        return new Vector3D(nx * inverseDistanceMagnitude, ny * inverseDistanceMagnitude, nz * inverseDistanceMagnitude);
     }
 
     // Unlike the other rules, obstacleAvoidance does NOT normalize its output: the magnitude
@@ -120,7 +123,9 @@ public final class BoidsRules {
         return away.scale(1.0 / (dist * dist));
     }
 
-    public Vector3D steer(Agent agent, List<Agent> neighbors) {
+    // package-private: classical Boids composition (separation + alignment + cohesion).
+    // Public callers must use steer(agent, neighbors, world) which adds environmental forces.
+    Vector3D steer(Agent agent, List<Agent> neighbors) {
         return separation(agent, neighbors).scale(config.separationWeight())
                 .add(alignment(neighbors).scale(config.alignmentWeight()))
                 .add(cohesion(agent, neighbors).scale(config.cohesionWeight()));

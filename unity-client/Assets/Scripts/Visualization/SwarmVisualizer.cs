@@ -315,47 +315,16 @@ namespace Gakkel.Swarm.Unity
 
                 if (!_agents.TryGetValue(agent.Id, out var agentObject))
                 {
-                    agentObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                    Destroy(agentObject.GetComponent<Collider>());
                     var displayId = agent.Id.Length >= 8 ? agent.Id[..8] : agent.Id;
-                    agentObject.name = $"Agent_{displayId}";
-                    var agentRenderer = agentObject.GetComponent<Renderer>();
-                    agentRenderer.material = _isolatedMaterial;
-                    agentObject.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-
-                    var trail = agentObject.AddComponent<TrailRenderer>();
-                    trail.time        = trailTime;
-                    trail.startWidth  = trailStartWidth;
-                    trail.endWidth    = 0f;
-                    trail.material    = _trailMaterial;
-                    trail.colorGradient       = MakeTrailGradient(Color.gray);
-                    trail.shadowCastingMode   = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    trail.enabled     = showTrails;
-
-                    var velocityLine = agentObject.AddComponent<LineRenderer>();
-                    velocityLine.positionCount      = VelocityArrowPointCount;
-                    velocityLine.startWidth         = 0.1f;
-                    velocityLine.endWidth           = 0.05f;
-                    velocityLine.material           = _trailMaterial;
-                    velocityLine.useWorldSpace      = true;
-                    velocityLine.enabled            = showVelocityVectors;
-
-                    var detectionSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    Destroy(detectionSphere.GetComponent<Collider>());
-                    detectionSphere.name = $"Detection_{displayId}";
-                    var detectionRenderer = detectionSphere.GetComponent<Renderer>();
-                    detectionRenderer.sharedMaterial    = _isolatedDetectionMaterial;
-                    detectionRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    float detectionDiameter = _sensorRadiusMetres * 2f;
-                    detectionSphere.transform.localScale = new Vector3(detectionDiameter, detectionDiameter, detectionDiameter);
-                    detectionSphere.SetActive(showDetectionZones);
+                    agentObject = CreateAgentVisual(displayId, out var agentRenderer, out var trail, out var velocityLine);
+                    var detectionSphere = CreateDetectionSphere(displayId, out var detectionRenderer);
 
                     _agents[agent.Id]                  = agentObject;
-                    _agentRenderers[agent.Id]           = agentRenderer;
-                    _agentTrails[agent.Id]              = trail;
-                    _agentVelocityLines[agent.Id]       = velocityLine;
-                    _agentDetectionSpheres[agent.Id]    = detectionSphere;
-                    _agentDetectionRenderers[agent.Id]  = detectionRenderer;
+                    _agentRenderers[agent.Id]          = agentRenderer;
+                    _agentTrails[agent.Id]             = trail;
+                    _agentVelocityLines[agent.Id]      = velocityLine;
+                    _agentDetectionSpheres[agent.Id]   = detectionSphere;
+                    _agentDetectionRenderers[agent.Id] = detectionRenderer;
                 }
 
                 var unityPosition = CoordinateUtils.NedToUnity(agent.PositionXyz);
@@ -384,6 +353,50 @@ namespace Gakkel.Swarm.Unity
                 _agentDetectionSpheres.Remove(agentId);
                 _agentDetectionRenderers.Remove(agentId);
             }
+        }
+
+        private GameObject CreateAgentVisual(string displayId, out Renderer agentRenderer, out TrailRenderer trail, out LineRenderer velocityLine)
+        {
+            var agentObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            Destroy(agentObject.GetComponent<Collider>());
+            agentObject.name = $"Agent_{displayId}";
+            agentRenderer = agentObject.GetComponent<Renderer>();
+            agentRenderer.material = _isolatedMaterial;
+            agentObject.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+
+            trail = agentObject.AddComponent<TrailRenderer>();
+            trail.time              = trailTime;
+            trail.startWidth        = trailStartWidth;
+            trail.endWidth          = 0f;
+            trail.material          = _trailMaterial;
+            trail.colorGradient     = MakeTrailGradient(Color.gray);
+            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            trail.enabled           = showTrails;
+
+            velocityLine = agentObject.AddComponent<LineRenderer>();
+            velocityLine.positionCount = VelocityArrowPointCount;
+            velocityLine.startWidth    = 0.1f;
+            velocityLine.endWidth      = 0.05f;
+            velocityLine.material      = _trailMaterial;
+            velocityLine.useWorldSpace = true;
+            velocityLine.enabled       = showVelocityVectors;
+
+            return agentObject;
+        }
+
+        private GameObject CreateDetectionSphere(string displayId, out Renderer detectionRenderer)
+        {
+            var detectionSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Destroy(detectionSphere.GetComponent<Collider>());
+            detectionSphere.name = $"Detection_{displayId}";
+            detectionRenderer = detectionSphere.GetComponent<Renderer>();
+            detectionRenderer.sharedMaterial    = _isolatedDetectionMaterial;
+            detectionRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            float detectionDiameter = _sensorRadiusMetres * 2f;
+            detectionSphere.transform.localScale = new Vector3(detectionDiameter, detectionDiameter, detectionDiameter);
+            detectionSphere.SetActive(showDetectionZones);
+
+            return detectionSphere;
         }
 
         // Gradient: head (0) = full opacity, tail (1) = transparent.

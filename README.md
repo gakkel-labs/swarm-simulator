@@ -9,6 +9,216 @@
 
 ![Demo GIF](docs/assets/demo.gif)
 
+> Version française : [`README.fr.md`](README.fr.md)
+
 Part of the [Gakkel universe](https://github.com/gakkel-labs) of personal projects
 exploring deep-sea robotics: [fleet-dashboard](https://github.com/gakkel-labs/fleet-dashboard),
 [drone-embedded](https://github.com/gakkel-labs/drone-embedded).
+
+---
+
+## What it is
+
+A small but real distributed system: a **Java backend** runs a 3D flocking simulation
+(Boids rules, obstacles, predator, search target) and pushes the world state at 20 Hz
+over a **gRPC server-streaming** channel. A **Unity client** subscribes to that stream
+and renders the swarm as plain grey capsules — visually minimal on purpose, so the
+emergent behavior takes the spotlight.
+
+The scenario is **Maritime Search and Rescue (SAR)**:
+
+- *Explorers* spread out and detect the target.
+- An *operator* confirms the position.
+- *Carriers* converge to extract.
+
+The point isn't fidelity — it's to study coordination patterns, gRPC streaming under
+real frequencies, and a clean cross-process boundary that can later host a Raspberry
+Pi agent (v0.3 roadmap).
+
+---
+
+## Quickstart — run the demo in 2 minutes
+
+### Prerequisites
+
+| Tool         | Version              | Notes                                          |
+|--------------|----------------------|------------------------------------------------|
+| JDK          | 21 (Temurin OK)      | `java -version` should report 21               |
+| Maven        | 3.9+                 | `mvn -v`                                       |
+| Unity Hub    | with Editor 2022.3 LTS | URP template                                 |
+| Free port    | `50051` (gRPC)       | Override by editing `SwarmServer.PORT` if needed |
+
+### 1. Start the backend
+
+```bash
+mvn -pl swarm-server -am package
+mvn -pl swarm-server exec:java -Dexec.mainClass="fr.gakkel.swarmsimulator.swarmserver.server.SwarmServer"
+```
+
+You should see:
+
+```
+SwarmServer on :50051 — sim 30Hz — stream 20Hz
+```
+
+### 2. Open the Unity client
+
+1. In **Unity Hub**, *Add project from disk* → select `unity-client/`.
+2. Open the project with **Unity 2022.3 LTS**.
+3. Load the scene `Assets/Scenes/SampleScene.unity`.
+4. Hit **Play**.
+
+### 3. Expected result
+
+- Grey capsules spawn and start flocking (cohesion + separation + alignment).
+- A red predator drifts through the bounding box; nearby capsules flee.
+- Left-click in the scene to **place the SAR target** — explorers converge,
+  the *found* event fires and the carriers move in.
+
+If something goes wrong, the most common cause is the gRPC port already being bound —
+kill the previous JVM or change `PORT` in
+[`SwarmServer.java`](swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/server/SwarmServer.java).
+
+---
+
+## Architecture
+
+Two independent processes communicating over gRPC. The backend is the only authority
+on simulation state; Unity is a pure visual consumer.
+
+```mermaid
+flowchart LR
+    subgraph Backend["Backend Java (swarm-server)"]
+        SIM[SimulationLoop<br/>30 Hz tick]
+        WORLD[(World<br/>agents, obstacles,<br/>predator, target)]
+        BCAST[SwarmObserverImpl<br/>broadcaster 20 Hz]
+        CTRL[SimulationControlImpl<br/>PlaceTarget RPC]
+        SIM -->|writes| WORLD
+        WORLD -->|reads| BCAST
+        CTRL -->|mutates| WORLD
+    end
+
+    subgraph Unity["Unity Client"]
+        RECV[WorldStateReceiver<br/>background Task]
+        DISP[MainThreadDispatcher<br/>ConcurrentQueue]
+        VIZ[SwarmVisualizer<br/>+ Target/PredatorRenderer]
+        RECV -->|Enqueue| DISP
+        DISP -->|frame coroutine| VIZ
+    end
+
+    BCAST ==>|stream WorldState 20 Hz| RECV
+    VIZ -.->|PlaceTarget unary| CTRL
+```
+
+### Runtime flow — one tick
+
+```mermaid
+sequenceDiagram
+    participant Sim as SimulationLoop (30 Hz)
+    participant World as World
+    participant Bcast as SwarmObserverImpl (20 Hz)
+    participant Net as gRPC stream
+    participant Unity as Unity main thread
+    participant Op as Operator (optional)
+
+    Sim->>World: compute Boids forces<br/>apply Δv, Δp
+    Bcast->>World: snapshot agents/predator/target
+    Bcast->>Net: onNext(WorldState)
+    Net-->>Unity: enqueue WorldState (background)
+    Unity->>Unity: dequeue + update Transforms
+    Op-->>Net: PlaceTarget(Vec3) [unary, on demand]
+    Net->>World: set target
+```
+
+Deeper dive: [`docs/architecture.md`](docs/architecture.md) (frame remapping NED↔Unity,
+thread model, concurrent World access, full message catalogue).
+
+### Why these choices — ADRs
+
+- [ADR-0001](docs/adr/0001-grpc-streaming.md) — **gRPC server-streaming** to push
+  WorldState at 20 Hz (vs. polling or WebSockets).
+- [ADR-0002](docs/adr/0002-no-spring-boot-for-mvp.md) — **No Spring Boot** for the MVP;
+  `main()` + `ScheduledExecutorService` + `ServerBuilder` is enough.
+- [ADR-0003](docs/adr/0003-minimal-3d-assets.md) — **Minimal 3D assets** (grey capsules,
+  primitives) so the focus stays on emergent behavior, not art.
+- [ADR-0004](docs/adr/0004-target-placement-operator-triggered.md) — **Operator-triggered
+  target placement**, architecturally pluggable for later automation.
+
+---
+
+## Repository layout
+
+| Path             | Role                                                          |
+|------------------|---------------------------------------------------------------|
+| `contracts/`     | `.proto` files + generated Java stubs (package `gakkel.swarm.v1`) |
+| `swarm-server/`  | gRPC server, domain model, Boids simulation loop              |
+| `tests/`         | End-to-end integration tests                                  |
+| `unity-client/`  | Unity 2022.3 LTS / URP project — visual client                |
+| `docs/`          | Architecture, ADRs, per-area deep dives, tech-debt snapshots  |
+
+---
+
+## Stack
+
+- **Backend** — Java 21, Maven 3.9+, grpc-java 1.81, protobuf 3.25, SLF4J + Logback.
+- **Client** — Unity 2022.3 LTS (URP), Grpc.Core C# / Grpc.Net.Client.
+- **Tests** — JUnit 5, Mockito, AssertJ.
+- **Future** — Raspberry Pi (Ubuntu Server 22.04) as a hybrid gRPC client (v0.3).
+
+Code conventions, response style and Claude Code workflow live in
+[`CLAUDE.md`](CLAUDE.md). TL;DR: Google Java Style, JUnit 5 + Mockito, conventional
+commits, English in code and FR+EN in docs.
+
+---
+
+## Tests
+
+```bash
+# unit tests (per module)
+mvn -pl swarm-server test
+
+# integration tests
+mvn -pl tests -am verify
+
+# full build (compile + tests, all modules)
+mvn verify
+```
+
+---
+
+## Roadmap
+
+| Version | Scope                                              | Status |
+|---------|----------------------------------------------------|--------|
+| v0.1    | Boids + obstacles + predator + SAR scenario        | 🚧 in progress |
+| v0.2    | Dockerization                                      | ⏳ planned |
+| v0.3    | Hybrid Raspberry Pi agent                          | ⏳ planned |
+| v0.4    | 3 differentiated drone types                       | ⏳ planned |
+| v0.5    | ACO + Kalman tracking                              | ⏳ planned |
+| v0.6    | Multi-Pi physical demo                             | ⏳ planned |
+
+---
+
+## Going further
+
+- [`docs/architecture.md`](docs/architecture.md) — backend ↔ Unity flow, threading,
+  frame remapping.
+- [`docs/01-boids-rules.md`](docs/01-boids-rules.md) — the algorithmic core.
+- [`docs/02-grpc-contract.md`](docs/02-grpc-contract.md) — wire protocol reference.
+- [`docs/03-unity-integration.md`](docs/03-unity-integration.md) — thread-safe gRPC
+  bridge.
+- [`docs/notes-threading-grpc-unity.md`](docs/notes-threading-grpc-unity.md) — design
+  notes.
+- [`docs/tech-debt/`](docs/tech-debt/) — periodic tech-debt snapshots.
+
+---
+
+## Credits
+
+- Craig W. Reynolds — *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
+- The Gakkel universe: [fleet-dashboard](https://github.com/gakkel-labs/fleet-dashboard),
+  [drone-embedded](https://github.com/gakkel-labs/drone-embedded).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).

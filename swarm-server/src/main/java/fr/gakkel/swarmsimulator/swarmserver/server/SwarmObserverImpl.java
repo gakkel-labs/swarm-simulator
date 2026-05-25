@@ -140,6 +140,9 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
             case EXPLORER -> AgentType.AGENT_TYPE_EXPLORER;
             case OPERATOR -> AgentType.AGENT_TYPE_OPERATOR;
             case CARRIER  -> AgentType.AGENT_TYPE_CARRIER;
+            // Defensive default: switch is exhaustive at compile time, but this guards against
+            // binary-incompatible class evolution if the proto enum is updated independently.
+            default       -> throw new IllegalStateException("Unmapped AgentType: " + type);
         };
     }
 

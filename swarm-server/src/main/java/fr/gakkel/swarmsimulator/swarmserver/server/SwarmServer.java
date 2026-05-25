@@ -32,7 +32,12 @@ public class SwarmServer {
         SimulationLoop sim = new SimulationLoop(world, boids, diag, simExecutor);
         SimulationService simulationService = new SimulationService(world);
 
-        SwarmObserverImpl observer = new SwarmObserverImpl(world);
+        ScheduledExecutorService broadcastExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "swarm-broadcaster");
+            t.setDaemon(true);
+            return t;
+        });
+        SwarmObserverImpl observer = new SwarmObserverImpl(world, broadcastExecutor);
 
         Server server = ServerBuilder.forPort(PORT)
                 .addService(new PingServiceImpl())

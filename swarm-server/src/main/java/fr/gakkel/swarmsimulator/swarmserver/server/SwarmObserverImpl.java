@@ -24,7 +24,6 @@ import org.slf4j.MDC;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -38,16 +37,7 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     private final Set<ServerCallStreamObserver<WorldState>> subscribers = ConcurrentHashMap.newKeySet();
     private final ScheduledExecutorService broadcaster;
 
-    public SwarmObserverImpl(World world) {
-        this(world, Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "swarm-broadcaster");
-            t.setDaemon(true);
-            return t;
-        }));
-    }
-
-    // package-private: allows tests to inject a mock executor and drive broadcast() manually
-    SwarmObserverImpl(World world, ScheduledExecutorService executor) {
+    public SwarmObserverImpl(World world, ScheduledExecutorService executor) {
         this.world = world;
         this.broadcaster = executor;
         broadcaster.scheduleAtFixedRate(this::broadcast, 0, 1000L / STREAM_RATE_HZ, TimeUnit.MILLISECONDS);

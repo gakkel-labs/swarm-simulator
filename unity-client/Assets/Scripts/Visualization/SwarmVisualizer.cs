@@ -130,10 +130,15 @@ namespace Gakkel.Swarm.Unity
             UpdateVelocityVectors(ws.Agents);
             predatorRenderer?.Apply(ws.Predators);
 
-            if (ws.SearchStatus != null && ws.SearchStatus.FoundEvent != null && _blinkAgentId == null)
+            if (ws.SearchStatus != null)
             {
-                _blinkAgentId        = ws.SearchStatus.FoundEvent.AgentId;
-                _blinkAgentStartTime = Time.time;
+                if (ws.SearchStatus.FoundEvent == null)
+                    _blinkAgentId = null;
+                else if (_blinkAgentId == null)
+                {
+                    _blinkAgentId        = ws.SearchStatus.FoundEvent.AgentId;
+                    _blinkAgentStartTime = Time.time;
+                }
             }
         }
 

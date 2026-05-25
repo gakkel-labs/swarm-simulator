@@ -59,6 +59,18 @@ namespace Gakkel.Swarm.Unity
 
         private const float DetectionZoneAlpha = 0.08f;
         private const int VelocityArrowPointCount = 5;
+        private const float AgentCapsuleScale = 0.5f;
+        private const float VelocityArrowStartWidth = 0.1f;
+        private const float VelocityArrowEndWidth = 0.05f;
+        private const float VelocityArrowHeadSize = 0.15f;
+        private const float VelocityArrowHeadOffsetFromTip = 0.3f;
+        private const float VelocityArrowMinDirectionSqrMagnitude = 1e-6f;
+        private const float VelocityArrowPerpendicularFallbackThreshold = 0.01f;
+        private const float CentroidCrossArmHalfLength = 1f;
+        private const float CentroidCrossArmWidth = 0.2f;
+        private const float TrailHeadAlpha = 0.8f;
+        private const float TrailTailAlpha = 0f;
+        private const float ObstacleHeightHalfFactor = 0.5f;
 
         private void Awake()
         {
@@ -255,10 +267,9 @@ namespace Gakkel.Swarm.Unity
         {
             var root = new GameObject($"Centroid_G{groupIndex}");
             var centroidMaterial = _groupCentroidMaterials[groupIndex % _groupCentroidMaterials.Length];
-            float armHalfLength = 1f;
-            AddCrossArm(root, centroidMaterial, -Vector3.right   * armHalfLength, Vector3.right   * armHalfLength, "Arm_X");
-            AddCrossArm(root, centroidMaterial, -Vector3.up      * armHalfLength, Vector3.up      * armHalfLength, "Arm_Y");
-            AddCrossArm(root, centroidMaterial, -Vector3.forward * armHalfLength, Vector3.forward * armHalfLength, "Arm_Z");
+            AddCrossArm(root, centroidMaterial, -Vector3.right   * CentroidCrossArmHalfLength, Vector3.right   * CentroidCrossArmHalfLength, "Arm_X");
+            AddCrossArm(root, centroidMaterial, -Vector3.up      * CentroidCrossArmHalfLength, Vector3.up      * CentroidCrossArmHalfLength, "Arm_Y");
+            AddCrossArm(root, centroidMaterial, -Vector3.forward * CentroidCrossArmHalfLength, Vector3.forward * CentroidCrossArmHalfLength, "Arm_Z");
             return root;
         }
 
@@ -270,7 +281,7 @@ namespace Gakkel.Swarm.Unity
             lineRenderer.positionCount = 2;
             lineRenderer.SetPosition(0, from);
             lineRenderer.SetPosition(1, to);
-            lineRenderer.startWidth = lineRenderer.endWidth = 0.2f;
+            lineRenderer.startWidth = lineRenderer.endWidth = CentroidCrossArmWidth;
             lineRenderer.material = material;
             lineRenderer.useWorldSpace = false;
             lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -284,7 +295,7 @@ namespace Gakkel.Swarm.Unity
                 var origin    = CoordinateUtils.NedToUnity(agent.PositionXyz);
                 var tip       = origin + CoordinateUtils.NedToUnity(agent.VelocityMps) * velocityVectorScale;
                 var direction = tip - origin;
-                if (direction.sqrMagnitude < 1e-6f)
+                if (direction.sqrMagnitude < VelocityArrowMinDirectionSqrMagnitude)
                 {
                     for (int i = 0; i < VelocityArrowPointCount; i++) _velocityLinePositions[i] = origin;
                 }
@@ -292,9 +303,10 @@ namespace Gakkel.Swarm.Unity
                 {
                     direction.Normalize();
                     var perpendicular = Vector3.Cross(direction, Vector3.up);
-                    if (perpendicular.sqrMagnitude < 0.01f) perpendicular = Vector3.Cross(direction, Vector3.right);
-                    perpendicular = perpendicular.normalized * 0.15f;
-                    var headBase = tip - direction * 0.3f;
+                    if (perpendicular.sqrMagnitude < VelocityArrowPerpendicularFallbackThreshold)
+                        perpendicular = Vector3.Cross(direction, Vector3.right);
+                    perpendicular = perpendicular.normalized * VelocityArrowHeadSize;
+                    var headBase = tip - direction * VelocityArrowHeadOffsetFromTip;
                     _velocityLinePositions[0] = origin;
                     _velocityLinePositions[1] = tip;
                     _velocityLinePositions[2] = headBase + perpendicular;
@@ -362,7 +374,7 @@ namespace Gakkel.Swarm.Unity
             agentObject.name = $"Agent_{displayId}";
             agentRenderer = agentObject.GetComponent<Renderer>();
             agentRenderer.material = _isolatedMaterial;
-            agentObject.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            agentObject.transform.localScale = new Vector3(AgentCapsuleScale, AgentCapsuleScale, AgentCapsuleScale);
 
             trail = agentObject.AddComponent<TrailRenderer>();
             trail.time              = trailTime;
@@ -375,8 +387,8 @@ namespace Gakkel.Swarm.Unity
 
             velocityLine = agentObject.AddComponent<LineRenderer>();
             velocityLine.positionCount = VelocityArrowPointCount;
-            velocityLine.startWidth    = 0.1f;
-            velocityLine.endWidth      = 0.05f;
+            velocityLine.startWidth    = VelocityArrowStartWidth;
+            velocityLine.endWidth      = VelocityArrowEndWidth;
             velocityLine.material      = _trailMaterial;
             velocityLine.useWorldSpace = true;
             velocityLine.enabled       = showVelocityVectors;
@@ -405,7 +417,7 @@ namespace Gakkel.Swarm.Unity
             var gradient = new Gradient();
             gradient.SetKeys(
                 new[] { new GradientColorKey(color, 0f), new GradientColorKey(color, 1f) },
-                new[] { new GradientAlphaKey(0.8f, 0f), new GradientAlphaKey(0f, 1f) }
+                new[] { new GradientAlphaKey(TrailHeadAlpha, 0f), new GradientAlphaKey(TrailTailAlpha, 1f) }
             );
             return gradient;
         }
@@ -419,7 +431,7 @@ namespace Gakkel.Swarm.Unity
                 obstacleObject.name = "Obstacle";
                 obstacleObject.GetComponent<Renderer>().material = _obstacleMaterial;
                 float diameter = obstacle.RadiusM * 2f;
-                obstacleObject.transform.localScale = new Vector3(diameter, obstacleHeightMetres * 0.5f, diameter);
+                obstacleObject.transform.localScale = new Vector3(diameter, obstacleHeightMetres * ObstacleHeightHalfFactor, diameter);
                 obstacleObject.transform.position = CoordinateUtils.NedToUnity(obstacle.PositionXyz);
                 _obstacles.Add(obstacleObject);
             }

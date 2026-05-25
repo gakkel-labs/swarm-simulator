@@ -32,14 +32,14 @@ namespace Gakkel.Swarm.Unity
 
         private void LateUpdate()
         {
-            var kb = Keyboard.current;
-            if (kb != null && kb.tabKey.wasPressedThisFrame)
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.tabKey.wasPressedThisFrame)
                 SwitchMode();
 
             if (_mode == CameraMode.Orbital)
-                UpdateOrbital(kb);
+                UpdateOrbital(keyboard);
             else
-                UpdateFree(kb);
+                UpdateFree(keyboard);
         }
 
         private void SwitchMode()
@@ -57,9 +57,9 @@ namespace Gakkel.Swarm.Unity
             }
         }
 
-        private void UpdateOrbital(Keyboard kb)
+        private void UpdateOrbital(Keyboard keyboard)
         {
-            if (kb != null && kb.rKey.wasPressedThisFrame)
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
             {
                 _yaw = 0f;
                 _pitch = 30f;
@@ -90,7 +90,7 @@ namespace Gakkel.Swarm.Unity
             transform.LookAt(centroid);
         }
 
-        private void UpdateFree(Keyboard kb)
+        private void UpdateFree(Keyboard keyboard)
         {
             var mouse = Mouse.current;
             if (mouse != null)
@@ -108,18 +108,18 @@ namespace Gakkel.Swarm.Unity
                     _freePosition += Quaternion.Euler(_freePitch, _freeYaw, 0) * Vector3.forward * scroll * zoomSensitivity;
             }
 
-            var rot = Quaternion.Euler(_freePitch, _freeYaw, 0);
-            if (kb != null)
+            var rotation = Quaternion.Euler(_freePitch, _freeYaw, 0);
+            if (keyboard != null)
             {
                 float speed = freeMoveSpeed * Time.deltaTime;
-                if (kb.wKey.isPressed) _freePosition += rot * Vector3.forward * speed;
-                if (kb.sKey.isPressed) _freePosition -= rot * Vector3.forward * speed;
-                if (kb.aKey.isPressed) _freePosition -= rot * Vector3.right   * speed;
-                if (kb.dKey.isPressed) _freePosition += rot * Vector3.right   * speed;
+                if (keyboard.wKey.isPressed) _freePosition += rotation * Vector3.forward * speed;
+                if (keyboard.sKey.isPressed) _freePosition -= rotation * Vector3.forward * speed;
+                if (keyboard.aKey.isPressed) _freePosition -= rotation * Vector3.right   * speed;
+                if (keyboard.dKey.isPressed) _freePosition += rotation * Vector3.right   * speed;
             }
 
             transform.position = _freePosition;
-            transform.rotation = rot;
+            transform.rotation = rotation;
         }
     }
 }

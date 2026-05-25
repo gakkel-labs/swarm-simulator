@@ -291,10 +291,10 @@ Si cet overhead devient gênant en v0.4+ (par ex. 200 agents), le champ peut mig
 | Sujet                       | Fichier                                                                                   |
 | --------------------------- | ----------------------------------------------------------------------------------------- |
 | Définition proto            | `contracts/src/main/proto/swarm_observer.proto`                                           |
-| Service côté serveur        | `swarm-server/.../server/SwarmObserverImpl.java`                                          |
-| Bootstrap serveur gRPC      | `swarm-server/.../server/SwarmServer.java` (`PORT = 50051`)                               |
+| Service côté serveur        | `swarm-server/.../server/SwarmObserverImpl.java` (abonnements + boucle de diffusion)      |
+| Bootstrap serveur gRPC      | `swarm-server/.../server/SwarmServer.java` (point d'entrée) + `SwarmServerBootstrap.java` (câblage, `PORT = 50051`) |
 | Source des frames           | `swarm-server/.../simulation/SimulationLoop.java` (tick Boids 30 Hz → `World`)            |
-| Mapping domaine → proto     | `SwarmObserverImpl.toAgentState()` / `toVec3()` / `toProtoType()` / `toProtoObstacle()` / `toPredatorState()` |
+| Mapping domaine → proto     | `swarm-server/.../server/WorldStateBuilder.java` (`build()` / `toAgentState()` / `toVec3()` / `toProtoObstacle()` / `toPredatorState()`) |
 
 Pour exercer le stream à la main :
 

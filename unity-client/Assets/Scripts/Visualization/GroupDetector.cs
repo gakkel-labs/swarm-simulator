@@ -20,8 +20,8 @@ namespace Gakkel.Swarm.Unity
             {
                 if (groupId.ContainsKey(id)) continue;
 
-                int g = nextGroup++;
-                groupId[id] = g;
+                int currentGroupId = nextGroup++;
+                groupId[id] = currentGroupId;
                 queue.Enqueue(id);
 
                 while (queue.Count > 0)
@@ -32,7 +32,7 @@ namespace Gakkel.Swarm.Unity
                         if (groupId.ContainsKey(otherId)) continue;
                         if (Vector3.Distance(positions[current], otherPos) < groupingRadius)
                         {
-                            groupId[otherId] = g;
+                            groupId[otherId] = currentGroupId;
                             queue.Enqueue(otherId);
                         }
                     }

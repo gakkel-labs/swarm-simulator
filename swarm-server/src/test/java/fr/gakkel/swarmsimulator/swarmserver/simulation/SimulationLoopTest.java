@@ -43,9 +43,9 @@ class SimulationLoopTest {
 
     @Test
     void createDefaultWorld_agentsStartInBounds() {
-        World w = SimulationLoop.createDefaultWorld();
-        for (Agent a : w.agents()) {
-            assertTrue(w.isInBounds(a.position()), "agent out of bounds: " + a.position());
+        World defaultWorld = SimulationLoop.createDefaultWorld();
+        for (Agent agent : defaultWorld.agents()) {
+            assertTrue(defaultWorld.isInBounds(agent.position()), "agent out of bounds: " + agent.position());
         }
     }
 
@@ -68,8 +68,8 @@ class SimulationLoopTest {
 
     @Test
     void clampSpeed_noChangeWhenBelowMax() {
-        Vector3D v = new Vector3D(1, 0, 0);
-        assertEquals(v, SimulationLoop.clampSpeed(v, 5.0));
+        Vector3D vector = new Vector3D(1, 0, 0);
+        assertEquals(vector, SimulationLoop.clampSpeed(vector, 5.0));
     }
 
     @Test
@@ -83,15 +83,15 @@ class SimulationLoopTest {
 
         @Test
         void singleAgent_centroidEqualsItsPosition() {
-            var a = agent(new Vector3D(10, 20, 30));
-            assertEquals(new Vector3D(10, 20, 30), SimulationLoop.computeCentroid(List.of(a)));
+            var agent = createAgent(new Vector3D(10, 20, 30));
+            assertEquals(new Vector3D(10, 20, 30), SimulationLoop.computeCentroid(List.of(agent)));
         }
 
         @Test
         void twoSymmetricAgents_centroidIsOrigin() {
-            var a1 = agent(new Vector3D(-5, 0, 0));
-            var a2 = agent(new Vector3D(5, 0, 0));
-            assertEquals(new Vector3D(0, 0, 0), SimulationLoop.computeCentroid(List.of(a1, a2)));
+            var leftAgent  = createAgent(new Vector3D(-5, 0, 0));
+            var rightAgent = createAgent(new Vector3D( 5, 0, 0));
+            assertEquals(new Vector3D(0, 0, 0), SimulationLoop.computeCentroid(List.of(leftAgent, rightAgent)));
         }
     }
 
@@ -100,25 +100,25 @@ class SimulationLoopTest {
 
         @Test
         void allAgentsAtSamePosition_sigmaIsZero() {
-            var a1 = agent(new Vector3D(5, 5, 5));
-            var a2 = agent(new Vector3D(5, 5, 5));
-            Vector3D centroid = SimulationLoop.computeCentroid(List.of(a1, a2));
-            assertEquals(0.0, SimulationLoop.computePositionStandardDeviation(List.of(a1, a2), centroid), 1e-9);
+            var firstAgent  = createAgent(new Vector3D(5, 5, 5));
+            var secondAgent = createAgent(new Vector3D(5, 5, 5));
+            Vector3D centroid = SimulationLoop.computeCentroid(List.of(firstAgent, secondAgent));
+            assertEquals(0.0, SimulationLoop.computePositionStandardDeviation(List.of(firstAgent, secondAgent), centroid), 1e-9);
         }
 
         @Test
         void twoAgentsSymmetric_sigmaEqualsDistanceToCentroid() {
             // each agent is 5u from centroid → σ = sqrt((5² + 5²) / 2) = 5
-            var a1 = agent(new Vector3D(0, 0, 0));
-            var a2 = agent(new Vector3D(10, 0, 0));
-            Vector3D centroid = SimulationLoop.computeCentroid(List.of(a1, a2));
-            assertEquals(5.0, SimulationLoop.computePositionStandardDeviation(List.of(a1, a2), centroid), 1e-9);
+            var firstAgent  = createAgent(new Vector3D(0, 0, 0));
+            var secondAgent = createAgent(new Vector3D(10, 0, 0));
+            Vector3D centroid = SimulationLoop.computeCentroid(List.of(firstAgent, secondAgent));
+            assertEquals(5.0, SimulationLoop.computePositionStandardDeviation(List.of(firstAgent, secondAgent), centroid), 1e-9);
         }
 
         @Test
         void scatteredAgents_haveHigherSigmaThanConvergedAgents() {
-            var converged = List.of(agent(new Vector3D(0, 0, 0)), agent(new Vector3D(1, 0, 0)), agent(new Vector3D(0, 1, 0)));
-            var scattered = List.of(agent(new Vector3D(0, 0, 0)), agent(new Vector3D(50, 0, 0)), agent(new Vector3D(0, 50, 0)));
+            var converged = List.of(createAgent(new Vector3D(0, 0, 0)), createAgent(new Vector3D(1, 0, 0)), createAgent(new Vector3D(0, 1, 0)));
+            var scattered = List.of(createAgent(new Vector3D(0, 0, 0)), createAgent(new Vector3D(50, 0, 0)), createAgent(new Vector3D(0, 50, 0)));
 
             double sigmaC = SimulationLoop.computePositionStandardDeviation(converged, SimulationLoop.computeCentroid(converged));
             double sigmaS = SimulationLoop.computePositionStandardDeviation(scattered, SimulationLoop.computeCentroid(scattered));
@@ -133,41 +133,41 @@ class SimulationLoopTest {
 
         @Test
         void noObstacles_returnsPositiveInfinity() {
-            var a = agent(new Vector3D(50, 50, 25));
+            var agent = createAgent(new Vector3D(50, 50, 25));
 
-            double gap = SimulationLoop.minObstacleGap(List.of(a), List.of());
+            double gap = SimulationLoop.minObstacleGap(List.of(agent), List.of());
 
             assertEquals(Double.POSITIVE_INFINITY, gap);
         }
 
         @Test
         void oneAgentOneObstacle_returnsDistanceToSurface() {
-            var a = agent(new Vector3D(0, 0, 0));
+            var agent = createAgent(new Vector3D(0, 0, 0));
             var obstacle = new Obstacle(new Vector3D(10, 0, 0), 3.0);
 
-            double gap = SimulationLoop.minObstacleGap(List.of(a), List.of(obstacle));
+            double gap = SimulationLoop.minObstacleGap(List.of(agent), List.of(obstacle));
 
             assertEquals(7.0, gap, 1e-9);  // 10 - 3 = 7
         }
 
         @Test
         void picksSmallestGapAcrossAllPairs() {
-            var a1 = agent(new Vector3D(0, 0, 0));
-            var a2 = agent(new Vector3D(100, 0, 0));
-            var farObstacle  = new Obstacle(new Vector3D(50, 0, 0), 1.0);   // gap from a1 = 49
-            var nearObstacle = new Obstacle(new Vector3D(5, 0, 0), 2.0);    // gap from a1 = 3 ← min
+            var nearAgent = createAgent(new Vector3D(0, 0, 0));
+            var farAgent  = createAgent(new Vector3D(100, 0, 0));
+            var farObstacle  = new Obstacle(new Vector3D(50, 0, 0), 1.0);   // gap from nearAgent = 49
+            var nearObstacle = new Obstacle(new Vector3D(5, 0, 0), 2.0);    // gap from nearAgent = 3 ← min
 
-            double gap = SimulationLoop.minObstacleGap(List.of(a1, a2), List.of(farObstacle, nearObstacle));
+            double gap = SimulationLoop.minObstacleGap(List.of(nearAgent, farAgent), List.of(farObstacle, nearObstacle));
 
             assertEquals(3.0, gap, 1e-9);
         }
 
         @Test
         void agentInsideObstacle_returnsNegativeGap() {
-            var a = agent(new Vector3D(10, 0, 0));
+            var agent = createAgent(new Vector3D(10, 0, 0));
             var obstacle = new Obstacle(new Vector3D(10, 0, 0), 5.0);  // agent at center
 
-            double gap = SimulationLoop.minObstacleGap(List.of(a), List.of(obstacle));
+            double gap = SimulationLoop.minObstacleGap(List.of(agent), List.of(obstacle));
 
             assertEquals(-5.0, gap, 1e-9);
         }
@@ -178,7 +178,7 @@ class SimulationLoopTest {
 
         @Test
         void noPenetration_returnsZero() {
-            var outside = agent(new Vector3D(0, 0, 0));
+            var outside = createAgent(new Vector3D(0, 0, 0));
             var obstacle = new Obstacle(new Vector3D(50, 50, 25), 5.0);
 
             assertEquals(0, SimulationLoop.countAgentsInsideObstacles(List.of(outside), List.of(obstacle)));
@@ -186,8 +186,8 @@ class SimulationLoopTest {
 
         @Test
         void oneInside_returnsOne() {
-            var inside  = agent(new Vector3D(11, 0, 0));  // 1u from center, radius 3 → inside
-            var outside = agent(new Vector3D(50, 0, 0));
+            var inside  = createAgent(new Vector3D(11, 0, 0));  // 1u from center, radius 3 → inside
+            var outside = createAgent(new Vector3D(50, 0, 0));
             var obstacle = new Obstacle(new Vector3D(10, 0, 0), 3.0);
 
             long count = SimulationLoop.countAgentsInsideObstacles(List.of(inside, outside), List.of(obstacle));
@@ -197,11 +197,11 @@ class SimulationLoopTest {
 
         @Test
         void multipleObstacles_agentCountedOnceEvenIfInsideSeveral() {
-            var a = agent(new Vector3D(10, 0, 0));
-            var o1 = new Obstacle(new Vector3D(10, 0, 0), 3.0);  // contains a
-            var o2 = new Obstacle(new Vector3D(11, 0, 0), 3.0);  // also contains a
+            var agent = createAgent(new Vector3D(10, 0, 0));
+            var firstObstacle  = new Obstacle(new Vector3D(10, 0, 0), 3.0);  // contains agent
+            var secondObstacle = new Obstacle(new Vector3D(11, 0, 0), 3.0);  // also contains agent
 
-            long count = SimulationLoop.countAgentsInsideObstacles(List.of(a), List.of(o1, o2));
+            long count = SimulationLoop.countAgentsInsideObstacles(List.of(agent), List.of(firstObstacle, secondObstacle));
 
             assertEquals(1, count);
         }
@@ -209,10 +209,10 @@ class SimulationLoopTest {
 
     @Test
     void tick_agentsNeverInsideObstaclesAfterManyTicks() {
-        World w = SimulationLoop.createWorld(20, new Random(42L));
-        SimulationLoop sl = new SimulationLoop(w, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
-        for (int i = 0; i < 600; i++) sl.tick();
-        long penetrations = SimulationLoop.countAgentsInsideObstacles(w.agents(), w.obstacles());
+        World testWorld = SimulationLoop.createWorld(20, new Random(42L));
+        SimulationLoop testLoop = new SimulationLoop(testWorld, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
+        for (int i = 0; i < 600; i++) testLoop.tick();
+        long penetrations = SimulationLoop.countAgentsInsideObstacles(testWorld.agents(), testWorld.obstacles());
         assertEquals(0, penetrations, "agents should not be inside obstacles after 600 ticks");
     }
 
@@ -372,7 +372,7 @@ class SimulationLoopTest {
         void agentWithinSensorRadius_marksTargetFound() {
             Vector3D targetPosition = new Vector3D(50, -50, 25);
             detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            Agent nearAgent = agent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M - 1, -50, 25));
+            Agent nearAgent = createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M - 1, -50, 25));
             detectionWorld.addAgent(nearAgent);
 
             detectionLoop.tick();
@@ -385,7 +385,7 @@ class SimulationLoopTest {
         void agentBeyondSensorRadius_doesNotMarkFound() {
             Vector3D targetPosition = new Vector3D(50, -50, 25);
             detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M + 1, -50, 25)));
+            detectionWorld.addAgent(createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M + 1, -50, 25)));
 
             detectionLoop.tick();
 
@@ -396,7 +396,7 @@ class SimulationLoopTest {
         void agentExactlyAtSensorRadius_marksTargetFound() {
             Vector3D targetPosition = new Vector3D(50, -50, 25);
             detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            detectionWorld.addAgent(agent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M, -50, 25)));
+            detectionWorld.addAgent(createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M, -50, 25)));
 
             detectionLoop.tick();
 
@@ -408,7 +408,7 @@ class SimulationLoopTest {
             var target = new fr.gakkel.swarmsimulator.swarmserver.domain.Target(new Vector3D(50, -50, 25));
             target.markFound("first-agent");
             detectionWorld.setTarget(target);
-            Agent secondAgent = agent(new Vector3D(50, -50, 25));
+            Agent secondAgent = createAgent(new Vector3D(50, -50, 25));
             detectionWorld.addAgent(secondAgent);
 
             detectionLoop.tick();
@@ -418,13 +418,13 @@ class SimulationLoopTest {
 
         @Test
         void noTarget_tickRunsWithoutError() {
-            detectionWorld.addAgent(agent(new Vector3D(50, -50, 25)));
+            detectionWorld.addAgent(createAgent(new Vector3D(50, -50, 25)));
 
             assertDoesNotThrow(() -> detectionLoop.tick());
         }
     }
 
-    private static Agent agent(Vector3D position) {
+    private static Agent createAgent(Vector3D position) {
         return new Agent(UUID.randomUUID(), AgentType.EXPLORER, position, Vector3D.ZERO);
     }
 }

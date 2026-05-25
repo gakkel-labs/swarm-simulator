@@ -58,25 +58,28 @@ public final class BoidsRules {
 
     public Vector3D boundaryRepulsion(Agent agent, World world) {
         Vector3D pos = agent.position();
-        double r = config.boundaryRepulsionRadius();
+        double radius = config.boundaryRepulsionRadius();
         Vector3D force = Vector3D.ZERO;
 
-        force = force.add(wallForce(pos.x(),             1, 0, 0, r));
-        force = force.add(wallForce(world.width()  - pos.x(), -1, 0, 0, r));
-        force = force.add(wallForce(pos.y(),             0, 1, 0, r));
-        force = force.add(wallForce(world.height() - pos.y(), 0, -1, 0, r));
-        force = force.add(wallForce(pos.z(),             0, 0, 1, r));
-        force = force.add(wallForce(world.depth()  - pos.z(), 0, 0, -1, r));
+        force = force.add(wallForce(pos.x(),                  1,  0,  0, radius));
+        force = force.add(wallForce(world.width()  - pos.x(), -1, 0,  0, radius));
+        force = force.add(wallForce(pos.y(),                  0,  1,  0, radius));
+        force = force.add(wallForce(world.height() - pos.y(), 0, -1,  0, radius));
+        force = force.add(wallForce(pos.z(),                  0,  0,  1, radius));
+        force = force.add(wallForce(world.depth()  - pos.z(), 0,  0, -1, radius));
 
         // normalize() returns ZERO when forces cancel (e.g. agent equidistant from two opposing
         // walls in a very small world) — no repulsion is the correct silent behaviour in that case
         return force.normalize();
     }
 
+    // (nx, ny, nz) is already a unit vector — passed literally as (±1, 0, 0) etc. by boundaryRepulsion.
+    // Scaling by 1/dist (instead of normalizing) is intentional: an inverse-distance force grows as the
+    // agent approaches the wall, producing a smooth turn rather than a constant push.
     private static Vector3D wallForce(double dist, double nx, double ny, double nz, double radius) {
         if (dist >= radius || dist < MIN_SEPARATION_DISTANCE) return Vector3D.ZERO;
-        double magnitude = 1.0 / dist;
-        return new Vector3D(nx * magnitude, ny * magnitude, nz * magnitude);
+        double inverseDistanceMagnitude = 1.0 / dist;
+        return new Vector3D(nx * inverseDistanceMagnitude, ny * inverseDistanceMagnitude, nz * inverseDistanceMagnitude);
     }
 
     // Unlike the other rules, obstacleAvoidance does NOT normalize its output: the magnitude
@@ -96,8 +99,8 @@ public final class BoidsRules {
             // skip degenerate case (agent at center → no direction) and obstacles beyond the threshold
             if (distance < MIN_SEPARATION_DISTANCE || gap >= avoidanceRadius) continue;
 
-            double t = Math.max(gap, 0) / avoidanceRadius;
-            double strength = Math.exp(-OBSTACLE_FALLOFF * t);
+            double normalizedGap = Math.max(gap, 0) / avoidanceRadius;
+            double strength = Math.exp(-OBSTACLE_FALLOFF * normalizedGap);
             total = total.add(delta.scale(strength / distance));  // delta/distance is the unit direction
         }
         return total;
@@ -120,7 +123,9 @@ public final class BoidsRules {
         return away.scale(1.0 / (dist * dist));
     }
 
-    public Vector3D steer(Agent agent, List<Agent> neighbors) {
+    // package-private: classical Boids composition (separation + alignment + cohesion).
+    // Public callers must use steer(agent, neighbors, world) which adds environmental forces.
+    Vector3D steer(Agent agent, List<Agent> neighbors) {
         return separation(agent, neighbors).scale(config.separationWeight())
                 .add(alignment(neighbors).scale(config.alignmentWeight()))
                 .add(cohesion(agent, neighbors).scale(config.cohesionWeight()));

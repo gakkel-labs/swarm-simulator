@@ -8,7 +8,7 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 public final class SimulationConstants {
 
     /** Radius within which an agent detects the target, in meters. */
-    public static final double SENSOR_RADIUS_M = 20.0;
+    public static final double SENSOR_RADIUS_M = 10.0;
 
     private SimulationConstants() {}
 }

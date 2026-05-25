@@ -24,10 +24,12 @@ flowchart LR
     P --> AL[Règle 2 : Alignement<br/>aligner la vitesse]
     P --> C[Règle 3 : Cohésion<br/>rester groupé]
     P --> B[Règle 4 : BoundaryRepulsion<br/>éviter les bords du monde]
+    P --> F[Règle 5 : PredatorFlee<br/>fuir le prédateur]
     S -->|× w_sep| SUM((Σ))
     AL -->|× w_align| SUM
     C -->|× w_coh| SUM
     B -->|× w_boundary| SUM
+    F -->|× w_flee| SUM
     SUM --> V[Mise à jour vitesse<br/>v = clamp(v + steer·dt, MAX_SPEED)]
     V --> POS[Mise à jour position<br/>p += v · dt]
 ```
@@ -40,13 +42,13 @@ Version ASCII pour terminaux :
                     │  (perceptionRadius) │
                     └──────────┬──────────┘
                                │
-         ┌──────────────┬──────┴───────┬──────────────┐
-         ▼              ▼              ▼              ▼
-     SÉPARATION     ALIGNEMENT      COHÉSION       BOUNDARY
-    (repousser)   (suivre cap)    (centroïde)   (éviter bords)
-         │              │              │              │
-       × w_sep      × w_align       × w_coh      × w_boundary
-         └──────────────┴──────┬───────┴──────────────┘
+         ┌──────────────┬──────┴───────┬──────────────┬─────────────┐
+         ▼              ▼              ▼              ▼             ▼
+     SÉPARATION     ALIGNEMENT      COHÉSION       BOUNDARY     PRÉDATEUR
+    (repousser)   (suivre cap)    (centroïde)   (éviter bords)    FUITE
+         │              │              │              │             │
+       × w_sep      × w_align       × w_coh      × w_boundary  × w_flee
+         └──────────────┴──────┬───────┴──────────────┴─────────────┘
                                ▼
                           Σ steering
                                │
@@ -145,6 +147,25 @@ fonction boundaryRepulsion(agent, world):
 
 ---
 
+## 5.5 Règle 5 — PredatorFlee *(réponse à la menace, hors modèle Reynolds)*
+
+**Objectif :** repousser chaque agent loin du prédateur autonome dès qu'il entre dans `threatFleeRadius`. Le prédateur est une **menace unique en mouvement**, pas un voisin du flock — il est traité séparément de la liste de voisins filtrée par `perceptionRadius`.
+
+**Principe :** répulsion inverse-carré (même noyau que la Séparation). La règle n'est **pas normalisée** — la magnitude brute croît à mesure que le prédateur se rapproche, déclenchant une fuite d'urgence réactive plutôt qu'une dérive constante.
+
+```text
+fonction predatorFlee(agent, prédateur):
+    away = agent.position - prédateur.position
+    d = away.magnitude()
+    si d > threatFleeRadius ou d < ε :
+        retourner (0, 0, 0)           # prédateur hors portée, ou co-localisé (dégénéré)
+    retourner away / (d * d)          # NON normalisé — la magnitude encode l'urgence
+```
+
+> **Différence avec la Séparation :** `separation` est normalisé (magnitude toujours = 1) ; `predatorFlee` ne l'est pas. Combiné à `threatFleeWeight = 200.0`, la force de fuite écrase toutes les forces de flocking à quelques mètres — la panique l'emporte sur la formation. Au-delà de `threatFleeRadius` la force est exactement nulle.
+
+---
+
 ## 6. Composition
 
 Le vecteur de steering total appliqué à l'agent à chaque tick :
@@ -154,13 +175,14 @@ steer = w_sep      * separation(agent, voisins)
       + w_align    * alignment(voisins)
       + w_coh      * cohesion(agent, voisins)
       + w_boundary * boundaryRepulsion(agent, world)
+      + w_flee     * predatorFlee(agent, prédateur)   # seulement si prédateur != null et en portée
 
 agent.velocity += steer * dt
 agent.velocity  = clamp(agent.velocity, MAX_SPEED)   # seul plafond appliqué
 agent.position += agent.velocity * dt
 ```
 
-> **Note :** les règles retournent des vecteurs unitaires (magnitude = 1). Il n'y a pas de `clamp(steer, MAX_FORCE)` — la magnitude totale de `steer` est bornée supérieurement par la somme des poids (par inégalité triangulaire), atteinte uniquement quand tous les vecteurs sont colinéaires.
+> **Note :** les règles 1 à 4 retournent des vecteurs unitaires (magnitude = 1). `predatorFlee` (règle 5) retourne un vecteur non normalisé — sa magnitude croît en 1/d² dans `threatFleeRadius`. Il n'y a pas de `clamp(steer, MAX_FORCE)` — la magnitude totale de `steer` est pratiquement bornée par la somme des poids, le terme de fuite décroissant à zéro hors du rayon.
 
 ---
 
@@ -177,6 +199,8 @@ Valeurs par défaut (classe `BoidsConfig`) :
 | `maxSpeed`                 | `5.0`             | Vitesse maximale de l'agent                                     | Flock plus rapide, plus réactif            |
 | `boundaryRepulsionRadius`  | `15.0`            | Distance aux murs en-dessous de laquelle la répulsion s'active  | Marge de sécurité plus grande aux bords    |
 | `boundaryRepulsionWeight`  | `2.0`             | Poids de la répulsion aux bords                                 | Agents s'éloignent des murs plus tôt/fort  |
+| `threatFleeRadius`         | `15.0`            | Rayon de détection du prédateur — la fuite s'active en dessous  | Zone de panique plus large                 |
+| `threatFleeWeight`         | `200.0`           | Poids de predatorFlee dans la somme finale                      | Réponse de panique plus/moins forte        |
 | `dt` *(simulation loop)*   | `1/30 s ≈ 33 ms`  | Pas d'intégration temporelle (30 Hz)                            | Pas plus grands → instabilité numérique    |
 | `ε` *(garde numérique)*    | `1e-6`            | Seuil sous lequel un vecteur est considéré nul                  | Trop grand → règles inopérantes près de 0  |
 
@@ -200,7 +224,7 @@ Valeurs par défaut (classe `BoidsConfig`) :
 | **Pas de but**            | Un flock n'a pas d'objectif. Il bouge mais ne va nulle part en particulier.                                 | Non mitigé. Leader, waypoint, force d'attraction externe possibles. |
 | **Sensibilité au dt**     | L'intégration numérique (`p += v·dt`) devient instable à grand `dt`.                                        | Mitigé : `dt` fixé à 33 ms par la boucle 30 Hz. Sous-pas si nécessaire. |
 | **2D vs 3D**              | Les formules sont identiques, mais le tuning diffère : la 3D demande des poids plus faibles.                | À tuner si bascule en 3D.                                     |
-| **Absence de prédateur**  | Reynolds 1987 mentionne une règle "avoid predator" comme extension naturelle. Notre modèle (3 + boundary) n'a pas de mécanisme de fuite. | Non mitigé. Règle supplémentaire post-MVP si nécessaire.      |
+| **Absence de prédateur**  | Reynolds 1987 mentionne une règle "avoid predator" comme extension naturelle. | ✅ **Résolu en v0.1** via `predatorFlee` (§5.5). Un prédateur autonome se dirige vers l'agent le plus proche à 3 m/s ; les boids dans un rayon de 15 m fuient avec une répulsion inverse-carré (`w_flee = 200`). Les agents mangés réapparaissent 5 s plus tard loin du prédateur. |
 
 ---
 

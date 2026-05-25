@@ -123,13 +123,32 @@ Obstacle sphérique statique. Renvoyé à chaque frame même s'il est immuable a
 
 Les obstacles n'ont pas d'`id`. Les clients doivent les re-keyer par `(position, radius)`, ou simplement reconstruire la liste visuelle à chaque frame.
 
-### 3.5 `WorldState`
+### 3.5 `PredatorState`
+
+```proto
+message PredatorState {
+  string id           = 1;
+  Vec3   position_xyz = 2;
+  Vec3   velocity_mps = 3;
+}
+```
+
+Snapshot du prédateur autonome à l'instant de la broadcast.
+
+- `id` — chaîne fixe `"predator-0"` en v0.1 (prédateur unique). Plusieurs prédateurs utiliseraient des IDs distincts — les clients doivent indexer par `id` pour un rendu avec état.
+- `position_xyz` — centre du prédateur, mètres, NED. Même repère que `AgentState.position_xyz`.
+- `velocity_mps` — vitesse instantanée, m/s, NED. Magnitude bornée par `Predator.SPEED` (3.0 m/s — intentionnellement plus lent que les boids pour créer de la tension dramatique).
+
+Pas de champ d'orientation — le cap visuel est déduit côté client depuis `velocity_mps`.
+
+### 3.6 `WorldState`
 
 ```proto
 message WorldState {
-  int64                timestamp_unix_ms = 1;
-  repeated AgentState  agents            = 2;
-  repeated Obstacle    obstacles         = 3;
+  int64                    timestamp_unix_ms = 1;
+  repeated AgentState      agents            = 2;
+  repeated Obstacle        obstacles         = 3;
+  repeated PredatorState   predators         = 4;
 }
 ```
 
@@ -138,10 +157,11 @@ Snapshot complet du monde simulé à l'instant `timestamp_unix_ms`.
 - `timestamp_unix_ms` — horloge wall-clock du serveur au moment où la frame est construite (`System.currentTimeMillis()`). Cf. §5.3.
 - `agents` — tous les agents du monde. L'ordre **n'est pas** garanti ; les clients doivent indexer par `id`.
 - `obstacles` — tous les obstacles du monde. Une liste vide est légale.
+- `predators` — tous les prédateurs du monde. Contient exactement **1 entrée** en v0.1. Une liste vide est légale (scénarios sans prédateur). Les clients doivent gérer une liste vide — détruire le GameObject prédateur si la liste devient vide.
 
 Chaque frame est **auto-suffisante** — pas de diff, pas de delta. Un client qui se connecte en cours de simulation reçoit un état complet dès sa première frame.
 
-### 3.6 `SubscribeRequest`
+### 3.7 `SubscribeRequest`
 
 ```proto
 message SubscribeRequest {
@@ -274,7 +294,7 @@ Si cet overhead devient gênant en v0.4+ (par ex. 200 agents), le champ peut mig
 | Service côté serveur        | `swarm-server/.../server/SwarmObserverImpl.java`                                          |
 | Bootstrap serveur gRPC      | `swarm-server/.../server/SwarmServer.java` (`PORT = 50051`)                               |
 | Source des frames           | `swarm-server/.../simulation/SimulationLoop.java` (tick Boids 30 Hz → `World`)            |
-| Mapping domaine → proto     | `SwarmObserverImpl.toAgentState()` / `toVec3()` / `toProtoType()` / `toProtoObstacle()`   |
+| Mapping domaine → proto     | `SwarmObserverImpl.toAgentState()` / `toVec3()` / `toProtoType()` / `toProtoObstacle()` / `toPredatorState()` |
 
 Pour exercer le stream à la main :
 
@@ -293,7 +313,7 @@ Le contrat est volontairement minimal pour que les itérations futures s'insère
 
 | Besoin futur                            | Extension probable                                                              |
 | --------------------------------------- | ------------------------------------------------------------------------------- |
-| Menaces (scénario SAR v0.1)             | Nouveau champ `repeated Threat threats = 4` sur `WorldState`                    |
+| Menaces (scénario SAR v0.1)             | ✅ **Fait** — `repeated PredatorState predators = 4` sur `WorldState`. Un prédateur autonome chasse les agents ; Unity le rend comme une sphère rouge (`PredatorRenderer.cs`). |
 | Drones différenciés (v0.4)              | L'enum `AgentType` couvre déjà `OPERATOR` / `CARRIER`                           |
 | Canal de commande Pi-agent (v0.3)       | **Nouveau** service (`SwarmController`), RPC séparé — garder l'observer en lecture seule |
 | Télémétrie par agent (batterie, santé)  | Nouveaux champs `optional` sur `AgentState` (proto3 `optional` est wire-compatible) |

@@ -14,9 +14,9 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private Toggle detectionZoneToggle;
         [SerializeField] private TextMeshProUGUI hudText;
 
-        private float _fpsAccum;
-        private int _fpsFrames;
-        private float _fpsCurrent;
+        private float _fpsAccumulator;
+        private int _fpsFrameCount;
+        private float _currentFps;
 
         private void Start()
         {
@@ -34,32 +34,32 @@ namespace Gakkel.Swarm.Unity
         {
             if (visualizer == null || hudText == null) return;
 
-            _fpsAccum += Time.unscaledDeltaTime;
-            _fpsFrames++;
-            if (_fpsAccum >= 0.5f)
+            _fpsAccumulator += Time.unscaledDeltaTime;
+            _fpsFrameCount++;
+            if (_fpsAccumulator >= 0.5f)
             {
-                _fpsCurrent = _fpsFrames / _fpsAccum;
-                _fpsAccum = 0f;
-                _fpsFrames = 0;
+                _currentFps     = _fpsFrameCount / _fpsAccumulator;
+                _fpsAccumulator = 0f;
+                _fpsFrameCount  = 0;
             }
 
-            string sarLine = BuildSarLine();
-            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_fpsCurrent:F0}{sarLine}";
+            string searchStatusLine = BuildSearchStatusLine();
+            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}{searchStatusLine}";
         }
 
-        private string BuildSarLine()
+        private string BuildSearchStatusLine()
         {
             if (targetRenderer == null || !targetRenderer.IsPlaced) return string.Empty;
 
             if (targetRenderer.IsFound)
             {
-                string shortId = targetRenderer.FoundByAgentId.Length >= 8
+                string displayAgentId = targetRenderer.FoundByAgentId.Length >= 8
                     ? targetRenderer.FoundByAgentId[..8]
                     : targetRenderer.FoundByAgentId;
-                return $"\nFound by {shortId} in {targetRenderer.FoundAtElapsedS:F1}s";
+                return $"\nFound by {displayAgentId} in {targetRenderer.FoundAtElapsedSeconds:F1}s";
             }
 
-            return $"\nSearching... {targetRenderer.ElapsedSimS:F1}s";
+            return $"\nSearching... {targetRenderer.ElapsedSimSeconds:F1}s";
         }
     }
 }

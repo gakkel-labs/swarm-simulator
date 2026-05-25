@@ -19,36 +19,34 @@ namespace Gakkel.Swarm.Unity
         {
             var activeIds = new HashSet<string>();
 
-            foreach (var p in predators)
+            foreach (var predatorState in predators)
             {
-                activeIds.Add(p.Id);
+                activeIds.Add(predatorState.Id);
 
-                if (!_predators.TryGetValue(p.Id, out var go))
+                if (!_predators.TryGetValue(predatorState.Id, out var predatorObject))
                 {
-                    go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    Destroy(go.GetComponent<Collider>());
-                    go.name = "Predator";
-                    go.GetComponent<Renderer>().material = _predatorMaterial;
-                    go.transform.localScale = Vector3.one * 2f;
-                    _predators[p.Id] = go;
+                    predatorObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    Destroy(predatorObject.GetComponent<Collider>());
+                    predatorObject.name = "Predator";
+                    predatorObject.GetComponent<Renderer>().material = _predatorMaterial;
+                    predatorObject.transform.localScale = Vector3.one * 2f;
+                    _predators[predatorState.Id] = predatorObject;
                 }
 
-                go.transform.position = NedToUnity(p.PositionXyz);
+                predatorObject.transform.position = CoordinateUtils.NedToUnity(predatorState.PositionXyz);
             }
 
-            var toRemove = new List<string>();
-            foreach (var (id, go) in _predators)
+            var predatorsToRemove = new List<string>();
+            foreach (var (predatorId, predatorObject) in _predators)
             {
-                if (!activeIds.Contains(id))
+                if (!activeIds.Contains(predatorId))
                 {
-                    Destroy(go);
-                    toRemove.Add(id);
+                    Destroy(predatorObject);
+                    predatorsToRemove.Add(predatorId);
                 }
             }
-            foreach (var id in toRemove) _predators.Remove(id);
+            foreach (var predatorId in predatorsToRemove) _predators.Remove(predatorId);
         }
-
-        private static Vector3 NedToUnity(Vec3 ned) => new(ned.Y, -ned.Z, ned.X);
 
         private void OnDestroy()
         {

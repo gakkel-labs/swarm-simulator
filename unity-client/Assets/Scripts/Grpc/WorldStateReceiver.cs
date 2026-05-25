@@ -20,38 +20,38 @@ namespace Gakkel.Swarm.Unity
         private const string ClientId = "unity-client";
 
         private GrpcChannel _channel;
-        private CancellationTokenSource _cts;
+        private CancellationTokenSource _cancellationTokenSource;
 
         private void Start()
         {
-            _cts = new CancellationTokenSource();
+            _cancellationTokenSource = new CancellationTokenSource();
             _channel = GrpcChannel.ForAddress(serverAddress, new GrpcChannelOptions
             {
                 HttpHandler = new YetAnotherHttpHandler { Http2Only = true },
                 DisposeHttpClient = true,
             });
 
-            var task = ReceiveLoopAsync(_cts.Token);
-            task.ContinueWith(
-                t => Debug.LogException(t.Exception?.InnerException ?? t.Exception, this),
+            var receiveTask = ReceiveLoopAsync(_cancellationTokenSource.Token);
+            receiveTask.ContinueWith(
+                task => Debug.LogException(task.Exception?.InnerException ?? task.Exception, this),
                 TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        private async Task ReceiveLoopAsync(CancellationToken ct)
+        private async Task ReceiveLoopAsync(CancellationToken cancellationToken)
         {
             var client = new SwarmObserver.SwarmObserverClient(_channel);
 
-            while (!ct.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     using var call = client.SubscribeWorldState(
                         new SubscribeRequest { ClientId = ClientId },
-                        cancellationToken: ct);
+                        cancellationToken: cancellationToken);
 
-                    await foreach (var ws in call.ResponseStream.ReadAllAsync(ct))
+                    await foreach (var worldState in call.ResponseStream.ReadAllAsync(cancellationToken))
                     {
-                        var snapshot = ws;
+                        var snapshot = worldState;
                         MainThreadDispatcher.Enqueue(() => OnWorldStateReceived(snapshot));
                     }
                 }
@@ -67,7 +67,7 @@ namespace Gakkel.Swarm.Unity
                 {
                     MainThreadDispatcher.Enqueue(() =>
                         Debug.LogWarning($"[gRPC] Server disconnected ({ex.StatusCode}). Retrying in {retryDelaySeconds}s..."));
-                    await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds), ct);
+                    await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds), cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -78,19 +78,19 @@ namespace Gakkel.Swarm.Unity
             }
         }
 
-        private void OnWorldStateReceived(WorldState ws)
+        private void OnWorldStateReceived(WorldState worldState)
         {
-            visualizer?.Apply(ws);
-            targetRenderer?.Apply(ws.SearchStatus);
+            visualizer?.Apply(worldState);
+            targetRenderer?.Apply(worldState.SearchStatus);
 #if UNITY_EDITOR
-            Debug.Log($"[gRPC] WorldState t={ws.TimestampUnixMs} agents={ws.Agents.Count}");
+            Debug.Log($"[gRPC] WorldState t={worldState.TimestampUnixMs} agents={worldState.Agents.Count}");
 #endif
         }
 
         private void OnDestroy()
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
             _channel?.Dispose();
         }
     }

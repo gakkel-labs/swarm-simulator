@@ -12,12 +12,13 @@ namespace Gakkel.Swarm.Unity
         private GameObject _sphere;
         private Renderer _sphereRenderer;
         private float _blinkStartTime;
+        private bool _isBlinking;
 
-        public bool IsPlaced         { get; private set; }
-        public bool IsFound          { get; private set; }
-        public float ElapsedSimS     { get; private set; }
-        public string FoundByAgentId { get; private set; }
-        public float FoundAtElapsedS { get; private set; }
+        public bool IsPlaced               => _sphere.activeSelf;
+        public bool IsFound                { get; private set; }
+        public float ElapsedSimSeconds     { get; private set; }
+        public string FoundByAgentId       { get; private set; }
+        public float FoundAtElapsedSeconds { get; private set; }
 
         private void Awake()
         {
@@ -34,8 +35,15 @@ namespace Gakkel.Swarm.Unity
 
         private void Update()
         {
-            if (IsFound)
-                _sphereRenderer.material.color = ComputeBlinkColor(TargetColor, _blinkStartTime, BlinkDuration, BlinkFrequency);
+            if (!_isBlinking) return;
+            float elapsed = Time.time - _blinkStartTime;
+            if (elapsed > BlinkDuration)
+            {
+                _sphereRenderer.material.color = TargetColor;
+                _isBlinking = false;
+                return;
+            }
+            _sphereRenderer.material.color = Mathf.Sin(elapsed * BlinkFrequency) > 0 ? TargetColor : Color.white;
         }
 
         public void Apply(SearchStatus searchStatus)
@@ -43,14 +51,12 @@ namespace Gakkel.Swarm.Unity
             if (searchStatus == null || !searchStatus.TargetPlaced)
             {
                 _sphere.SetActive(false);
-                IsPlaced = false;
-                IsFound  = false;
+                IsFound = false;
                 return;
             }
 
-            IsPlaced    = true;
-            ElapsedSimS = searchStatus.ElapsedSimS;
-            _sphere.transform.position = NedToUnity(searchStatus.TargetPosition);
+            ElapsedSimSeconds = searchStatus.ElapsedSimS;
+            _sphere.transform.position = CoordinateUtils.NedToUnity(searchStatus.TargetPosition);
             _sphere.SetActive(true);
 
             if (searchStatus.FoundEvent == null)
@@ -62,20 +68,20 @@ namespace Gakkel.Swarm.Unity
 
             if (!IsFound)
             {
-                IsFound          = true;
-                FoundByAgentId   = searchStatus.FoundEvent.AgentId;
-                FoundAtElapsedS  = searchStatus.FoundEvent.ElapsedSimS;
-                _blinkStartTime  = Time.time;
+                IsFound                = true;
+                FoundByAgentId         = searchStatus.FoundEvent.AgentId;
+                FoundAtElapsedSeconds  = searchStatus.FoundEvent.ElapsedSimS;
+                _blinkStartTime        = Time.time;
+                _isBlinking            = true;
             }
         }
 
         public static Color ComputeBlinkColor(Color baseColor, float startTime, float duration = 5f, float frequency = 10f)
         {
-            if (Time.time - startTime > duration) return baseColor;
-            return Mathf.Sin((Time.time - startTime) * frequency) > 0 ? baseColor : Color.white;
+            float elapsed = Time.time - startTime;
+            if (elapsed > duration) return baseColor;
+            return Mathf.Sin(elapsed * frequency) > 0 ? baseColor : Color.white;
         }
-
-        private static Vector3 NedToUnity(Vec3 ned) => new(ned.Y, -ned.Z, ned.X);
 
         private void OnDestroy()
         {

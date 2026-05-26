@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -44,6 +46,7 @@ public class SimulationLoop {
     private final BoidsConfig config;
     private final FlockingDiagnostician diagnostician;
     private final CohesionMetric cohesionMetric;
+    private final CohesionCsvExporter csvExporter;
     private final ScheduledExecutorService executor;
     private final Random rng = new Random();
 
@@ -56,7 +59,17 @@ public class SimulationLoop {
         this.rules = new BoidsRules(config);
         this.diagnostician = new FlockingDiagnostician(config, Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig"));
         this.cohesionMetric = new CohesionMetric(30);
+        this.csvExporter = createCsvExporter();
         this.executor = Objects.requireNonNull(executor, "executor");
+    }
+
+    private static CohesionCsvExporter createCsvExporter() {
+        try {
+            return new CohesionCsvExporter(Paths.get("metrics"));
+        } catch (IOException e) {
+            LOG.warn("Could not create cohesion CSV exporter: {}", e.getMessage());
+            return null;
+        }
     }
 
     public double cohesionSpreadM() {
@@ -76,6 +89,7 @@ public class SimulationLoop {
             LOG.warn("sim-loop did not terminate within 1s — forcing shutdown");
             executor.shutdownNow();
         }
+        if (csvExporter != null) csvExporter.close();
     }
 
     // snapshot steer forces before applying — parallel Boids update, all forces
@@ -119,6 +133,10 @@ public class SimulationLoop {
             checkTargetDetection(agents);
 
             tickCount++;
+            if (csvExporter != null && tickCount % TICK_RATE_HZ == 0) {
+                csvExporter.record(System.currentTimeMillis(), (double) tickCount / TICK_RATE_HZ,
+                        cohesionMetric.smoothedSpreadM());
+            }
             if (tickCount % LOG_INTERVAL_TICKS == 0) {
                 int elapsedSeconds = tickCount / TICK_RATE_HZ;
                 double intervalSeconds = (double) LOG_INTERVAL_TICKS / TICK_RATE_HZ;

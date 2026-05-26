@@ -60,7 +60,8 @@ Versions clés gérées dans la racine : Java **21**, gRPC **1.81.0**, Protobuf 
 ```
 fr.gakkel.swarmsimulator.swarmserver
 ├── domain         # Agent, AgentType, World, Vector3D, Predator, Target, Obstacle, BoidsConfig, BoidsRules
-├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician
+├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician,
+│                  # CohesionMetric (fenêtre glissante), CohesionCsvExporter
 └── server         # SwarmServer (main), SwarmServerBootstrap (wiring),
                    # SwarmObserverImpl, SimulationControlImpl, PingServiceImpl,
                    # WorldStateBuilder

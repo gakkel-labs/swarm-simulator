@@ -62,7 +62,8 @@ Key versions managed in the root POM: Java **21**, gRPC **1.81.0**, Protobuf **3
 ```
 fr.gakkel.swarmsimulator.swarmserver
 ├── domain         # Agent, AgentType, World, Vector3D, Predator, Target, Obstacle, BoidsConfig, BoidsRules
-├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician
+├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician,
+│                  # CohesionMetric (sliding-window spread), CohesionCsvExporter
 └── server         # SwarmServer (main), SwarmServerBootstrap (wiring),
                    # SwarmObserverImpl, SimulationControlImpl, PingServiceImpl,
                    # WorldStateBuilder

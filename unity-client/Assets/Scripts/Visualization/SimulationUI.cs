@@ -18,6 +18,10 @@ namespace Gakkel.Swarm.Unity
         private int _fpsFrameCount;
         private float _currentFps;
 
+        private float _cohesionRefreshTimer;
+        private float _displayedSpread;
+        private const float CohesionRefreshInterval = 0.2f;
+
         private void Start()
         {
             if (trailToggle != null)
@@ -43,8 +47,15 @@ namespace Gakkel.Swarm.Unity
                 _fpsFrameCount  = 0;
             }
 
+            _cohesionRefreshTimer += Time.unscaledDeltaTime;
+            if (_cohesionRefreshTimer >= CohesionRefreshInterval)
+            {
+                _displayedSpread = visualizer.CohesionSpreadM;
+                _cohesionRefreshTimer   = 0f;
+            }
+
             string searchStatusLine = BuildSearchStatusLine();
-            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}{searchStatusLine}";
+            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}\nSpread: {_displayedSpread:F1}m{searchStatusLine}";
         }
 
         private string BuildSearchStatusLine()

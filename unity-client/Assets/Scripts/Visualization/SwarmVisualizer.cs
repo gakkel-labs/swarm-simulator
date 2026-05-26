@@ -126,6 +126,7 @@ namespace Gakkel.Swarm.Unity
         public void Apply(WorldState worldState)
         {
             if (worldState.SensorRadiusM > 0f) _sensorRadiusMetres = worldState.SensorRadiusM;
+            CohesionSpreadM = worldState.CohesionSpreadM;
             SyncAgents(worldState.Agents);
             if (!_obstaclesSpawned && worldState.Obstacles.Count > 0)
             {
@@ -158,8 +159,9 @@ namespace Gakkel.Swarm.Unity
         }
 
         public Vector3 GetCentroid() => _centroid;
-        public int AgentCount    => _agents.Count;
-        public int ObstacleCount => _obstacles.Count;
+        public int AgentCount      => _agents.Count;
+        public int ObstacleCount   => _obstacles.Count;
+        public float CohesionSpreadM { get; private set; }
 
         public void SetShowTrails(bool shouldShow)
         {

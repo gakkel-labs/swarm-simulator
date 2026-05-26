@@ -59,8 +59,8 @@ public class SimulationLoop {
         this.executor = Objects.requireNonNull(executor, "executor");
     }
 
-    public double cohesionSigmaM() {
-        return cohesionMetric.smoothedSigmaM();
+    public double cohesionSpreadM() {
+        return cohesionMetric.smoothedSpreadM();
     }
 
     public void start() {

@@ -26,18 +26,18 @@ import java.util.Objects;
 public class WorldStateBuilder {
 
     private final World world;
-    private final DoubleSupplier cohesionSigmaM;
+    private final DoubleSupplier cohesionSpreadM;
 
-    public WorldStateBuilder(World world, DoubleSupplier cohesionSigmaM) {
+    public WorldStateBuilder(World world, DoubleSupplier cohesionSpreadM) {
         this.world = Objects.requireNonNull(world, "world");
-        this.cohesionSigmaM = Objects.requireNonNull(cohesionSigmaM, "cohesionSigmaM");
+        this.cohesionSpreadM = Objects.requireNonNull(cohesionSpreadM, "cohesionSpreadM");
     }
 
     public WorldState build() {
         WorldState.Builder worldStateBuilder = WorldState.newBuilder()
                 .setTimestampUnixMs(System.currentTimeMillis())
                 .setSensorRadiusM((float) SimulationConstants.SENSOR_RADIUS_M)
-                .setCohesionSigmaM((float) cohesionSigmaM.getAsDouble());
+                .setCohesionSpreadM((float) cohesionSpreadM.getAsDouble());
         for (Agent agent : world.agents()) {
             worldStateBuilder.addAgents(toAgentState(agent));
         }

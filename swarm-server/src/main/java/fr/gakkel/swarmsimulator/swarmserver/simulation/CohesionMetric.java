@@ -6,7 +6,7 @@ public class CohesionMetric {
     private final double[] window;
     private int head = 0;
     private int count = 0;
-    private volatile double smoothedSigma = 0.0;
+    private volatile double smoothedSpread = 0.0;
 
     public CohesionMetric(int windowSize) {
         if (windowSize <= 0) throw new IllegalArgumentException("windowSize must be > 0");
@@ -14,17 +14,17 @@ public class CohesionMetric {
         this.window = new double[windowSize];
     }
 
-    public void record(double sigma) {
-        window[head] = sigma;
+    public void record(double spread) {
+        window[head] = spread;
         head = (head + 1) % windowSize;
         if (count < windowSize) count++;
 
         double sum = 0;
         for (int i = 0; i < count; i++) sum += window[i];
-        smoothedSigma = sum / count;
+        smoothedSpread = sum / count;
     }
 
-    public double smoothedSigmaM() {
-        return smoothedSigma;
+    public double smoothedSpreadM() {
+        return smoothedSpread;
     }
 }

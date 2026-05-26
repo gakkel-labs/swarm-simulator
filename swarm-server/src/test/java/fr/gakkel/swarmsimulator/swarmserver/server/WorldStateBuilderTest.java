@@ -175,6 +175,6 @@ class WorldStateBuilderTest {
 
         WorldState state = builderWithCohesion.build();
 
-        assertThat(state.getCohesionSigmaM()).isEqualTo(12.5f);
+        assertThat(state.getCohesionSpreadM()).isEqualTo(12.5f);
     }
 }

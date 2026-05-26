@@ -27,8 +27,8 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     private final Set<ServerCallStreamObserver<WorldState>> subscribers = ConcurrentHashMap.newKeySet();
     private final ScheduledExecutorService broadcaster;
 
-    public SwarmObserverImpl(World world, DoubleSupplier cohesionSigmaM, ScheduledExecutorService executor) {
-        this.worldStateBuilder = new WorldStateBuilder(world, cohesionSigmaM);
+    public SwarmObserverImpl(World world, DoubleSupplier cohesionSpreadM, ScheduledExecutorService executor) {
+        this.worldStateBuilder = new WorldStateBuilder(world, cohesionSpreadM);
         this.broadcaster = executor;
         broadcaster.scheduleAtFixedRate(this::broadcast, 0, 1000L / STREAM_RATE_HZ, TimeUnit.MILLISECONDS);
     }

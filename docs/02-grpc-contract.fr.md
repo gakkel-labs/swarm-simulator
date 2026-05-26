@@ -149,6 +149,9 @@ message WorldState {
   repeated AgentState      agents            = 2;
   repeated Obstacle        obstacles         = 3;
   repeated PredatorState   predators         = 4;
+  SearchStatus             search_status     = 5;
+  float                    sensor_radius_m   = 6;
+  float                    cohesion_spread_m = 7;
 }
 ```
 
@@ -158,6 +161,9 @@ Snapshot complet du monde simulé à l'instant `timestamp_unix_ms`.
 - `agents` — tous les agents du monde. L'ordre **n'est pas** garanti ; les clients doivent indexer par `id`.
 - `obstacles` — tous les obstacles du monde. Une liste vide est légale.
 - `predators` — tous les prédateurs du monde. Contient exactement **1 entrée** en v0.1. Une liste vide est légale (scénarios sans prédateur). Les clients doivent gérer une liste vide — détruire le GameObject prédateur si la liste devient vide.
+- `search_status` — présent uniquement quand une cible a été placée via `PlaceTarget`. Absent jusqu'à ce moment (valeur par défaut proto3).
+- `sensor_radius_m` — rayon de détection partagé par tous les agents, en mètres. Les clients l'utilisent pour dimensionner l'overlay de zone de détection.
+- `cohesion_spread_m` — dispersion moyenne des positions (écart-type par rapport au centroïde) lissée sur les 30 derniers ticks (~1 s). Zéro jusqu'au premier tick. Utilisé par le HUD Unity et exporté dans `metrics/cohesion-*.csv`.
 
 Chaque frame est **auto-suffisante** — pas de diff, pas de delta. Un client qui se connecte en cours de simulation reçoit un état complet dès sa première frame.
 

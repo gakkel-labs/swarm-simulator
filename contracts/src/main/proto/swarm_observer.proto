@@ -66,6 +66,7 @@ message WorldState {
   repeated PredatorState   predators         = 4;
   SearchStatus             search_status     = 5;
   float                    sensor_radius_m   = 6; // detection radius shared by all agents, meters
+  float                    cohesion_spread_m = 7; // mean position spread (std dev) over last 30 ticks, metres
 }
 
 // Sent once by the client to open the stream.

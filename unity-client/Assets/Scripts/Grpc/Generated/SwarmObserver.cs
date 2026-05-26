@@ -40,23 +40,23 @@ namespace Gakkel.Swarm.Contracts.V1 {
             "DWVsYXBzZWRfc2ltX3MYAyABKAISNgoLZm91bmRfZXZlbnQYBCABKAsyIS5n",
             "YWtrZWwuc3dhcm0udjEuVGFyZ2V0Rm91bmRFdmVudCI9ChJQbGFjZVRhcmdl",
             "dFJlcXVlc3QSJwoIcG9zaXRpb24YASABKAsyFS5nYWtrZWwuc3dhcm0udjEu",
-            "VmVjMyIVChNQbGFjZVRhcmdldFJlc3BvbnNlIoQCCgpXb3JsZFN0YXRlEhkK",
+            "VmVjMyIVChNQbGFjZVRhcmdldFJlc3BvbnNlIp8CCgpXb3JsZFN0YXRlEhkK",
             "EXRpbWVzdGFtcF91bml4X21zGAEgASgDEisKBmFnZW50cxgCIAMoCzIbLmdh",
             "a2tlbC5zd2FybS52MS5BZ2VudFN0YXRlEiwKCW9ic3RhY2xlcxgDIAMoCzIZ",
             "Lmdha2tlbC5zd2FybS52MS5PYnN0YWNsZRIxCglwcmVkYXRvcnMYBCADKAsy",
             "Hi5nYWtrZWwuc3dhcm0udjEuUHJlZGF0b3JTdGF0ZRI0Cg1zZWFyY2hfc3Rh",
             "dHVzGAUgASgLMh0uZ2Fra2VsLnN3YXJtLnYxLlNlYXJjaFN0YXR1cxIXCg9z",
-            "ZW5zb3JfcmFkaXVzX20YBiABKAIiJQoQU3Vic2NyaWJlUmVxdWVzdBIRCglj",
-            "bGllbnRfaWQYASABKAkqcQoJQWdlbnRUeXBlEhoKFkFHRU5UX1RZUEVfVU5T",
-            "UEVDSUZJRUQQABIXChNBR0VOVF9UWVBFX0VYUExPUkVSEAESFwoTQUdFTlRf",
-            "VFlQRV9PUEVSQVRPUhACEhYKEkFHRU5UX1RZUEVfQ0FSUklFUhADMmgKDVN3",
-            "YXJtT2JzZXJ2ZXISVwoTU3Vic2NyaWJlV29ybGRTdGF0ZRIhLmdha2tlbC5z",
-            "d2FybS52MS5TdWJzY3JpYmVSZXF1ZXN0GhsuZ2Fra2VsLnN3YXJtLnYxLldv",
-            "cmxkU3RhdGUwATJtChFTaW11bGF0aW9uQ29udHJvbBJYCgtQbGFjZVRhcmdl",
-            "dBIjLmdha2tlbC5zd2FybS52MS5QbGFjZVRhcmdldFJlcXVlc3QaJC5nYWtr",
-            "ZWwuc3dhcm0udjEuUGxhY2VUYXJnZXRSZXNwb25zZUI8Chxpby5nYWtrZWwu",
-            "c3dhcm0uY29udHJhY3RzLnYxUAGqAhlHYWtrZWwuU3dhcm0uQ29udHJhY3Rz",
-            "LlYxYgZwcm90bzM="));
+            "ZW5zb3JfcmFkaXVzX20YBiABKAISGQoRY29oZXNpb25fc3ByZWFkX20YByAB",
+            "KAIiJQoQU3Vic2NyaWJlUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkqcQoJ",
+            "QWdlbnRUeXBlEhoKFkFHRU5UX1RZUEVfVU5TUEVDSUZJRUQQABIXChNBR0VO",
+            "VF9UWVBFX0VYUExPUkVSEAESFwoTQUdFTlRfVFlQRV9PUEVSQVRPUhACEhYK",
+            "EkFHRU5UX1RZUEVfQ0FSUklFUhADMmgKDVN3YXJtT2JzZXJ2ZXISVwoTU3Vi",
+            "c2NyaWJlV29ybGRTdGF0ZRIhLmdha2tlbC5zd2FybS52MS5TdWJzY3JpYmVS",
+            "ZXF1ZXN0GhsuZ2Fra2VsLnN3YXJtLnYxLldvcmxkU3RhdGUwATJtChFTaW11",
+            "bGF0aW9uQ29udHJvbBJYCgtQbGFjZVRhcmdldBIjLmdha2tlbC5zd2FybS52",
+            "MS5QbGFjZVRhcmdldFJlcXVlc3QaJC5nYWtrZWwuc3dhcm0udjEuUGxhY2VU",
+            "YXJnZXRSZXNwb25zZUI8Chxpby5nYWtrZWwuc3dhcm0uY29udHJhY3RzLnYx",
+            "UAGqAhlHYWtrZWwuU3dhcm0uQ29udHJhY3RzLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Gakkel.Swarm.Contracts.V1.AgentType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -68,7 +68,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.SearchStatus), global::Gakkel.Swarm.Contracts.V1.SearchStatus.Parser, new[]{ "TargetPlaced", "TargetPosition", "ElapsedSimS", "FoundEvent" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.PlaceTargetRequest), global::Gakkel.Swarm.Contracts.V1.PlaceTargetRequest.Parser, new[]{ "Position" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.PlaceTargetResponse), global::Gakkel.Swarm.Contracts.V1.PlaceTargetResponse.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.WorldState), global::Gakkel.Swarm.Contracts.V1.WorldState.Parser, new[]{ "TimestampUnixMs", "Agents", "Obstacles", "Predators", "SearchStatus", "SensorRadiusM" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.WorldState), global::Gakkel.Swarm.Contracts.V1.WorldState.Parser, new[]{ "TimestampUnixMs", "Agents", "Obstacles", "Predators", "SearchStatus", "SensorRadiusM", "CohesionSpreadM" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Gakkel.Swarm.Contracts.V1.SubscribeRequest), global::Gakkel.Swarm.Contracts.V1.SubscribeRequest.Parser, new[]{ "ClientId" }, null, null, null, null)
           }));
     }
@@ -77,6 +77,11 @@ namespace Gakkel.Swarm.Contracts.V1 {
   }
   #region Enums
   public enum AgentType {
+    /// <summary>
+    /// Proto3 requires a 0-valued entry; UNSPECIFIED is the default if the field is unset on the wire.
+    /// Server never emits this value (every agent has a concrete type). Clients receiving it should
+    /// treat it as a contract violation (skip the agent or log a warning).
+    /// </summary>
     [pbr::OriginalName("AGENT_TYPE_UNSPECIFIED")] Unspecified = 0,
     [pbr::OriginalName("AGENT_TYPE_EXPLORER")] Explorer = 1,
     [pbr::OriginalName("AGENT_TYPE_OPERATOR")] Operator = 2,
@@ -2217,6 +2222,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       predators_ = other.predators_.Clone();
       searchStatus_ = other.searchStatus_ != null ? other.searchStatus_.Clone() : null;
       sensorRadiusM_ = other.sensorRadiusM_;
+      cohesionSpreadM_ = other.cohesionSpreadM_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2298,6 +2304,21 @@ namespace Gakkel.Swarm.Contracts.V1 {
       }
     }
 
+    /// <summary>Field number for the "cohesion_spread_m" field.</summary>
+    public const int CohesionSpreadMFieldNumber = 7;
+    private float cohesionSpreadM_;
+    /// <summary>
+    /// mean position spread (std dev) over last 30 ticks, metres
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public float CohesionSpreadM {
+      get { return cohesionSpreadM_; }
+      set {
+        cohesionSpreadM_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -2319,6 +2340,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       if(!predators_.Equals(other.predators_)) return false;
       if (!object.Equals(SearchStatus, other.SearchStatus)) return false;
       if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(SensorRadiusM, other.SensorRadiusM)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(CohesionSpreadM, other.CohesionSpreadM)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2332,6 +2354,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
       hash ^= predators_.GetHashCode();
       if (searchStatus_ != null) hash ^= SearchStatus.GetHashCode();
       if (SensorRadiusM != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(SensorRadiusM);
+      if (CohesionSpreadM != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(CohesionSpreadM);
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2365,6 +2388,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
         output.WriteRawTag(53);
         output.WriteFloat(SensorRadiusM);
       }
+      if (CohesionSpreadM != 0F) {
+        output.WriteRawTag(61);
+        output.WriteFloat(CohesionSpreadM);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2390,6 +2417,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
         output.WriteRawTag(53);
         output.WriteFloat(SensorRadiusM);
       }
+      if (CohesionSpreadM != 0F) {
+        output.WriteRawTag(61);
+        output.WriteFloat(CohesionSpreadM);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -2410,6 +2441,9 @@ namespace Gakkel.Swarm.Contracts.V1 {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(SearchStatus);
       }
       if (SensorRadiusM != 0F) {
+        size += 1 + 4;
+      }
+      if (CohesionSpreadM != 0F) {
         size += 1 + 4;
       }
       if (_unknownFields != null) {
@@ -2438,6 +2472,9 @@ namespace Gakkel.Swarm.Contracts.V1 {
       }
       if (other.SensorRadiusM != 0F) {
         SensorRadiusM = other.SensorRadiusM;
+      }
+      if (other.CohesionSpreadM != 0F) {
+        CohesionSpreadM = other.CohesionSpreadM;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -2485,6 +2522,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
             SensorRadiusM = input.ReadFloat();
             break;
           }
+          case 61: {
+            CohesionSpreadM = input.ReadFloat();
+            break;
+          }
         }
       }
     #endif
@@ -2529,6 +2570,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
           }
           case 53: {
             SensorRadiusM = input.ReadFloat();
+            break;
+          }
+          case 61: {
+            CohesionSpreadM = input.ReadFloat();
             break;
           }
         }

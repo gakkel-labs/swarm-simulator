@@ -2,14 +2,19 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.CohesionCsvExporter;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationLoop;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationService;
+
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionServiceV1;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +25,8 @@ import java.util.concurrent.TimeUnit;
  * and exposes the same wiring to integration tests.
  */
 public final class SwarmServerBootstrap {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SwarmServerBootstrap.class);
 
     private final SimulationLoop simulation;
     private final SwarmObserverImpl observer;
@@ -37,10 +44,11 @@ public final class SwarmServerBootstrap {
         DiagnosticsConfig diagnosticsConfig = DiagnosticsConfig.builder().build();
 
         ScheduledExecutorService simExecutor = singleDaemonThreadExecutor("sim-loop");
-        SimulationLoop simulation = new SimulationLoop(world, boidsConfig, diagnosticsConfig, simExecutor);
+        CohesionCsvExporter csvExporter = createCsvExporter();
+        SimulationLoop simulation = new SimulationLoop(world, boidsConfig, diagnosticsConfig, simExecutor, csvExporter);
 
         ScheduledExecutorService broadcastExecutor = singleDaemonThreadExecutor("swarm-broadcaster");
-        SwarmObserverImpl observer = new SwarmObserverImpl(world, broadcastExecutor);
+        SwarmObserverImpl observer = new SwarmObserverImpl(world, simulation::cohesionSpreadM, broadcastExecutor);
 
         Server grpcServer = ServerBuilder.forPort(port)
                 .addService(new PingServiceImpl())
@@ -65,6 +73,15 @@ public final class SwarmServerBootstrap {
 
     public void awaitTermination() throws InterruptedException {
         grpcServer.awaitTermination();
+    }
+
+    private static CohesionCsvExporter createCsvExporter() {
+        try {
+            return new CohesionCsvExporter(Paths.get("metrics"));
+        } catch (IOException e) {
+            LOG.warn("Could not create cohesion CSV exporter — metrics will not be written: {}", e.getMessage());
+            return null;
+        }
     }
 
     private static ScheduledExecutorService singleDaemonThreadExecutor(String threadName) {

@@ -149,6 +149,9 @@ message WorldState {
   repeated AgentState      agents            = 2;
   repeated Obstacle        obstacles         = 3;
   repeated PredatorState   predators         = 4;
+  SearchStatus             search_status     = 5;
+  float                    sensor_radius_m   = 6;
+  float                    cohesion_spread_m = 7;
 }
 ```
 
@@ -158,6 +161,9 @@ Full snapshot of the simulated world at instant `timestamp_unix_ms`.
 - `agents` — every agent in the world. Order is **not** guaranteed; clients must key by `id`.
 - `obstacles` — every obstacle in the world. Empty list is legal.
 - `predators` — every predator in the world. Contains exactly **1 entry** in v0.1. Empty list is legal (predator-free scenarios). Clients must handle an empty list gracefully — destroy the predator GameObject when the list becomes empty.
+- `search_status` — present only when a target has been placed via `PlaceTarget`. Absent until then (proto3 default).
+- `sensor_radius_m` — detection radius shared by all agents in metres. Clients use this to size the detection-zone overlay.
+- `cohesion_spread_m` — mean position spread (standard deviation from centroid) smoothed over the last 30 ticks (~1 s). Zero until the first tick completes. Used by the Unity HUD and exported to `metrics/cohesion-*.csv`.
 
 Each frame is **self-contained** — no diffing, no deltas. A client that connects mid-simulation receives a complete picture on its very first frame.
 

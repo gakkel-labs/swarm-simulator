@@ -31,7 +31,7 @@ class SwarmObserverImplTest {
     void setUp() {
         World world = new World(100, 100, 50);
         // mock executor prevents background scheduling — broadcast() called manually in tests
-        impl = new SwarmObserverImpl(world, mockExecutor);
+        impl = new SwarmObserverImpl(world, () -> 0.0, mockExecutor);
     }
 
     @Test

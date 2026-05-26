@@ -2,6 +2,8 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.SubscribeRequest;
+
+import java.util.function.DoubleSupplier;
 import io.gakkel.swarm.contracts.v1.SwarmObserverGrpc;
 import io.gakkel.swarm.contracts.v1.WorldState;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -25,8 +27,8 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     private final Set<ServerCallStreamObserver<WorldState>> subscribers = ConcurrentHashMap.newKeySet();
     private final ScheduledExecutorService broadcaster;
 
-    public SwarmObserverImpl(World world, ScheduledExecutorService executor) {
-        this.worldStateBuilder = new WorldStateBuilder(world);
+    public SwarmObserverImpl(World world, DoubleSupplier cohesionSpreadM, ScheduledExecutorService executor) {
+        this.worldStateBuilder = new WorldStateBuilder(world, cohesionSpreadM);
         this.broadcaster = executor;
         broadcaster.scheduleAtFixedRate(this::broadcast, 0, 1000L / STREAM_RATE_HZ, TimeUnit.MILLISECONDS);
     }

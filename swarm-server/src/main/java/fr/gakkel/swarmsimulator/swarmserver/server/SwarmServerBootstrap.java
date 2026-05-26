@@ -2,9 +2,13 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.CohesionCsvExporter;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationLoop;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationService;
+
+import java.io.IOException;
+import java.nio.file.Paths;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionServiceV1;
@@ -37,7 +41,8 @@ public final class SwarmServerBootstrap {
         DiagnosticsConfig diagnosticsConfig = DiagnosticsConfig.builder().build();
 
         ScheduledExecutorService simExecutor = singleDaemonThreadExecutor("sim-loop");
-        SimulationLoop simulation = new SimulationLoop(world, boidsConfig, diagnosticsConfig, simExecutor);
+        CohesionCsvExporter csvExporter = createCsvExporter();
+        SimulationLoop simulation = new SimulationLoop(world, boidsConfig, diagnosticsConfig, simExecutor, csvExporter);
 
         ScheduledExecutorService broadcastExecutor = singleDaemonThreadExecutor("swarm-broadcaster");
         SwarmObserverImpl observer = new SwarmObserverImpl(world, simulation::cohesionSpreadM, broadcastExecutor);
@@ -65,6 +70,14 @@ public final class SwarmServerBootstrap {
 
     public void awaitTermination() throws InterruptedException {
         grpcServer.awaitTermination();
+    }
+
+    private static CohesionCsvExporter createCsvExporter() {
+        try {
+            return new CohesionCsvExporter(Paths.get("metrics"));
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     private static ScheduledExecutorService singleDaemonThreadExecutor(String threadName) {

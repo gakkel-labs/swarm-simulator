@@ -14,8 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -54,22 +52,18 @@ public class SimulationLoop {
 
     public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
                           ScheduledExecutorService executor) {
+        this(world, config, diagnosticsConfig, executor, null);
+    }
+
+    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
+                          ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
         this.world = Objects.requireNonNull(world, "world");
         this.config = Objects.requireNonNull(config, "config");
         this.rules = new BoidsRules(config);
         this.diagnostician = new FlockingDiagnostician(config, Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig"));
         this.cohesionMetric = new CohesionMetric(30);
-        this.csvExporter = createCsvExporter();
+        this.csvExporter = csvExporter;
         this.executor = Objects.requireNonNull(executor, "executor");
-    }
-
-    private static CohesionCsvExporter createCsvExporter() {
-        try {
-            return new CohesionCsvExporter(Paths.get("metrics"));
-        } catch (IOException e) {
-            LOG.warn("Could not create cohesion CSV exporter: {}", e.getMessage());
-            return null;
-        }
     }
 
     public double cohesionSpreadM() {

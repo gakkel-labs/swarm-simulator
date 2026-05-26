@@ -24,7 +24,7 @@ class WorldStateBuilderTest {
     @BeforeEach
     void setUp() {
         world = new World(100, 100, 50);
-        builder = new WorldStateBuilder(world);
+        builder = new WorldStateBuilder(world, () -> 0.0);
     }
 
     @Test
@@ -167,5 +167,14 @@ class WorldStateBuilderTest {
         WorldState state = builder.build();
 
         assertThat(state.hasSearchStatus()).isFalse();
+    }
+
+    @Test
+    void build_cohesionSupplierValue_isIncludedInWorldState() {
+        WorldStateBuilder builderWithCohesion = new WorldStateBuilder(world, () -> 12.5);
+
+        WorldState state = builderWithCohesion.build();
+
+        assertThat(state.getCohesionSigmaM()).isEqualTo(12.5f);
     }
 }

@@ -40,7 +40,7 @@ public final class SwarmServerBootstrap {
         SimulationLoop simulation = new SimulationLoop(world, boidsConfig, diagnosticsConfig, simExecutor);
 
         ScheduledExecutorService broadcastExecutor = singleDaemonThreadExecutor("swarm-broadcaster");
-        SwarmObserverImpl observer = new SwarmObserverImpl(world, broadcastExecutor);
+        SwarmObserverImpl observer = new SwarmObserverImpl(world, simulation::cohesionSigmaM, broadcastExecutor);
 
         Server grpcServer = ServerBuilder.forPort(port)
                 .addService(new PingServiceImpl())

@@ -7,6 +7,8 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
+
+import java.util.function.DoubleSupplier;
 import io.gakkel.swarm.contracts.v1.AgentState;
 import io.gakkel.swarm.contracts.v1.AgentType;
 import io.gakkel.swarm.contracts.v1.PredatorState;
@@ -24,15 +26,18 @@ import java.util.Objects;
 public class WorldStateBuilder {
 
     private final World world;
+    private final DoubleSupplier cohesionSigmaM;
 
-    public WorldStateBuilder(World world) {
+    public WorldStateBuilder(World world, DoubleSupplier cohesionSigmaM) {
         this.world = Objects.requireNonNull(world, "world");
+        this.cohesionSigmaM = Objects.requireNonNull(cohesionSigmaM, "cohesionSigmaM");
     }
 
     public WorldState build() {
         WorldState.Builder worldStateBuilder = WorldState.newBuilder()
                 .setTimestampUnixMs(System.currentTimeMillis())
-                .setSensorRadiusM((float) SimulationConstants.SENSOR_RADIUS_M);
+                .setSensorRadiusM((float) SimulationConstants.SENSOR_RADIUS_M)
+                .setCohesionSigmaM((float) cohesionSigmaM.getAsDouble());
         for (Agent agent : world.agents()) {
             worldStateBuilder.addAgents(toAgentState(agent));
         }

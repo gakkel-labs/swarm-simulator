@@ -43,6 +43,7 @@ public class SimulationLoop {
     private final BoidsRules rules;
     private final BoidsConfig config;
     private final FlockingDiagnostician diagnostician;
+    private final CohesionMetric cohesionMetric;
     private final ScheduledExecutorService executor;
     private final Random rng = new Random();
 
@@ -54,7 +55,12 @@ public class SimulationLoop {
         this.config = Objects.requireNonNull(config, "config");
         this.rules = new BoidsRules(config);
         this.diagnostician = new FlockingDiagnostician(config, Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig"));
+        this.cohesionMetric = new CohesionMetric(30);
         this.executor = Objects.requireNonNull(executor, "executor");
+    }
+
+    public double cohesionSigmaM() {
+        return cohesionMetric.smoothedSigmaM();
     }
 
     public void start() {
@@ -97,6 +103,9 @@ public class SimulationLoop {
                 newPosition = world.clamp(newPosition);
                 agent.update(newPosition, newVelocity);
             }
+            Vector3D centroid = computeCentroid(agents);
+            cohesionMetric.record(computePositionStandardDeviation(agents, centroid));
+
             Predator predator = world.predator();
             if (predator != null) {
                 predator.update(world, DT);

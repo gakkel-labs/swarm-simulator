@@ -7,13 +7,14 @@ import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationLoop;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationService;
 
-import java.io.IOException;
-import java.nio.file.Paths;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionServiceV1;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +25,8 @@ import java.util.concurrent.TimeUnit;
  * and exposes the same wiring to integration tests.
  */
 public final class SwarmServerBootstrap {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SwarmServerBootstrap.class);
 
     private final SimulationLoop simulation;
     private final SwarmObserverImpl observer;
@@ -76,6 +79,7 @@ public final class SwarmServerBootstrap {
         try {
             return new CohesionCsvExporter(Paths.get("metrics"));
         } catch (IOException e) {
+            LOG.warn("Could not create cohesion CSV exporter — metrics will not be written: {}", e.getMessage());
             return null;
         }
     }

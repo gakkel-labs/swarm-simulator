@@ -50,6 +50,17 @@ class SimulationLoopTest {
     }
 
     @Test
+    void createWorld_scalesObstacleRadiiWithSmallestDimensionRatio() {
+        // default dimensions => scale 1.0 => original radii (8/5/6) unchanged
+        World defaultWorld = SimulationLoop.createWorld(5, 100, 100, 50, new Random(0L));
+        assertEquals(8.0, defaultWorld.obstacles().get(0).radius(), 1e-9);
+
+        // half the depth (the smallest extent) => radii halved so spheres still fit the box
+        World smallWorld = SimulationLoop.createWorld(5, 100, 100, 25, new Random(0L));
+        assertEquals(4.0, smallWorld.obstacles().get(0).radius(), 1e-9);
+    }
+
+    @Test
     void tick_agentsRemainInBoundsAfterManyTicks() {
         for (int i = 0; i < 300; i++) loop.tick();
         for (Agent a : world.agents()) {

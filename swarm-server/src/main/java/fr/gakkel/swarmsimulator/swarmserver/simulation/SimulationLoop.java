@@ -293,9 +293,10 @@ public class SimulationLoop {
         return createWorld(agentCount, DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH, rng);
     }
 
-    // Obstacle and predator positions are expressed as fractions of the world dimensions so the
-    // scene stays inside the box at any size. At the default 100x100x50 the fractions reproduce the
-    // original literal positions (50,-50,25)/(25,-70,25)/(75,-30,25) and predator (5,-5,5) exactly.
+    // Obstacle/predator positions are expressed as fractions of the world dimensions, and obstacle
+    // radii scale by the smallest dimension ratio so a sphere never outgrows the smallest extent.
+    // At the default 100x100x50 the scale is 1.0, reproducing the original literal positions
+    // (50,-50,25)/(25,-70,25)/(75,-30,25), radii (8/5/6) and predator (5,-5,5) exactly.
     static World createWorld(int agentCount, double width, double height, double depth, Random rng) {
         World world = new World(width, height, depth);
         for (int i = 0; i < agentCount; i++) {
@@ -309,9 +310,11 @@ public class SimulationLoop {
                     rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
             world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
         }
-        world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0));
-        world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0));
-        world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0));
+        double radiusScale = Math.min(width / DEFAULT_WORLD_WIDTH,
+                Math.min(height / DEFAULT_WORLD_HEIGHT, depth / DEFAULT_WORLD_DEPTH));
+        world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0 * radiusScale));
+        world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
+        world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
         world.setPredator(new Predator(new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth), Vector3D.ZERO));
         return world;
     }

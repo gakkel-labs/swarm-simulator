@@ -189,3 +189,23 @@ La queue n'a pas de taille maximale explicite. Si le serveur spam à un rythme d
 2. Ajouter `WorldStateReceiver` à n'importe quel GameObject actif et câbler la référence `SwarmVisualizer` dans l'Inspector.
 3. Démarrer le serveur Java (`./mvnw -pl swarm-server exec:java`) avant d'entrer en Play mode.
 4. Le log de debug `[gRPC]` apparaît dans la Console (éditeur uniquement — garde `#if UNITY_EDITOR`) confirmant que le stream est actif.
+
+---
+
+## 8. Ouverture du projet en Unity 6 (pièges de migration)
+
+Le projet a été créé sous Unity 2022.3 et est désormais épinglé sur **Unity 6 (6000.4.6f1)** (cf. `ProjectVersion.txt`). À la première ouverture sur un poste neuf, deux pièges de migration font paraître le HUD cassé alors que rien n'est logiquement faux :
+
+### 8.1 Police Arial intégrée retirée → labels `UI.Text` legacy vides
+
+Unity 6 a **retiré la police Arial intégrée** (`{fileID: 10102, guid: 0000000000000000e000000000000000}`), remplacée par `LegacyRuntime.ttf`. Tout composant legacy `UnityEngine.UI.Text` qui référence l'ancienne Arial s'affiche **vide**. Les 4 labels des toggles de `SampleScene` étaient touchés.
+
+**Correctif (déjà appliqué) :** leur `m_Font` a été repointé vers `LiberationSans.ttf` (`{fileID: 12800000, guid: e3265ab4bf004d28a9537516768c1c75, type: 3}`), livré avec TextMeshPro et présent dans le projet. `LegacyRuntime.ttf` fonctionne aussi. Le `hudText` TMP (Agents/FPS/Spread) n'est pas concerné — les TMP Essentials et `LiberationSans SDF` sont commités dans `Assets/TextMesh Pro/`.
+
+### 8.2 Le Canvas Scaler doit être en *Scale With Screen Size*
+
+Le Canvas Scaler du HUD était en **Constant Pixel Size** : l'UI gardait une taille en pixels fixe et se tassait dans un coin sur un écran plus haute résolution — donnant l'impression qu'elle était absente. **Correctif (déjà appliqué) :** UI Scale Mode = **Scale With Screen Size**, Reference Resolution = **1920×1080**, Screen Match Mode = Match Width Or Height, Match = **0.5**.
+
+Deux pièges d'éditeur associés lors de la vérification :
+- **Tester la vue Game à une résolution fixe `1920×1080`, pas en *Free Aspect*.** Le Free Aspect recalcule l'UI en direct quand on redimensionne la fenêtre, ce qui donne l'illusion d'éléments qui « disparaissent » — un vrai build se comporte comme une résolution fixe, pas comme le Free Aspect.
+- **Les modifications de composants faites en mode Play sont annulées à la sortie.** Régler le Canvas Scaler en **mode édition**, puis sauvegarder la scène (`Ctrl+S`).

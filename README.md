@@ -45,7 +45,7 @@ Pi agent (v0.3 roadmap).
 |--------------|----------------------|------------------------------------------------|
 | JDK          | 21 (Temurin OK)      | `java -version` should report 21               |
 | Maven        | 3.9+                 | `mvn -v`                                       |
-| Unity Hub    | with Editor 2022.3 LTS | URP template                                 |
+| Unity Hub    | with Editor 6000.4.6f1 (Unity 6) | URP template                       |
 | Free port    | `50051` (gRPC)       | Override by editing `SwarmServer.PORT` if needed |
 
 ### 1. Start the backend
@@ -64,7 +64,7 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
 ### 2. Open the Unity client
 
 1. In **Unity Hub**, *Add project from disk* → select `unity-client/`.
-2. Open the project with **Unity 2022.3 LTS**.
+2. Open the project with **Unity 6 (6000.4.6f1)**.
 3. Load the scene `Assets/Scenes/SampleScene.unity`.
 4. Hit **Play**.
 
@@ -153,7 +153,7 @@ thread model, concurrent World access, full message catalogue).
 | `contracts/`     | `.proto` files + generated Java stubs (package `gakkel.swarm.v1`) |
 | `swarm-server/`  | gRPC server, domain model, Boids simulation loop              |
 | `tests/`         | End-to-end integration tests                                  |
-| `unity-client/`  | Unity 2022.3 LTS / URP project — visual client                |
+| `unity-client/`  | Unity 6 (6000.4.6f1) / URP project — visual client            |
 | `docs/`          | Architecture, ADRs, per-area deep dives, tech-debt snapshots  |
 
 ---
@@ -161,7 +161,7 @@ thread model, concurrent World access, full message catalogue).
 ## Stack
 
 - **Backend** — Java 21, Maven 3.9+, grpc-java 1.81, protobuf 3.25, SLF4J + Logback.
-- **Client** — Unity 2022.3 LTS (URP), Grpc.Core C# / Grpc.Net.Client.
+- **Client** — Unity 6 (6000.4.6f1, URP), Grpc.Core C# / Grpc.Net.Client.
 - **Tests** — JUnit 5, Mockito, AssertJ.
 - **Future** — Raspberry Pi (Ubuntu Server 22.04) as a hybrid gRPC client (v0.3).
 

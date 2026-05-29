@@ -189,3 +189,23 @@ There is no explicit size cap on the queue. If the server spams at an unreasonab
 2. Add `WorldStateReceiver` to any active GameObject and wire the `SwarmVisualizer` reference in the Inspector.
 3. Start the Java server (`./mvnw -pl swarm-server exec:java`) before entering Play mode.
 4. The `[gRPC]` debug log appears in the Console (Editor only — `#if UNITY_EDITOR` guard) confirming the stream is live.
+
+---
+
+## 8. Opening the project in Unity 6 (migration gotchas)
+
+The project was authored under Unity 2022.3 and is now pinned to **Unity 6 (6000.4.6f1)** (see `ProjectVersion.txt`). Opening it for the first time on a fresh machine exposes two upgrade traps that make the HUD look broken even though nothing is logically wrong:
+
+### 8.1 Removed built-in Arial font → blank legacy `UI.Text` labels
+
+Unity 6 **removed the built-in `Arial.ttf`** (`{fileID: 10102, guid: 0000000000000000e000000000000000}`), replaced by `LegacyRuntime.ttf`. Any legacy `UnityEngine.UI.Text` referencing the old Arial renders **empty**. The 4 toggle labels in `SampleScene` were affected.
+
+**Fix (already applied):** their `m_Font` was repointed to `LiberationSans.ttf` (`{fileID: 12800000, guid: e3265ab4bf004d28a9537516768c1c75, type: 3}`), which ships with TextMeshPro and is present in the project. `LegacyRuntime.ttf` works too. The TMP `hudText` (Agents/FPS/Spread) is unaffected — TMP Essentials and `LiberationSans SDF` are committed under `Assets/TextMesh Pro/`.
+
+### 8.2 Canvas Scaler must be *Scale With Screen Size*
+
+The HUD Canvas Scaler was set to **Constant Pixel Size**, so the UI kept a fixed pixel size and shrank into a corner on a higher-resolution monitor — appearing absent. **Fix (already applied):** UI Scale Mode = **Scale With Screen Size**, Reference Resolution = **1920×1080**, Screen Match Mode = Match Width Or Height, Match = **0.5**.
+
+Two related editor gotchas when verifying this:
+- **Test the Game view at a fixed `1920×1080`, not *Free Aspect*.** Free Aspect re-scales the UI live as you drag the window, which looks like elements "disappearing" — a real build behaves like a fixed resolution, not like Free Aspect.
+- **Component changes made in Play mode are discarded on exit.** Set the Canvas Scaler in **Edit mode**, then save the scene (`Ctrl+S`).

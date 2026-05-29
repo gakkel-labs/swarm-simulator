@@ -298,7 +298,7 @@ If that overhead matters in v0.4+ (e.g. 200 agents), the field can be migrated t
 | ---------------------- | ----------------------------------------------------------------------------------------- |
 | Proto definition       | `contracts/src/main/proto/swarm_observer.proto`                                           |
 | Server-side service    | `swarm-server/.../server/SwarmObserverImpl.java` (subscription + broadcast loop)          |
-| gRPC server bootstrap  | `swarm-server/.../server/SwarmServer.java` (entry point) + `SwarmServerBootstrap.java` (wiring, `PORT = 50051`) |
+| gRPC server bootstrap  | `swarm-server/.../server/SwarmServer.java` (entry point) + `SwarmServerBootstrap.java` (wiring; port from `Settings`, default `50051`, override `SWARM_PORT`) |
 | Frame source           | `swarm-server/.../simulation/SimulationLoop.java` (30 Hz Boids tick → `World`)            |
 | Domain → proto mapping | `swarm-server/.../server/WorldStateBuilder.java` (`build()` / `toAgentState()` / `toVec3()` / `toProtoObstacle()` / `toPredatorState()`) |
 

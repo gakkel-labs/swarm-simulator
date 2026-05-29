@@ -1,5 +1,6 @@
 package fr.gakkel.swarmsimulator.swarmserver.server;
 
+import fr.gakkel.swarmsimulator.swarmserver.config.Settings;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,10 +8,10 @@ import org.slf4j.LoggerFactory;
 public class SwarmServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(SwarmServer.class);
-    private static final int PORT = 50051;
 
     public static void main(String[] args) throws Exception {
-        SwarmServerBootstrap bootstrap = SwarmServerBootstrap.create(PORT);
+        Settings settings = Settings.load();
+        SwarmServerBootstrap bootstrap = SwarmServerBootstrap.create(settings);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutting down...");
@@ -23,7 +24,7 @@ public class SwarmServer {
 
         bootstrap.start();
         LOG.info("SwarmServer on :{} — sim {}Hz — stream {}Hz",
-                PORT, SimulationLoop.TICK_RATE_HZ, SwarmObserverImpl.STREAM_RATE_HZ);
+                settings.port(), SimulationLoop.TICK_RATE_HZ, SwarmObserverImpl.STREAM_RATE_HZ);
         bootstrap.awaitTermination();
     }
 }

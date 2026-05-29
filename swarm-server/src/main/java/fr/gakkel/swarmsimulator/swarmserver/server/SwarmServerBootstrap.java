@@ -1,9 +1,8 @@
 package fr.gakkel.swarmsimulator.swarmserver.server;
 
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.config.Settings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.CohesionCsvExporter;
-import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationLoop;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationService;
 
@@ -38,19 +37,18 @@ public final class SwarmServerBootstrap {
         this.grpcServer = grpcServer;
     }
 
-    public static SwarmServerBootstrap create(int port) {
-        World world = SimulationLoop.createDefaultWorld();
-        BoidsConfig boidsConfig = BoidsConfig.builder().build();
-        DiagnosticsConfig diagnosticsConfig = DiagnosticsConfig.builder().build();
-
-        ScheduledExecutorService simExecutor = singleDaemonThreadExecutor("sim-loop");
-        CohesionCsvExporter csvExporter = createCsvExporter();
-        SimulationLoop simulation = new SimulationLoop(world, boidsConfig, diagnosticsConfig, simExecutor, csvExporter);
+    public static SwarmServerBootstrap create(Settings settings) {
+        SimulationLoop.Wiring wiring = SimulationLoop.wire(
+                settings.agentCount(), settings.worldWidth(), settings.worldHeight(), settings.worldDepth(),
+                settings.boids(), settings.diagnostics(), settings.seed(),
+                singleDaemonThreadExecutor("sim-loop"), createCsvExporter());
+        World world = wiring.world();
+        SimulationLoop simulation = wiring.loop();
 
         ScheduledExecutorService broadcastExecutor = singleDaemonThreadExecutor("swarm-broadcaster");
         SwarmObserverImpl observer = new SwarmObserverImpl(world, simulation::cohesionSpreadM, broadcastExecutor);
 
-        Server grpcServer = ServerBuilder.forPort(port)
+        Server grpcServer = ServerBuilder.forPort(settings.port())
                 .addService(new PingServiceImpl())
                 .addService(observer)
                 .addService(new SimulationControlImpl(new SimulationService(world)))

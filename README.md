@@ -46,7 +46,7 @@ Pi agent (v0.3 roadmap).
 | JDK          | 21 (Temurin OK)      | `java -version` should report 21               |
 | Maven        | 3.9+                 | `mvn -v`                                       |
 | Unity Hub    | with Editor 6000.4.6f1 (Unity 6) | URP template                       |
-| Free port    | `50051` (gRPC)       | Override by editing `SwarmServer.PORT` if needed |
+| Free port    | `50051` (gRPC)       | Override with `SWARM_PORT` (see [Configuration](#configuration)) |
 
 ### 1. Start the backend
 
@@ -76,8 +76,57 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
   the *found* event fires and the carriers move in.
 
 If something goes wrong, the most common cause is the gRPC port already being bound —
-kill the previous JVM or change `PORT` in
-[`SwarmServer.java`](swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/server/SwarmServer.java).
+kill the previous JVM or start the backend on another port with `SWARM_PORT=50052 …`
+(see [Configuration](#configuration)).
+
+---
+
+## Configuration
+
+All runtime parameters are read **once at startup** with the precedence
+**environment variable → `application.properties` → built-in default**. No flags, no
+recompilation — set an environment variable (12-factor / Docker friendly) or uncomment a
+key in [`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
+With nothing set, the simulation is identical to before this was introduced.
+
+```bash
+# examples
+SWARM_PORT=50052 mvn -pl swarm-server exec:java -Dexec.mainClass="…server.SwarmServer"
+SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.mainClass="…"
+```
+
+| Variable | Property | Default | Meaning |
+|----------|----------|---------|---------|
+| `SWARM_PORT` | `swarm.port` | `50051` | gRPC listen port |
+| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Number of explorer agents |
+| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | World X extent |
+| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | World Y extent |
+| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | World Z extent |
+| `SWARM_SEED` | `swarm.seed` | `42` | RNG seed — see below |
+| `SWARM_BOIDS_*` | `swarm.boids.*` | (per rule) | Boids weights & radii (perception-radius, separation-weight, alignment-weight, cohesion-weight, wander-weight, max-speed, boundary-repulsion-{radius,weight}, obstacle-avoidance-{radius,weight}, threat-flee-{radius,weight}) |
+| `SWARM_DIAG_*` | `swarm.diag.*` | (per threshold) | Diagnostics thresholds (immobile-threshold-fraction, frozen-threshold-fraction, dispersal-limit-fraction, flocking-lost-fraction, stability-tolerance, stability-samples) |
+
+The full list of `SWARM_BOIDS_*` / `SWARM_DIAG_*` names with their defaults lives, commented,
+in `application.properties`.
+
+### Seed & reproducibility
+
+`SWARM_SEED` makes a run reproducible: **the same seed reproduces the same simulation
+dynamics** — agent positions, velocities, predator-respawn and the wander force all derive
+from it. This is what benchmarking and headless CI runs build on.
+
+- `SWARM_SEED=<integer>` — deterministic, reproducible run.
+- `SWARM_SEED=random` (or `none`) — a fresh seed is drawn at startup **and logged**, so an
+  interesting run can be replayed by passing that value back.
+- *unset* — defaults to `42` (deterministic), preserving the historical behaviour.
+
+Note: agent **identifiers** (UUIDs) are not seeded, so they differ from run to run. The
+physical simulation (positions, metrics, detection order) is identical; only the IDs in log
+lines such as `Target found by agent <id>` change.
+
+> Tip — to compare two Boids configurations fairly, run each over the **same set of seeds**
+> (e.g. `SWARM_SEED=1…100` for both) so the difference reflects the configuration, not the
+> random initial conditions.
 
 ---
 

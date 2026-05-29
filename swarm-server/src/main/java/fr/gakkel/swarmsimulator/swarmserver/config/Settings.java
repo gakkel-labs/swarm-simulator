@@ -48,6 +48,14 @@ public record Settings(
 
     private static final String PROPERTIES_RESOURCE = "application.properties";
 
+    public Settings {
+        // World dimensions are also validated by the World constructor, but agent count has no other
+        // guard: 0 (or negative) would silently produce NaN cohesion metrics on an empty swarm.
+        if (agentCount < 1) {
+            throw new IllegalArgumentException("agent count must be >= 1 (got " + agentCount + ")");
+        }
+    }
+
     /** Loads settings from the process environment and the {@code application.properties} classpath resource. */
     public static Settings load() {
         return load(System.getenv(), loadClasspathProperties());

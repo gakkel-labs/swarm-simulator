@@ -106,6 +106,13 @@ class SettingsTest {
     }
 
     @Test
+    void agentCountBelowOne_throws() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> load(Map.of("SWARM_AGENT_COUNT", "0"), new Properties()));
+        assertEquals("agent count must be >= 1 (got 0)", ex.getMessage());
+    }
+
+    @Test
     void invalidSeed_throwsWithGuidance() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> load(Map.of("SWARM_SEED", "later"), new Properties()));

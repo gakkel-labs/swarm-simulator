@@ -16,7 +16,7 @@ public final class BoidsRules {
         this(config, new Random());
     }
 
-    BoidsRules(BoidsConfig config, Random rng) {
+    public BoidsRules(BoidsConfig config, Random rng) {
         this.config = Objects.requireNonNull(config, "config");
         this.rng    = Objects.requireNonNull(rng, "rng");
     }

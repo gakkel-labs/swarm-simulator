@@ -46,7 +46,7 @@ public class SimulationLoop {
     private final CohesionMetric cohesionMetric;
     private final CohesionCsvExporter csvExporter;
     private final ScheduledExecutorService executor;
-    private final Random rng = new Random();
+    private final Random rng;
 
     private int tickCount = 0;
 
@@ -57,13 +57,26 @@ public class SimulationLoop {
 
     public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
                           ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
+        this(world, config, diagnosticsConfig, executor, csvExporter, new Random(), new Random());
+    }
+
+    /**
+     * Canonical constructor. {@code respawnRng} drives post-predator respawn placement and
+     * {@code wanderRng} drives the Boids wander force; both are injected so a single master seed
+     * makes an entire run reproducible. Prefer the {@link #wire} factory, which derives both
+     * streams from one seed — this constructor stays package-private for tests and that factory.
+     */
+    SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
+                   ScheduledExecutorService executor, CohesionCsvExporter csvExporter,
+                   Random respawnRng, Random wanderRng) {
         this.world = Objects.requireNonNull(world, "world");
         this.config = Objects.requireNonNull(config, "config");
-        this.rules = new BoidsRules(config);
+        this.rules = new BoidsRules(config, Objects.requireNonNull(wanderRng, "wanderRng"));
         this.diagnostician = new FlockingDiagnostician(config, Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig"));
         this.cohesionMetric = new CohesionMetric(30);
         this.csvExporter = csvExporter;
         this.executor = Objects.requireNonNull(executor, "executor");
+        this.rng = Objects.requireNonNull(respawnRng, "respawnRng");
     }
 
     public double cohesionSpreadM() {
@@ -173,12 +186,12 @@ public class SimulationLoop {
     private Vector3D findRespawnPosition(Predator predator) {
         for (int i = 0; i < 20; i++) {
             Vector3D pos = new Vector3D(
-                    rng.nextDouble(0, DEFAULT_WORLD_WIDTH),
-                    rng.nextDouble(-DEFAULT_WORLD_HEIGHT, 0),
-                    rng.nextDouble(0, DEFAULT_WORLD_DEPTH));
+                    rng.nextDouble(0, world.width()),
+                    rng.nextDouble(-world.height(), 0),
+                    rng.nextDouble(0, world.depth()));
             if (pos.distanceTo(predator.position()) >= RESPAWN_MIN_DIST) return pos;
         }
-        return new Vector3D(DEFAULT_WORLD_WIDTH / 2, -DEFAULT_WORLD_HEIGHT / 2, DEFAULT_WORLD_DEPTH / 2);
+        return new Vector3D(world.width() / 2, -world.height() / 2, world.depth() / 2);
     }
 
     static Vector3D computeCentroid(List<Agent> agents) {
@@ -250,27 +263,56 @@ public class SimulationLoop {
         return new Vector3D(vx, vy, vz);
     }
 
+    // Distinct salts so the three RNG streams derived from the single master seed don't share state.
+    private static final long RESPAWN_SEED_SALT = 0x9E3779B97F4A7C15L;
+    private static final long WANDER_SEED_SALT  = 0xC2B2AE3D27D4EB4FL;
+
+    /** A world and the simulation loop that drives it, both wired from one master seed. */
+    public record Wiring(World world, SimulationLoop loop) {}
+
+    /**
+     * Builds the world and the simulation loop from a single master seed: initial placement, predator
+     * respawn and the wander force all derive from {@code masterSeed}, so the entire run is
+     * reproducible. This is the public assembly entry point — callers never touch the low-level
+     * {@code createWorld} primitive or the per-stream RNGs directly.
+     */
+    public static Wiring wire(int agentCount, double width, double height, double depth,
+                              BoidsConfig boids, DiagnosticsConfig diagnostics, long masterSeed,
+                              ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
+        World world = createWorld(agentCount, width, height, depth, new Random(masterSeed));
+        SimulationLoop loop = new SimulationLoop(world, boids, diagnostics, executor, csvExporter,
+                new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
+        return new Wiring(world, loop);
+    }
+
     public static World createDefaultWorld() {
-        return createWorld(20, new Random(42L));
+        return createWorld(20, DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH, new Random(42L));
     }
 
     static World createWorld(int agentCount, Random rng) {
-        World world = new World(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH);
+        return createWorld(agentCount, DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH, rng);
+    }
+
+    // Obstacle and predator positions are expressed as fractions of the world dimensions so the
+    // scene stays inside the box at any size. At the default 100x100x50 the fractions reproduce the
+    // original literal positions (50,-50,25)/(25,-70,25)/(75,-30,25) and predator (5,-5,5) exactly.
+    static World createWorld(int agentCount, double width, double height, double depth, Random rng) {
+        World world = new World(width, height, depth);
         for (int i = 0; i < agentCount; i++) {
             Vector3D pos = new Vector3D(
-                    rng.nextDouble(0, DEFAULT_WORLD_WIDTH),
-                    rng.nextDouble(-DEFAULT_WORLD_HEIGHT, 0),
-                    rng.nextDouble(0, DEFAULT_WORLD_DEPTH));
+                    rng.nextDouble(0, width),
+                    rng.nextDouble(-height, 0),
+                    rng.nextDouble(0, depth));
             Vector3D vel = new Vector3D(
                     rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
                     rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
                     rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
             world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
         }
-        world.addObstacle(new Obstacle(new Vector3D(50, -50, 25), 8.0));
-        world.addObstacle(new Obstacle(new Vector3D(25, -70, 25), 5.0));
-        world.addObstacle(new Obstacle(new Vector3D(75, -30, 25), 6.0));
-        world.setPredator(new Predator(new Vector3D(5, -5, 5), Vector3D.ZERO));
+        world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0));
+        world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0));
+        world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0));
+        world.setPredator(new Predator(new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth), Vector3D.ZERO));
         return world;
     }
 

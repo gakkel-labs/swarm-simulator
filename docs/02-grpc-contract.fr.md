@@ -298,7 +298,7 @@ Si cet overhead devient gênant en v0.4+ (par ex. 200 agents), le champ peut mig
 | --------------------------- | ----------------------------------------------------------------------------------------- |
 | Définition proto            | `contracts/src/main/proto/swarm_observer.proto`                                           |
 | Service côté serveur        | `swarm-server/.../server/SwarmObserverImpl.java` (abonnements + boucle de diffusion)      |
-| Bootstrap serveur gRPC      | `swarm-server/.../server/SwarmServer.java` (point d'entrée) + `SwarmServerBootstrap.java` (câblage, `PORT = 50051`) |
+| Bootstrap serveur gRPC      | `swarm-server/.../server/SwarmServer.java` (point d'entrée) + `SwarmServerBootstrap.java` (câblage ; port issu de `Settings`, défaut `50051`, surcharge `SWARM_PORT`) |
 | Source des frames           | `swarm-server/.../simulation/SimulationLoop.java` (tick Boids 30 Hz → `World`)            |
 | Mapping domaine → proto     | `swarm-server/.../server/WorldStateBuilder.java` (`build()` / `toAgentState()` / `toVec3()` / `toProtoObstacle()` / `toPredatorState()`) |
 

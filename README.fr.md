@@ -47,7 +47,7 @@ accueillera plus tard un agent Raspberry Pi (roadmap v0.3).
 | JDK          | 21 (Temurin OK)      | `java -version` doit reporter 21                 |
 | Maven        | 3.9+                 | `mvn -v`                                         |
 | Unity Hub    | avec Editor 6000.4.6f1 (Unity 6) | template URP                         |
-| Port libre   | `50051` (gRPC)       | Modifier `SwarmServer.PORT` au besoin            |
+| Port libre   | `50051` (gRPC)       | Surcharger via `SWARM_PORT` (voir [Configuration](#configuration)) |
 
 ### 1. Démarrer le backend
 
@@ -78,8 +78,53 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
   l'événement *found* se déclenche et les carriers s'approchent.
 
 Si quelque chose coince, la cause la plus fréquente est le port gRPC déjà occupé —
-tuer la JVM précédente ou changer `PORT` dans
-[`SwarmServer.java`](swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/server/SwarmServer.java).
+tuer la JVM précédente ou démarrer le backend sur un autre port avec `SWARM_PORT=50052 …`
+(voir [Configuration](#configuration)).
+
+---
+
+## Configuration
+
+Tous les paramètres runtime sont lus **une seule fois au démarrage**, avec la précédence
+**variable d'environnement → `application.properties` → valeur par défaut**. Aucun flag, aucune
+recompilation — définir une variable d'environnement (compatible 12-factor / Docker) ou
+décommenter une clé dans [`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
+Sans rien définir, la simulation est identique à avant cette évolution.
+
+```bash
+# exemples
+SWARM_PORT=50052 mvn -pl swarm-server exec:java -Dexec.mainClass="…server.SwarmServer"
+SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.mainClass="…"
+```
+
+| Variable | Propriété | Défaut | Signification |
+|----------|-----------|--------|---------------|
+| `SWARM_PORT` | `swarm.port` | `50051` | Port d'écoute gRPC |
+| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Nombre d'agents explorers |
+| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | Étendue X du monde |
+| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Étendue Y du monde |
+| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Étendue Z du monde |
+| `SWARM_SEED` | `swarm.seed` | `42` | Graine RNG — voir ci-dessous |
+| `SWARM_BOIDS_*` | `swarm.boids.*` | (par règle) | Poids & rayons Boids (perception-radius, separation-weight, alignment-weight, cohesion-weight, wander-weight, max-speed, boundary-repulsion-{radius,weight}, obstacle-avoidance-{radius,weight}, threat-flee-{radius,weight}) |
+| `SWARM_DIAG_*` | `swarm.diag.*` | (par seuil) | Seuils de diagnostic (immobile-threshold-fraction, frozen-threshold-fraction, dispersal-limit-fraction, flocking-lost-fraction, stability-tolerance, stability-samples) |
+
+La liste complète des noms `SWARM_BOIDS_*` / `SWARM_DIAG_*` avec leurs défauts est présente,
+commentée, dans `application.properties`.
+
+### Graine & reproductibilité
+
+`SWARM_SEED` rend un run reproductible : **une même graine produit la même simulation**
+(placement initial, respawn après prédateur et force de *wander* en dérivent tous). C'est la
+brique sur laquelle s'appuient le benchmarking et les runs CI headless.
+
+- `SWARM_SEED=<entier>` — run déterministe et reproductible.
+- `SWARM_SEED=random` (ou `none`) — une graine est tirée au démarrage **et loggée**, pour
+  pouvoir rejouer un run intéressant en repassant cette valeur.
+- *non défini* — vaut `42` (déterministe), conservant le comportement historique.
+
+> Astuce — pour comparer équitablement deux configurations Boids, lancer chacune sur le
+> **même jeu de graines** (p. ex. `SWARM_SEED=1…100` pour les deux) afin que la différence
+> reflète la configuration, pas les conditions initiales aléatoires.
 
 ---
 

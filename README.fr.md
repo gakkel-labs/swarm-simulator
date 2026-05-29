@@ -113,14 +113,18 @@ commentée, dans `application.properties`.
 
 ### Graine & reproductibilité
 
-`SWARM_SEED` rend un run reproductible : **une même graine produit la même simulation**
-(placement initial, respawn après prédateur et force de *wander* en dérivent tous). C'est la
-brique sur laquelle s'appuient le benchmarking et les runs CI headless.
+`SWARM_SEED` rend un run reproductible : **une même graine reproduit la même dynamique de
+simulation** — positions et vitesses des agents, respawn après prédateur et force de *wander*
+en dérivent tous. C'est la brique sur laquelle s'appuient le benchmarking et les runs CI headless.
 
 - `SWARM_SEED=<entier>` — run déterministe et reproductible.
 - `SWARM_SEED=random` (ou `none`) — une graine est tirée au démarrage **et loggée**, pour
   pouvoir rejouer un run intéressant en repassant cette valeur.
 - *non défini* — vaut `42` (déterministe), conservant le comportement historique.
+
+Note : les **identifiants** d'agents (UUID) ne sont pas seedés et diffèrent donc d'un run à
+l'autre. La simulation physique (positions, métriques, ordre de détection) est identique ;
+seuls les IDs dans les logs du type `Target found by agent <id>` changent.
 
 > Astuce — pour comparer équitablement deux configurations Boids, lancer chacune sur le
 > **même jeu de graines** (p. ex. `SWARM_SEED=1…100` pour les deux) afin que la différence

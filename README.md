@@ -111,14 +111,18 @@ in `application.properties`.
 
 ### Seed & reproducibility
 
-`SWARM_SEED` makes a run reproducible: **the same seed produces the same simulation**
-(initial placement, predator-respawn and the wander force all derive from it). This is what
-benchmarking and headless CI runs build on.
+`SWARM_SEED` makes a run reproducible: **the same seed reproduces the same simulation
+dynamics** — agent positions, velocities, predator-respawn and the wander force all derive
+from it. This is what benchmarking and headless CI runs build on.
 
 - `SWARM_SEED=<integer>` — deterministic, reproducible run.
 - `SWARM_SEED=random` (or `none`) — a fresh seed is drawn at startup **and logged**, so an
   interesting run can be replayed by passing that value back.
 - *unset* — defaults to `42` (deterministic), preserving the historical behaviour.
+
+Note: agent **identifiers** (UUIDs) are not seeded, so they differ from run to run. The
+physical simulation (positions, metrics, detection order) is identical; only the IDs in log
+lines such as `Target found by agent <id>` change.
 
 > Tip — to compare two Boids configurations fairly, run each over the **same set of seeds**
 > (e.g. `SWARM_SEED=1…100` for both) so the difference reflects the configuration, not the

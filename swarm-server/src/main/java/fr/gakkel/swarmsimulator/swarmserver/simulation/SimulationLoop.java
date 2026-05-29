@@ -33,9 +33,6 @@ public class SimulationLoop {
     // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics
     private static final int LOG_INTERVAL_TICKS = 5 * TICK_RATE_HZ;
 
-    static final double DEFAULT_WORLD_WIDTH  = 100;
-    static final double DEFAULT_WORLD_HEIGHT = 100;
-    static final double DEFAULT_WORLD_DEPTH  = 50;
     private static final double INITIAL_SPEED_XY = 2.0;
     private static final double INITIAL_SPEED_Z  = 1.0;
 
@@ -286,11 +283,15 @@ public class SimulationLoop {
     }
 
     public static World createDefaultWorld() {
-        return createWorld(20, DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH, new Random(42L));
+        return createWorld(SimulationConstants.DEFAULT_AGENT_COUNT,
+                SimulationConstants.DEFAULT_WORLD_WIDTH, SimulationConstants.DEFAULT_WORLD_HEIGHT,
+                SimulationConstants.DEFAULT_WORLD_DEPTH, new Random(SimulationConstants.DEFAULT_SEED));
     }
 
     static World createWorld(int agentCount, Random rng) {
-        return createWorld(agentCount, DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_WORLD_DEPTH, rng);
+        return createWorld(agentCount,
+                SimulationConstants.DEFAULT_WORLD_WIDTH, SimulationConstants.DEFAULT_WORLD_HEIGHT,
+                SimulationConstants.DEFAULT_WORLD_DEPTH, rng);
     }
 
     // Obstacle/predator positions are expressed as fractions of the world dimensions, and obstacle
@@ -310,8 +311,8 @@ public class SimulationLoop {
                     rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
             world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
         }
-        double radiusScale = Math.min(width / DEFAULT_WORLD_WIDTH,
-                Math.min(height / DEFAULT_WORLD_HEIGHT, depth / DEFAULT_WORLD_DEPTH));
+        double radiusScale = Math.min(width / SimulationConstants.DEFAULT_WORLD_WIDTH,
+                Math.min(height / SimulationConstants.DEFAULT_WORLD_HEIGHT, depth / SimulationConstants.DEFAULT_WORLD_DEPTH));
         world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0 * radiusScale));
         world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
         world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));

@@ -2,6 +2,7 @@ package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +40,9 @@ public record Settings(
 
     private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
-    public static final int    DEFAULT_PORT         = 50051;
-    public static final int    DEFAULT_AGENT_COUNT  = 20;
-    public static final double DEFAULT_WORLD_WIDTH  = 100;
-    public static final double DEFAULT_WORLD_HEIGHT = 100;
-    public static final double DEFAULT_WORLD_DEPTH  = 50;
-    public static final long   DEFAULT_SEED         = 42L;
+    // Port is server-only; world/agent/seed defaults live in SimulationConstants (single source of
+    // truth, also used by SimulationLoop.createDefaultWorld) and are referenced below.
+    public static final int DEFAULT_PORT = 50051;
 
     private static final String PROPERTIES_RESOURCE = "application.properties";
 
@@ -67,10 +65,10 @@ public record Settings(
      */
     static Settings load(Map<String, String> env, Properties props) {
         int port = intValue(env, props, "SWARM_PORT", "swarm.port", DEFAULT_PORT);
-        int agentCount = intValue(env, props, "SWARM_AGENT_COUNT", "swarm.agent-count", DEFAULT_AGENT_COUNT);
-        double worldWidth = doubleValue(env, props, "SWARM_WORLD_WIDTH", "swarm.world.width", DEFAULT_WORLD_WIDTH);
-        double worldHeight = doubleValue(env, props, "SWARM_WORLD_HEIGHT", "swarm.world.height", DEFAULT_WORLD_HEIGHT);
-        double worldDepth = doubleValue(env, props, "SWARM_WORLD_DEPTH", "swarm.world.depth", DEFAULT_WORLD_DEPTH);
+        int agentCount = intValue(env, props, "SWARM_AGENT_COUNT", "swarm.agent-count", SimulationConstants.DEFAULT_AGENT_COUNT);
+        double worldWidth = doubleValue(env, props, "SWARM_WORLD_WIDTH", "swarm.world.width", SimulationConstants.DEFAULT_WORLD_WIDTH);
+        double worldHeight = doubleValue(env, props, "SWARM_WORLD_HEIGHT", "swarm.world.height", SimulationConstants.DEFAULT_WORLD_HEIGHT);
+        double worldDepth = doubleValue(env, props, "SWARM_WORLD_DEPTH", "swarm.world.depth", SimulationConstants.DEFAULT_WORLD_DEPTH);
         long seed = resolveSeed(env, props);
 
         BoidsConfig boids = resolveBoids(env, props);
@@ -112,13 +110,14 @@ public record Settings(
 
     /**
      * Resolves the master RNG seed. Accepts a number for reproducible runs, {@code random}/{@code none}
-     * for a freshly drawn seed (logged so the run can be replayed), or falls back to {@link #DEFAULT_SEED}.
+     * for a freshly drawn seed (logged so the run can be replayed), or falls back to
+     * {@link SimulationConstants#DEFAULT_SEED}.
      */
     private static long resolveSeed(Map<String, String> env, Properties props) {
         Optional<String> raw = raw(env, props, "SWARM_SEED", "swarm.seed");
         if (raw.isEmpty()) {
-            LOG.info("Seed: {} (default)", DEFAULT_SEED);
-            return DEFAULT_SEED;
+            LOG.info("Seed: {} (default)", SimulationConstants.DEFAULT_SEED);
+            return SimulationConstants.DEFAULT_SEED;
         }
         String value = raw.get();
         if (value.equalsIgnoreCase("random") || value.equalsIgnoreCase("none")) {

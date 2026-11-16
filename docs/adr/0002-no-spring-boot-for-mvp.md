@@ -3,6 +3,8 @@
 ## Status
 Accepted — 2026-01-15 (retroactive, formalized 2026-05-25)
 
+Note (2026-11-16): `fleet-dashboard`, named below, is replaced by `mission-console` — see [ADR-0005](0005-mission-console-replaces-fleet-dashboard.md).
+
 ## Context
 The `swarm-server` backend is a Java server that hosts the Boids simulation loop and exposes
 a gRPC service. The application skeleton needs to be decided.

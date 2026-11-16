@@ -4,7 +4,7 @@
 > Reynolds' Boids model with obstacle avoidance and threat response.
 
 [![CI](https://github.com/gakkel-labs/swarm-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/gakkel-labs/swarm-simulator/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 
 ![Demo GIF](docs/assets/demo.gif)
@@ -270,4 +270,11 @@ mvn verify
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) — see [`LICENSE`](LICENSE).
+Copyright (c) 2026 Bourse Alexandre.
+
+You may use, copy and modify this project for any **noncommercial** purpose
+(personal use, study, research, teaching, evaluation). Commercial use requires
+prior written permission from the author.
+
+Versions published before this change remain available under the MIT license.

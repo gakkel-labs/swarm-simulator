@@ -25,7 +25,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Opérateur** | La personne qui prépare et suit la mission depuis le centre d'opérations. Gakkel aide l'opérateur ; c'est l'opérateur qui décide. | — |
 | **Centre d'opérations** | La salle (souvent sur un navire de recherche) où travaille l'opérateur. Elle reçoit les informations envoyées par les porte-drones. | — |
 | **État de la mission** | Où en est la mission dans sa vie. États proposés : *En préparation*, *Validée* (plan accepté), *En cours* (drones en mer), *Terminée*, *Annulée*. | 🔜 |
-| **Moments de la mission** | Les moments clés pour l'opérateur : **Préparer**, **Lancer**, **Détecter**, **Confirmer**, **Clôturer**. | 🔜 |
+| **Moments de la mission** | Les moments clés pour l'opérateur : **Préparer**, **Lancer**, **Détecter**, **Confirmer**, **Intervenir**, **Clôturer**. | 🔜 |
 | **GO / NO-GO** | La décision de lancer ou non, selon la météo et le trafic maritime. | 🔜 |
 | **Fenêtre météo** | La période où la météo permet de mettre à l'eau et de récupérer les drones. | 🔜 |
 | **AIS** | Le système qui donne la position des navires proches. L'opérateur le consulte avant le lancement. | 🔜 |
@@ -40,16 +40,17 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Porte-drones** | Il transporte l'essaim, le **dépose** dans la zone, parle avec l'essaim et relaie les informations au centre d'opérations. Il déploie aussi les drones spécialisés. | 🔜 (type réservé) |
 | **Essaim** | Un groupe de **drones de détection** qui se déplacent ensemble, sans chef. L'essaim fait la **première détection** sur la zone. | ✅ |
 | **Drone de détection** | Un drone de l'essaim. Il fouille la zone avec ses capteurs et signale ce qu'il trouve. | ✅ (*agent* `EXPLORER`) |
-| **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **récupérer** un objet. | 🔜 |
+| **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). | 🔜 |
 | **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend teste beaucoup de configurations et propose la meilleure. | 🔜 |
 
-## 3. Comment travaille une flotte : Déposer, Détecter, Confirmer
+## 3. Comment travaille une flotte : Déposer, Détecter, Confirmer, Intervenir
 
 | Mot | Définition | Dans le code |
 |-----|------------|:------------:|
 | **Déposer** | Temps 1. Le porte-drones dépose l'essaim dans la zone de recherche. | 🔜 |
 | **Détecter** | Temps 2. L'essaim, une fois à l'eau, fouille la zone avec ses capteurs. Quand un drone de détection voit un objet suspect, il signale un **contact** au porte-drones, qui le relaie à l'opérateur. À ce stade, un contact est seulement une cible *possible* : on ne sait pas encore si c'est l'épave ou un rocher. | ✅ (version simple) |
 | **Confirmer** | Temps 3. Le porte-drones déploie un drone spécialisé pour aller voir un contact de près. Détecter dit « il y a quelque chose ici » ; Confirmer dit « oui, c'est l'épave » ou « non, ce n'en est pas une ». L'opérateur donne l'ordre, ou laisse Gakkel le faire automatiquement. | 🔜 |
+| **Intervenir** | Temps 4. Un drone spécialisé traite le contact confirmé : par exemple il récupère la boîte noire ou neutralise une mine. Confirmer dit « c'est l'épave » ; Intervenir agit dessus. | 🔜 |
 | **Envoi manuel / automatique** | Choisi pendant la préparation : l'opérateur envoie lui-même chaque drone spécialisé, ou Gakkel l'envoie automatiquement. L'opérateur peut reprendre la main à tout moment. | 🔜 |
 
 ## 4. La recherche

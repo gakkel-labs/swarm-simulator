@@ -22,13 +22,15 @@ Gakkel est le système qui aide l'opérateur à préparer et à suivre ce type d
 La recherche d'épave est la mission de référence, mais Gakkel vise toute mission de
 drones : inspection, cartographie des fonds, guerre des mines.
 
-Une flotte travaille en trois temps :
+Une flotte travaille en quatre temps :
 
 1. **Déposer :** un **porte-drones** dépose un **essaim de drones de détection** dans la zone de recherche.
 2. **Détecter :** l'essaim fouille la zone et trouve les contacts (première détection).
    Le porte-drones parle avec l'essaim et relaie les informations au centre d'opérations.
 3. **Confirmer :** le porte-drones déploie ensuite des **drones spécialisés** pour vérifier
    un contact sur place. L'opérateur en donne l'ordre, ou laisse Gakkel le faire automatiquement.
+4. **Intervenir :** un drone spécialisé traite le contact confirmé, par exemple il récupère
+   la boîte noire ou neutralise une mine.
 
 Plus d'infos sur l'opérateur : [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md).
 

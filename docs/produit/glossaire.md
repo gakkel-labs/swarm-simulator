@@ -25,7 +25,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Operator** | The person who prepares and follows the mission from the operations centre. Gakkel helps the operator; the operator decides. | — |
 | **Operations centre** | The room (often on a research vessel) where the operator works. It receives the information sent by the drone carriers. | — |
 | **Mission state** | Where the mission is in its life. Proposed states: *In preparation*, *Validated* (plan accepted), *In progress* (drones at sea), *Finished*, *Cancelled*. | 🔜 |
-| **Mission phases** | The key moments of a mission for the operator: **Prepare**, **Launch**, **Detect**, **Confirm**, **Close**. | 🔜 |
+| **Mission phases** | The key moments of a mission for the operator: **Prepare**, **Launch**, **Detect**, **Confirm**, **Intervene**, **Close**. | 🔜 |
 | **GO / NO-GO** | The decision to launch, or not, depending on the weather and sea traffic. | 🔜 |
 | **Weather window** | The period when the weather allows the drones to be launched and recovered. | 🔜 |
 | **AIS** | The system that gives the position of nearby ships. The operator checks it before launch. | 🔜 |
@@ -40,16 +40,17 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Drone carrier** | It carries the swarm, **drops** it in the area, talks to the swarm and relays information to the operations centre. It also deploys the specialised drones. | 🔜 (type reserved) |
 | **Swarm** | A group of **detection drones** that move together, with no leader. The swarm does the **first detection** over the area. | ✅ |
 | **Detection drone** | A drone of the swarm. It searches the area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
-| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **recover** an object. | 🔜 |
+| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). | 🔜 |
 | **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend tests many configurations and proposes the best one. | 🔜 |
 
-## 3. How a fleet works: Drop, Detect, Confirm
+## 3. How a fleet works: Drop, Detect, Confirm, Intervene
 
 | Word | Definition | In the code |
 |------|------------|:-----------:|
 | **Drop** | Step 1. The drone carrier drops the swarm in the search area. | 🔜 |
 | **Detect** | Step 2. The swarm, now in the water, searches the area with its sensors. When a detection drone sees a suspect object, it reports a **contact** to the drone carrier, which relays it to the operator. At this stage a contact is only a *possible* target: nobody knows yet if it is the wreck or a rock. | ✅ (simple version) |
 | **Confirm** | Step 3. The drone carrier deploys a specialised drone to go and look at one contact up close. Detect says "there is something here"; Confirm says "yes, it is the wreck" or "no, it is not". The operator gives the order, or lets Gakkel do it automatically. | 🔜 |
+| **Intervene** | Step 4. A specialised drone takes care of the confirmed contact: for example it recovers the black box or neutralises a mine. Confirm says "it is the wreck"; Intervene does something about it. | 🔜 |
 | **Manual / automatic dispatch** | Chosen during preparation: the operator sends each specialised drone themselves, or Gakkel sends it automatically. The operator can take back control at any time. | 🔜 |
 
 ## 4. The search

@@ -20,7 +20,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 |-----|------------|:------------:|
 | **Mission** | Un travail confié à des flottes de drones, avec un objectif, une zone de recherche et une fenêtre de temps. Exemple : retrouver l'épave d'un avion dans une zone de recherche donnée. | 🔜 |
 | **Mission de référence** | La mission qui sert à construire et tester Gakkel en premier : la **recherche civile d'une épave** (avion ou navire). | — |
-| **Autres missions** | Les missions que Gakkel devra aussi gérer plus tard : **inspection**, **cartographie des fonds**, **guerre des mines**. | — |
+| **Autres missions** | Les missions que Gakkel devra aussi gérer plus tard : **inspection**, **cartographie des fonds (bathymétrie)**, **guerre des mines**. | — |
 | **Objectif** | Ce que la mission doit atteindre. Exemple : « trouver l'épave », « cartographier cette zone ». | 🔜 |
 | **Opérateur** | La personne qui prépare et suit la mission depuis le centre d'opérations. Gakkel aide l'opérateur ; c'est l'opérateur qui décide. | — |
 | **Centre d'opérations** | La salle (souvent sur un navire de recherche) où travaille l'opérateur. Elle reçoit les informations envoyées par les porte-drones. | — |
@@ -90,7 +90,7 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 |-----|------------|:------------:|
 | **Backend** | Le programme Java qui fait tourner la simulation. C'est le seul qui décide de ce qui se passe. | ✅ |
 | **Vue 3D** (Unity) | L'affichage en 3D. Elle permettra de suivre une mission en temps réel et de la rejouer ensuite, en voyant les déplacements des drones. Elle montre seulement ce que le backend envoie ; elle ne décide rien. | ✅ |
-| **Poste web** | L'application web de l'opérateur, où la mission est définie (dépôt `mission-console`). | 🔜 |
+| **Poste de contrôle** | L'application web de l'opérateur, où la mission est définie (dépôt `mission-console`). | 🔜 |
 | **Rejouer** (replay) | Revoir une mission terminée dans la vue 3D, pour voir comment les drones se sont déplacés et ce qui s'est passé. | 🔜 |
 | **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. | ✅ |
 | **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `CARRIER` (porte-drones). Attention : le type `OPERATOR` dans le code est seulement réservé et **n'est pas** l'opérateur humain. | ✅ |

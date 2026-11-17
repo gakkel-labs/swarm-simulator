@@ -20,7 +20,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 |------|------------|:-----------:|
 | **Mission** | A job given to drone fleets, with an objective, a search area and a time window. Example: find the wreck of an aircraft in a given search area. | 🔜 |
 | **Reference mission** | The mission used to build and test Gakkel first: the **civil search for a sunken wreck** (aircraft or ship). | — |
-| **Other missions** | Missions Gakkel must also handle later: **inspection**, **seabed mapping**, **mine countermeasures**. | — |
+| **Other missions** | Missions Gakkel must also handle later: **inspection**, **seabed mapping (bathymetry)**, **mine countermeasures**. | — |
 | **Objective** | What the mission must achieve. Example: "find the wreck", "map this area". | 🔜 |
 | **Operator** | The person who prepares and follows the mission from the operations centre. Gakkel helps the operator; the operator decides. | — |
 | **Operations centre** | The room (often on a research vessel) where the operator works. It receives the information sent by the drone carriers. | — |
@@ -90,7 +90,7 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 |------|------------|:-----------:|
 | **Backend** | The Java program that runs the simulation. It is the only one that decides what happens. | ✅ |
 | **Viewer** (Unity) | The 3D display. It will let you follow a mission live and replay it afterwards, watching the drones move. It only shows what the backend sends; it decides nothing. | ✅ |
-| **Web station** | The operator's web application, where the mission is defined (repository `mission-console`). | 🔜 |
+| **Control station** | The operator's web application, where the mission is defined (repository `mission-console`). | 🔜 |
 | **Replay** | Play again a mission that is finished, in the viewer, to see how the drones moved and what happened. | 🔜 |
 | **Simulation** | A computer run that imitates the mission, to test it before going to sea. | ✅ |
 | **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `CARRIER` (drone carrier). Careful: the type `OPERATOR` in the code is only reserved and is **not** the human operator. | ✅ |

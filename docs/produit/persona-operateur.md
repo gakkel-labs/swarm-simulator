@@ -28,7 +28,7 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 
 - Find a sunken wreck (aircraft or ship) in an area of 50 to 100 km²
 - Cover the whole area with no gaps and no overlaps
-- Quickly validate each sonar contact (wreck or rock?) by deciding when to send a specialised drone
+- Quickly validate each sonar contact (wreck or rock?) by deciding when to send a specialised drone. Depending on the mission, this can be automated: during preparation Michel chooses between manual decision and automatic dispatch, and can take back control at any time
 - Keep a complete record: covered areas, contacts, decisions
 
 ## His difficulties
@@ -52,10 +52,10 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 
 ## Key moments of a mission
 
-1. **Prepare**: define the area and the objective, check weather and traffic, validate the proposed plan.
+1. **Prepare**: define the area and the objective, check weather and traffic, validate the proposed plan, choose whether specialised drones will be sent manually or automatically.
 2. **Launch**: deploy the fleets during the weather window.
 3. **Detect**: the swarms cover the area, the drone carriers report contacts.
-4. **Confirm**: Michel picks the contacts to check and sends a specialised drone.
+4. **Confirm**: Michel picks the contacts to check and sends a specialised drone, or lets Gakkel do it automatically if he planned it.
 5. **Close**: recover the drones and produce the report.
 
 ## His expectations of Gakkel

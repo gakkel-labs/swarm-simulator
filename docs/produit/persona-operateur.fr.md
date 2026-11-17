@@ -28,7 +28,7 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 
 - Retrouver une épave coulée (avion ou navire) dans une zone de 50 à 100 km²
 - Couvrir toute la zone sans trou ni doublon
-- Valider vite chaque contact sonar (épave ou rocher ?) en décidant quand envoyer un drone spécialisé
+- Valider vite chaque contact sonar (épave ou rocher ?) en décidant quand envoyer un drone spécialisé. Selon la mission, cet envoi peut être automatisé : Michel choisit à la préparation entre décision manuelle et envoi automatique, et peut reprendre la main à tout moment
 - Garder une trace complète : zones couvertes, contacts, décisions
 
 ## Ses difficultés
@@ -52,10 +52,10 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 
 ## Les moments clés d'une mission
 
-1. **Préparer** : définir la zone et l'objectif, vérifier la météo et le trafic, valider le plan proposé.
+1. **Préparer** : définir la zone et l'objectif, vérifier la météo et le trafic, valider le plan proposé, choisir si l'envoi des drones spécialisés sera manuel ou automatique.
 2. **Lancer** : mettre à l'eau les flottes pendant la fenêtre météo.
 3. **Détecter** : les essaims couvrent la zone, les porte-drones remontent les contacts.
-4. **Confirmer** : Michel choisit les contacts à vérifier et envoie un drone spécialisé.
+4. **Confirmer** : Michel choisit les contacts à vérifier et envoie un drone spécialisé, ou laisse Gakkel le faire automatiquement s'il l'a prévu.
 5. **Clore** : récupérer les drones et produire le rapport.
 
 ## Ses attentes envers Gakkel

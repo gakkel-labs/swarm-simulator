@@ -56,6 +56,24 @@ Ce qui **n'existe pas** encore :
 - Pas de préparation de mission, pas de poste web, pas d'optimiseur.
 - Pas encore de vidéo de démo (elle arrive avec l'étape 1).
 
+## Le cœur de l'essaim : Boids
+
+Le projet est parti de l'algorithme **Boids**, inventé par Craig Reynolds en 1986 pour
+animer des vols d'oiseaux. Il n'y a **pas de chef** : chaque drone regarde seulement ses
+voisins proches et suit trois règles simples.
+
+- **Séparation :** ne pas trop s'approcher de ses voisins.
+- **Alignement :** aller dans la même direction que ses voisins.
+- **Cohésion :** rester près du groupe.
+
+De ces règles locales naît un comportement de groupe. C'est bien adapté à un essaim de
+drones : pas de cerveau central, donc perdre un drone n'arrête pas les autres, et
+l'essaim reste groupé sans communication lourde. Gakkel ajoute quelques règles :
+éviter les obstacles, rester dans la zone, fuir un prédateur, et un peu d'errance
+aléatoire.
+
+Détails, schémas et formules : [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md).
+
 ## Où va le projet
 
 Les prochaines étapes sont suivies dans les jalons (milestones) GitHub :

@@ -55,6 +55,23 @@ What does **not** exist yet:
 - No mission planning, no web station, no optimizer.
 - No demo video yet (it comes with Step 1).
 
+## The heart of the swarm: Boids
+
+The project started from the **Boids** algorithm, invented by Craig Reynolds in 1986 to
+animate flocks of birds. There is **no leader**: each drone only looks at its close
+neighbours and follows three simple rules.
+
+- **Separation:** don't get too close to your neighbours.
+- **Alignment:** go in the same direction as your neighbours.
+- **Cohesion:** stay close to the group.
+
+From these local rules, a group behaviour emerges. This suits a drone swarm well: no
+central brain, so losing one drone does not stop the others, and the swarm stays
+together without heavy communication. Gakkel adds a few rules on top: avoid obstacles,
+stay inside the area, flee a predator, and a little random wandering.
+
+Details, diagrams and formulas: [`docs/01-boids-rules.md`](docs/01-boids-rules.md).
+
 ## Where the project goes
 
 The next steps are tracked as GitHub milestones:

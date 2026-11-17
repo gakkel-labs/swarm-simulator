@@ -242,6 +242,7 @@ mvn verify
 ### Pour aller plus loin
 
 - [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md) — le persona de l'opérateur.
+- [`docs/produit/glossaire.fr.md`](docs/produit/glossaire.fr.md) — le glossaire (les mots du projet).
 - [`docs/architecture.fr.md`](docs/architecture.fr.md) — flux backend ↔ Unity, threads,
   changement de repère.
 - [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) — les règles Boids.

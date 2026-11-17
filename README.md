@@ -238,6 +238,7 @@ mvn verify
 ### Going further
 
 - [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md) — the operator persona.
+- [`docs/produit/glossaire.md`](docs/produit/glossaire.md) — the glossary (the words of the project).
 - [`docs/architecture.md`](docs/architecture.md) — backend ↔ Unity flow, threading,
   frame remapping.
 - [`docs/01-boids-rules.md`](docs/01-boids-rules.md) — the Boids rules.

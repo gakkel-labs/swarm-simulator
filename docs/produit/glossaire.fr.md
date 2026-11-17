@@ -24,7 +24,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Objectif** | Ce que la mission doit atteindre. Exemple : « trouver l'épave », « cartographier cette zone ». | 🔜 |
 | **Opérateur** | La personne qui prépare et suit la mission depuis le centre d'opérations. Gakkel aide l'opérateur ; c'est l'opérateur qui décide. | — |
 | **Centre d'opérations** | La salle (souvent sur un navire de recherche) où travaille l'opérateur. Elle reçoit les informations envoyées par les porte-drones. | — |
-| **État de la mission** | Où en est la mission dans sa vie. États proposés : *Brouillon* (en préparation), *Validée* (plan accepté), *En cours* (drones en mer), *Terminée*, *Annulée*. | 🔜 |
+| **État de la mission** | Où en est la mission dans sa vie. États proposés : *En préparation*, *Validée* (plan accepté), *En cours* (drones en mer), *Terminée*, *Annulée*. | 🔜 |
 | **Moments de la mission** | Les moments clés pour l'opérateur : **Préparer**, **Lancer**, **Détecter**, **Confirmer**, **Clôturer**. | 🔜 |
 | **GO / NO-GO** | La décision de lancer ou non, selon la météo et le trafic maritime. | 🔜 |
 | **Fenêtre météo** | La période où la météo permet de mettre à l'eau et de récupérer les drones. | 🔜 |
@@ -48,8 +48,8 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | Mot | Définition | Dans le code |
 |-----|------------|:------------:|
 | **Déposer** | Temps 1. Le porte-drones dépose l'essaim dans la zone de recherche. | 🔜 |
-| **Détecter** | Temps 2. L'essaim fouille la zone et trouve des contacts. | ✅ (version simple) |
-| **Confirmer** | Temps 3. Le porte-drones déploie un drone spécialisé pour vérifier un contact. L'opérateur donne l'ordre, ou laisse Gakkel le faire automatiquement. | 🔜 |
+| **Détecter** | Temps 2. L'essaim, une fois à l'eau, fouille la zone avec ses capteurs. Quand un drone voit un objet suspect, il signale un **contact** au porte-drones, qui le relaie à l'opérateur. À ce stade, un contact est seulement une cible *possible* : on ne sait pas encore si c'est l'épave ou un rocher. | ✅ (version simple) |
+| **Confirmer** | Temps 3. Le porte-drones déploie un drone spécialisé pour aller voir un contact de près. Détecter dit « il y a quelque chose ici » ; Confirmer dit « oui, c'est l'épave » ou « non, ce n'en est pas une ». L'opérateur donne l'ordre, ou laisse Gakkel le faire automatiquement. | 🔜 |
 | **Envoi manuel / automatique** | Choisi pendant la préparation : l'opérateur envoie lui-même chaque drone spécialisé, ou Gakkel l'envoie automatiquement. L'opérateur peut reprendre la main à tout moment. | 🔜 |
 
 ## 4. La recherche

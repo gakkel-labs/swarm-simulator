@@ -24,7 +24,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Objective** | What the mission must achieve. Example: "find the wreck", "map this area". | 🔜 |
 | **Operator** | The person who prepares and follows the mission from the operations centre. Gakkel helps the operator; the operator decides. | — |
 | **Operations centre** | The room (often on a research vessel) where the operator works. It receives the information sent by the drone carriers. | — |
-| **Mission state** | Where the mission is in its life. Proposed states: *Draft* (being prepared), *Validated* (plan accepted), *In progress* (drones at sea), *Finished*, *Cancelled*. | 🔜 |
+| **Mission state** | Where the mission is in its life. Proposed states: *In preparation*, *Validated* (plan accepted), *In progress* (drones at sea), *Finished*, *Cancelled*. | 🔜 |
 | **Mission phases** | The key moments of a mission for the operator: **Prepare**, **Launch**, **Detect**, **Confirm**, **Close**. | 🔜 |
 | **GO / NO-GO** | The decision to launch, or not, depending on the weather and sea traffic. | 🔜 |
 | **Weather window** | The period when the weather allows the drones to be launched and recovered. | 🔜 |
@@ -48,8 +48,8 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | Word | Definition | In the code |
 |------|------------|:-----------:|
 | **Drop** | Step 1. The drone carrier drops the swarm in the search area. | 🔜 |
-| **Detect** | Step 2. The swarm searches the area and finds contacts. | ✅ (simple version) |
-| **Confirm** | Step 3. The drone carrier deploys a specialised drone to check a contact. The operator gives the order, or lets Gakkel do it automatically. | 🔜 |
+| **Detect** | Step 2. The swarm, now in the water, searches the area with its sensors. When a drone sees a suspect object, it reports a **contact** to the drone carrier, which relays it to the operator. At this stage a contact is only a *possible* target: nobody knows yet if it is the wreck or a rock. | ✅ (simple version) |
+| **Confirm** | Step 3. The drone carrier deploys a specialised drone to go and look at one contact up close. Detect says "there is something here"; Confirm says "yes, it is the wreck" or "no, it is not". The operator gives the order, or lets Gakkel do it automatically. | 🔜 |
 | **Manual / automatic dispatch** | Chosen during preparation: the operator sends each specialised drone themselves, or Gakkel sends it automatically. The operator can take back control at any time. | 🔜 |
 
 ## 4. The search

@@ -1,43 +1,77 @@
-# gakkel-swarm-simulator
+# Gakkel — swarm simulator
 
-> Distributed simulator of coordinated underwater drone swarms.
-> Reynolds' Boids model with obstacle avoidance and threat response.
+> A drone mission system, starting with the search for a sunken wreck.
+> This repository holds the simulation backend (Java) and the 3D viewer (Unity).
 
 [![CI](https://github.com/gakkel-labs/swarm-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/gakkel-labs/swarm-simulator/actions)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 
-![Demo GIF](docs/assets/demo.gif)
-
 > Version française : [`README.fr.md`](README.fr.md)
 
-Part of the [Gakkel universe](https://github.com/gakkel-labs) of personal projects
-exploring deep-sea robotics: [mission-console](https://github.com/gakkel-labs/mission-console),
-[drone-embedded](https://github.com/gakkel-labs/drone-embedded).
+---
+
+## The idea
+
+An aircraft has disappeared at sea. Somewhere in an area of 50 to 100 km², its wreck
+lies on the seabed. **Michel** works in the operations centre of a research vessel. He
+coordinates several drone fleets to find it, and he must not miss it.
+
+Gakkel is the system that helps him prepare and follow this kind of mission. The wreck
+search is the reference mission, but Gakkel is meant for any drone mission: cable or
+pipeline inspection, seabed mapping, mine countermeasures.
+
+Each fleet works like this:
+
+- A **swarm of low-cost drones** covers the area and makes a first detection.
+- A **drone carrier** talks to the swarm and relays the information to the operations centre.
+- One or more **specialised drones**, more expensive, are sent to confirm a contact on site.
+  Michel sends them himself, or lets Gakkel send them automatically.
+
+More about Michel: [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md).
 
 ---
 
-## What it is
+## What works today
 
-A small but real distributed system: a **Java backend** runs a 3D flocking simulation
-(Boids rules, obstacles, predator, search target) and pushes the world state at 20 Hz
-over a **gRPC server-streaming** channel. A **Unity client** subscribes to that stream
-and renders the swarm as plain grey capsules — visually minimal on purpose, so the
-emergent behavior takes the spotlight.
+This is an early stage. Today the repository contains **the swarm part only**:
 
-The scenario is **Maritime Search and Rescue (SAR)**:
+- A **Java backend** simulates a swarm of 20 drones in 3D. The drones move as a group
+  (Reynolds' Boids rules), avoid an obstacle, stay inside the area and flee a predator
+  that hunts them.
+- A **Unity viewer** connects to the backend and shows the swarm live (simple grey
+  capsules for now).
+- In the viewer, a **left-click places a target** (the "wreck"). The first drone that
+  passes within 10 m of it detects it: the drone blinks and the screen shows which drone
+  found it and after how many seconds.
 
-- *Explorers* spread out and detect the target.
-- An *operator* confirms the position.
-- *Carriers* converge to extract.
+What does **not** exist yet:
 
-The point isn't fidelity — it's to study coordination patterns, gRPC streaming under
-real frequencies, and a clean cross-process boundary that can later host a Raspberry
-Pi agent (v0.3 roadmap).
+- No drone carrier and no specialised drones (the types are reserved in the code and the
+  protocol, but have no behaviour).
+- The drones do not search on purpose: they flock, and detection happens when one of
+  them passes near the target.
+- No mission planning, no web station, no optimizer.
+- No demo video yet (it comes with Step 1).
+
+## Where the project goes
+
+The next steps are tracked as GitHub milestones:
+[Step 1 — Beautiful Unity scene](https://github.com/gakkel-labs/swarm-simulator/milestone/5),
+[Step 2 — Find the best fleet configuration](https://github.com/gakkel-labs/swarm-simulator/milestone/6),
+[Step 3 — Play the best configuration in Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/7),
+[Step 4 — Enter the mission on the web](https://github.com/gakkel-labs/swarm-simulator/milestone/8),
+[Step 5 — Edit the recommendations and rerun](https://github.com/gakkel-labs/swarm-simulator/milestone/9),
+[Step 6 — Follow the mission](https://github.com/gakkel-labs/swarm-simulator/milestone/10).
+
+The operator's web station lives in its own repository:
+[mission-console](https://github.com/gakkel-labs/mission-console). The roles are:
+the **web station** defines the mission, the **Java backend** runs the simulations and
+chooses the best fleet configuration, and **Unity** only displays.
 
 ---
 
-## Quickstart — run the demo in 2 minutes
+## Try it
 
 ### Prerequisites
 
@@ -61,7 +95,7 @@ You should see:
 SwarmServer on :50051 — sim 30Hz — stream 20Hz
 ```
 
-### 2. Open the Unity client
+### 2. Open the Unity viewer
 
 1. In **Unity Hub**, *Add project from disk* → select `unity-client/`.
 2. Open the project with **Unity 6 (6000.4.6f1)**.
@@ -70,70 +104,22 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
 
 ### 3. Expected result
 
-- Grey capsules spawn and start flocking (cohesion + separation + alignment).
-- A red predator drifts through the bounding box; nearby capsules flee.
-- Left-click in the scene to **place the SAR target** — explorers converge,
-  the *found* event fires and the carriers move in.
+- Grey capsules appear and move as a group.
+- A red predator moves through the area; nearby capsules flee.
+- Left-click in the scene to place the target. When a capsule passes close to it, the
+  capsule blinks and the screen shows "Found by … in …s".
 
-If something goes wrong, the most common cause is the gRPC port already being bound —
-kill the previous JVM or start the backend on another port with `SWARM_PORT=50052 …`
-(see [Configuration](#configuration)).
-
----
-
-## Configuration
-
-All runtime parameters are read **once at startup** with the precedence
-**environment variable → `application.properties` → built-in default**. No flags, no
-recompilation — set an environment variable (12-factor / Docker friendly) or uncomment a
-key in [`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
-With nothing set, the simulation is identical to before this was introduced.
-
-```bash
-# examples
-SWARM_PORT=50052 mvn -pl swarm-server exec:java -Dexec.mainClass="…server.SwarmServer"
-SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.mainClass="…"
-```
-
-| Variable | Property | Default | Meaning |
-|----------|----------|---------|---------|
-| `SWARM_PORT` | `swarm.port` | `50051` | gRPC listen port |
-| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Number of explorer agents |
-| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | World X extent |
-| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | World Y extent |
-| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | World Z extent |
-| `SWARM_SEED` | `swarm.seed` | `42` | RNG seed — see below |
-| `SWARM_BOIDS_*` | `swarm.boids.*` | (per rule) | Boids weights & radii (perception-radius, separation-weight, alignment-weight, cohesion-weight, wander-weight, max-speed, boundary-repulsion-{radius,weight}, obstacle-avoidance-{radius,weight}, threat-flee-{radius,weight}) |
-| `SWARM_DIAG_*` | `swarm.diag.*` | (per threshold) | Diagnostics thresholds (immobile-threshold-fraction, frozen-threshold-fraction, dispersal-limit-fraction, flocking-lost-fraction, stability-tolerance, stability-samples) |
-
-The full list of `SWARM_BOIDS_*` / `SWARM_DIAG_*` names with their defaults lives, commented,
-in `application.properties`.
-
-### Seed & reproducibility
-
-`SWARM_SEED` makes a run reproducible: **the same seed reproduces the same simulation
-dynamics** — agent positions, velocities, predator-respawn and the wander force all derive
-from it. This is what benchmarking and headless CI runs build on.
-
-- `SWARM_SEED=<integer>` — deterministic, reproducible run.
-- `SWARM_SEED=random` (or `none`) — a fresh seed is drawn at startup **and logged**, so an
-  interesting run can be replayed by passing that value back.
-- *unset* — defaults to `42` (deterministic), preserving the historical behaviour.
-
-Note: agent **identifiers** (UUIDs) are not seeded, so they differ from run to run. The
-physical simulation (positions, metrics, detection order) is identical; only the IDs in log
-lines such as `Target found by agent <id>` change.
-
-> Tip — to compare two Boids configurations fairly, run each over the **same set of seeds**
-> (e.g. `SWARM_SEED=1…100` for both) so the difference reflects the configuration, not the
-> random initial conditions.
+If nothing appears, the most common cause is the gRPC port already being used: stop the
+previous JVM or start the backend on another port with `SWARM_PORT=50052 …`.
 
 ---
 
-## Architecture
+## Technical details
 
-Two independent processes communicating over gRPC. The backend is the only authority
-on simulation state; Unity is a pure visual consumer.
+### Architecture
+
+Two independent processes talk over gRPC. The backend is the only authority on the
+simulation state; Unity only displays it.
 
 ```mermaid
 flowchart LR
@@ -147,7 +133,7 @@ flowchart LR
         CTRL -->|mutates| WORLD
     end
 
-    subgraph Unity["Unity Client"]
+    subgraph Unity["Unity viewer"]
         RECV[WorldStateReceiver<br/>background Task]
         DISP[MainThreadDispatcher<br/>ConcurrentQueue]
         VIZ[SwarmVisualizer<br/>+ Target/PredatorRenderer]
@@ -159,28 +145,8 @@ flowchart LR
     VIZ -.->|PlaceTarget unary| CTRL
 ```
 
-### Runtime flow — one tick
-
-```mermaid
-sequenceDiagram
-    participant Sim as SimulationLoop (30 Hz)
-    participant World as World
-    participant Bcast as SwarmObserverImpl (20 Hz)
-    participant Net as gRPC stream
-    participant Unity as Unity main thread
-    participant Op as Operator (optional)
-
-    Sim->>World: compute Boids forces<br/>apply Δv, Δp
-    Bcast->>World: snapshot agents/predator/target
-    Bcast->>Net: onNext(WorldState)
-    Net-->>Unity: enqueue WorldState (background)
-    Unity->>Unity: dequeue + update Transforms
-    Op-->>Net: PlaceTarget(Vec3) [unary, on demand]
-    Net->>World: set target
-```
-
-Deeper dive: [`docs/architecture.md`](docs/architecture.md) (frame remapping NED↔Unity,
-thread model, concurrent World access, full message catalogue).
+Deeper dive: [`docs/architecture.md`](docs/architecture.md) (NED↔Unity frame
+remapping, thread model, message catalogue).
 
 ### Why these choices — ADRs
 
@@ -189,84 +155,85 @@ thread model, concurrent World access, full message catalogue).
 - [ADR-0002](docs/adr/0002-no-spring-boot-for-mvp.md) — **No Spring Boot** for the MVP;
   `main()` + `ScheduledExecutorService` + `ServerBuilder` is enough.
 - [ADR-0003](docs/adr/0003-minimal-3d-assets.md) — **Minimal 3D assets** (grey capsules,
-  primitives) so the focus stays on emergent behavior, not art.
-- [ADR-0004](docs/adr/0004-target-placement-operator-triggered.md) — **Operator-triggered
-  target placement**, architecturally pluggable for later automation.
+  primitives) for the first version.
+- [ADR-0004](docs/adr/0004-target-placement-operator-triggered.md) — **Target placed by
+  the operator** (click), pluggable for later automation.
+- [ADR-0005](docs/adr/0005-mission-console-replaces-fleet-dashboard.md) —
+  **mission-console** replaces the old fleet-dashboard project.
 
----
+### Configuration
 
-## Repository layout
+All runtime parameters are read **once at startup**, in this order:
+**environment variable → `application.properties` → built-in default**.
+
+```bash
+# examples
+SWARM_PORT=50052 mvn -pl swarm-server exec:java -Dexec.mainClass="…server.SwarmServer"
+SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.mainClass="…"
+```
+
+| Variable | Property | Default | Meaning |
+|----------|----------|---------|---------|
+| `SWARM_PORT` | `swarm.port` | `50051` | gRPC listen port |
+| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Number of drones in the swarm |
+| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | World X extent |
+| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | World Y extent |
+| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | World Z extent |
+| `SWARM_SEED` | `swarm.seed` | `42` | RNG seed (`random` draws one and logs it) |
+| `SWARM_BOIDS_*` | `swarm.boids.*` | (per rule) | Boids weights and radii |
+| `SWARM_DIAG_*` | `swarm.diag.*` | (per threshold) | Diagnostics thresholds |
+
+The full list, with defaults, is commented in
+[`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
+
+About the seed: the same seed gives the same starting positions and the same random
+choices. The simulation still runs on the real clock (for example the respawn delay
+after the predator), so two runs can drift apart over time. A simulation clock with a
+`step(dt)` engine is planned before the optimizer (Step 2).
+
+### Repository layout
 
 | Path             | Role                                                          |
 |------------------|---------------------------------------------------------------|
 | `contracts/`     | `.proto` files + generated Java stubs (package `gakkel.swarm.v1`) |
-| `swarm-server/`  | gRPC server, domain model, Boids simulation loop              |
-| `tests/`         | End-to-end integration tests                                  |
-| `unity-client/`  | Unity 6 (6000.4.6f1) / URP project — visual client            |
-| `docs/`          | Architecture, ADRs, per-area deep dives, tech-debt snapshots  |
+| `swarm-server/`  | gRPC server, domain model, Boids simulation loop, unit tests  |
+| `tests/`         | Module for end-to-end integration tests (empty for now)       |
+| `unity-client/`  | Unity 6 (6000.4.6f1) / URP project — 3D viewer               |
+| `docs/`          | Product, architecture, ADRs, deep dives, tech-debt snapshots  |
 
----
+### Stack
 
-## Stack
+- **Backend** — Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
+- **Viewer** — Unity 6 (6000.4.6f1, URP), gRPC C# client.
+- **Tests** — JUnit 5, Mockito, AssertJ (about 170 unit tests, run by CI on every push).
 
-- **Backend** — Java 21, Maven 3.9+, grpc-java 1.81, protobuf 3.25, SLF4J + Logback.
-- **Client** — Unity 6 (6000.4.6f1, URP), Grpc.Core C# / Grpc.Net.Client.
-- **Tests** — JUnit 5, Mockito, AssertJ.
-- **Future** — Raspberry Pi (Ubuntu Server 22.04) as a hybrid gRPC client (v0.3).
-
-Code conventions, response style and Claude Code workflow live in
-[`CLAUDE.md`](CLAUDE.md). TL;DR: Google Java Style, JUnit 5 + Mockito, conventional
-commits, English in code and FR+EN in docs.
-
----
-
-## Tests
+### Tests
 
 ```bash
-# unit tests (per module)
+# unit tests
 mvn -pl swarm-server test
-
-# integration tests
-mvn -pl tests -am verify
 
 # full build (compile + tests, all modules)
 mvn verify
 ```
 
----
+### Going further
 
-## Roadmap
-
-| Version | Scope                                              | Status |
-|---------|----------------------------------------------------|--------|
-| v0.1    | Boids + obstacles + predator + SAR scenario        | 🚧 in progress |
-| v0.2    | Dockerization                                      | ⏳ planned |
-| v0.3    | Hybrid Raspberry Pi agent                          | ⏳ planned |
-| v0.4    | 3 differentiated drone types                       | ⏳ planned |
-| v0.5    | ACO + Kalman tracking                              | ⏳ planned |
-| v0.6    | Multi-Pi physical demo                             | ⏳ planned |
-
----
-
-## Going further
-
+- [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md) — Michel, the operator.
 - [`docs/architecture.md`](docs/architecture.md) — backend ↔ Unity flow, threading,
   frame remapping.
-- [`docs/01-boids-rules.md`](docs/01-boids-rules.md) — the algorithmic core.
+- [`docs/01-boids-rules.md`](docs/01-boids-rules.md) — the Boids rules.
 - [`docs/02-grpc-contract.md`](docs/02-grpc-contract.md) — wire protocol reference.
 - [`docs/03-unity-integration.md`](docs/03-unity-integration.md) — thread-safe gRPC
-  bridge.
-- [`docs/notes-threading-grpc-unity.md`](docs/notes-threading-grpc-unity.md) — design
-  notes.
-- [`docs/tech-debt/`](docs/tech-debt/) — periodic tech-debt snapshots.
+  bridge in Unity.
+- [`docs/tech-debt/`](docs/tech-debt/) — tech-debt snapshots.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute.
 
 ---
 
 ## Credits
 
 - Craig W. Reynolds — *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
-- The Gakkel universe: [mission-console](https://github.com/gakkel-labs/mission-console),
-  [drone-embedded](https://github.com/gakkel-labs/drone-embedded).
 
 ## License
 

@@ -1,95 +1,171 @@
-# gakkel-swarm-simulator
+# Gakkel — simulateur d'essaim
 
-> Simulateur distribué d'essaims de drones sous-marins coordonnés.
-> Modèle Boids de Reynolds avec évitement d'obstacles et réaction à la menace.
+> Un système de mission pour drones, qui commence par la recherche d'une épave.
+> Ce dépôt contient le backend de simulation (Java) et la vue 3D (Unity).
 
 [![CI](https://github.com/gakkel-labs/swarm-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/gakkel-labs/swarm-simulator/actions)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 
-![Demo GIF](docs/assets/demo.gif)
-
 > English version: [`README.md`](README.md)
 
-Fait partie de [l'univers Gakkel](https://github.com/gakkel-labs), une série de projets
-perso autour de la robotique sous-marine profonde :
-[mission-console](https://github.com/gakkel-labs/mission-console),
-[drone-embedded](https://github.com/gakkel-labs/drone-embedded).
+---
+
+## L'idée
+
+Un avion a disparu en mer. Quelque part dans une zone de 50 à 100 km², son épave
+repose sur le fond. **Michel** travaille au centre d'opérations d'un navire de
+recherche. Il coordonne plusieurs flottes de drones pour la retrouver, et il ne doit
+pas la rater.
+
+Gakkel est le système qui l'aide à préparer et à suivre ce type de mission. La
+recherche d'épave est la mission de référence, mais Gakkel vise toute mission de
+drones : inspection de câbles ou de pipelines, cartographie des fonds, guerre des mines.
+
+Chaque flotte fonctionne ainsi :
+
+- Un **essaim de drones à bas coût** couvre la zone et fait une première détection.
+- Un **porte-drones** parle avec l'essaim et relaie les informations au centre d'opérations.
+- Un ou plusieurs **drones spécialisés**, plus chers, partent confirmer un contact sur place.
+  Michel les envoie lui-même, ou laisse Gakkel les envoyer automatiquement.
+
+Plus d'infos sur Michel : [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md).
 
 ---
 
-## De quoi s'agit-il
+## Ce qui marche aujourd'hui
 
-Un petit système distribué bien réel : un **backend Java** fait tourner une simulation
-3D de flocking (règles Boids, obstacles, prédateur, cible de recherche) et pousse l'état
-du monde à 20 Hz via un canal **gRPC server-streaming**. Un **client Unity** s'abonne au
-flux et rend l'essaim sous forme de capsules grises — minimaliste à dessein, pour laisser
-toute la place au comportement émergent.
+Le projet est à ses débuts. Aujourd'hui le dépôt contient **seulement la partie essaim** :
 
-Le scénario est une **mission Recherche et Secours (SAR) maritime** :
+- Un **backend Java** simule un essaim de 20 drones en 3D. Les drones se déplacent en
+  groupe (règles Boids de Reynolds), évitent un obstacle, restent dans la zone et fuient
+  un prédateur qui les chasse.
+- Une **vue Unity** se connecte au backend et affiche l'essaim en direct (de simples
+  capsules grises pour l'instant).
+- Dans la vue, un **clic gauche place une cible** (l'« épave »). Le premier drone qui
+  passe à moins de 10 m la détecte : le drone clignote et l'écran affiche quel drone l'a
+  trouvée et au bout de combien de secondes.
 
-- Les *explorers* se dispersent et détectent la cible.
-- Un *operator* confirme la position.
-- Les *carriers* convergent pour l'extraction.
+Ce qui **n'existe pas** encore :
 
-L'objectif n'est pas la fidélité — c'est étudier des patterns de coordination, du gRPC
-streaming sous des fréquences réelles, et une frontière inter-processus propre qui
-accueillera plus tard un agent Raspberry Pi (roadmap v0.3).
+- Pas de porte-drones ni de drones spécialisés (les types sont réservés dans le code et
+  le protocole, mais n'ont aucun comportement).
+- Les drones ne cherchent pas exprès : ils volent en groupe, et la détection arrive
+  quand l'un d'eux passe près de la cible.
+- Pas de préparation de mission, pas de poste web, pas d'optimiseur.
+- Pas encore de vidéo de démo (elle arrive avec l'étape 1).
+
+## Où va le projet
+
+Les prochaines étapes sont suivies dans les jalons (milestones) GitHub :
+[Step 1 — Belle scène Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/5),
+[Step 2 — Trouver la meilleure configuration de flotte](https://github.com/gakkel-labs/swarm-simulator/milestone/6),
+[Step 3 — Rejouer la meilleure configuration dans Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/7),
+[Step 4 — Saisir la mission sur le web](https://github.com/gakkel-labs/swarm-simulator/milestone/8),
+[Step 5 — Modifier les recommandations et relancer](https://github.com/gakkel-labs/swarm-simulator/milestone/9),
+[Step 6 — Suivre la mission](https://github.com/gakkel-labs/swarm-simulator/milestone/10).
+
+Le poste web de l'opérateur a son propre dépôt :
+[mission-console](https://github.com/gakkel-labs/mission-console). Les rôles sont :
+le **poste web** définit la mission, le **backend Java** lance les simulations et
+choisit la meilleure configuration de flotte, et **Unity** ne fait qu'afficher.
 
 ---
 
-## Quickstart — lancer la démo en 2 minutes
+## Essayer
 
 ### Prérequis
 
-| Outil        | Version              | Notes                                            |
-|--------------|----------------------|--------------------------------------------------|
-| JDK          | 21 (Temurin OK)      | `java -version` doit reporter 21                 |
-| Maven        | 3.9+                 | `mvn -v`                                         |
-| Unity Hub    | avec Editor 6000.4.6f1 (Unity 6) | template URP                         |
-| Port libre   | `50051` (gRPC)       | Surcharger via `SWARM_PORT` (voir [Configuration](#configuration)) |
+| Outil        | Version              | Notes                                          |
+|--------------|----------------------|------------------------------------------------|
+| JDK          | 21 (Temurin OK)      | `java -version` doit afficher 21               |
+| Maven        | 3.9+                 | `mvn -v`                                       |
+| Unity Hub    | avec l'éditeur 6000.4.6f1 (Unity 6) | modèle URP                      |
+| Port libre   | `50051` (gRPC)       | Modifiable avec `SWARM_PORT` (voir [Configuration](#configuration)) |
 
-### 1. Démarrer le backend
+### 1. Lancer le backend
 
 ```bash
 mvn -pl swarm-server -am package
 mvn -pl swarm-server exec:java -Dexec.mainClass="fr.gakkel.swarmsimulator.swarmserver.server.SwarmServer"
 ```
 
-Tu dois voir :
+Vous devez voir :
 
 ```
 SwarmServer on :50051 — sim 30Hz — stream 20Hz
 ```
 
-### 2. Ouvrir le client Unity
+### 2. Ouvrir la vue Unity
 
-1. Dans **Unity Hub**, *Add project from disk* → sélectionner `unity-client/`.
+1. Dans **Unity Hub**, *Add project from disk* → choisir `unity-client/`.
 2. Ouvrir le projet avec **Unity 6 (6000.4.6f1)**.
 3. Charger la scène `Assets/Scenes/SampleScene.unity`.
-4. Cliquer **Play**.
+4. Appuyer sur **Play**.
 
 ### 3. Résultat attendu
 
-- Des capsules grises apparaissent et se mettent à flocker (cohésion + séparation +
-  alignement).
-- Un prédateur rouge dérive dans la boîte ; les capsules proches s'enfuient.
-- Clic gauche dans la scène pour **placer la cible SAR** — les explorers convergent,
-  l'événement *found* se déclenche et les carriers s'approchent.
+- Des capsules grises apparaissent et se déplacent en groupe.
+- Un prédateur rouge traverse la zone ; les capsules proches s'enfuient.
+- Clic gauche dans la scène pour placer la cible. Quand une capsule passe près d'elle,
+  la capsule clignote et l'écran affiche « Found by … in …s ».
 
-Si quelque chose coince, la cause la plus fréquente est le port gRPC déjà occupé —
-tuer la JVM précédente ou démarrer le backend sur un autre port avec `SWARM_PORT=50052 …`
-(voir [Configuration](#configuration)).
+Si rien n'apparaît, la cause la plus fréquente est un port gRPC déjà utilisé : arrêter
+la JVM précédente ou lancer le backend sur un autre port avec `SWARM_PORT=50052 …`.
 
 ---
 
-## Configuration
+## Détails techniques
 
-Tous les paramètres runtime sont lus **une seule fois au démarrage**, avec la précédence
-**variable d'environnement → `application.properties` → valeur par défaut**. Aucun flag, aucune
-recompilation — définir une variable d'environnement (compatible 12-factor / Docker) ou
-décommenter une clé dans [`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
-Sans rien définir, la simulation est identique à avant cette évolution.
+### Architecture
+
+Deux processus indépendants communiquent en gRPC. Le backend est la seule autorité sur
+l'état de la simulation ; Unity ne fait que l'afficher.
+
+```mermaid
+flowchart LR
+    subgraph Backend["Backend Java (swarm-server)"]
+        SIM[SimulationLoop<br/>tick 30 Hz]
+        WORLD[(World<br/>agents, obstacles,<br/>prédateur, cible)]
+        BCAST[SwarmObserverImpl<br/>diffusion 20 Hz]
+        CTRL[SimulationControlImpl<br/>RPC PlaceTarget]
+        SIM -->|écrit| WORLD
+        WORLD -->|lit| BCAST
+        CTRL -->|modifie| WORLD
+    end
+
+    subgraph Unity["Vue Unity"]
+        RECV[WorldStateReceiver<br/>Task en arrière-plan]
+        DISP[MainThreadDispatcher<br/>ConcurrentQueue]
+        VIZ[SwarmVisualizer<br/>+ Target/PredatorRenderer]
+        RECV -->|Enqueue| DISP
+        DISP -->|coroutine par frame| VIZ
+    end
+
+    BCAST ==>|flux WorldState 20 Hz| RECV
+    VIZ -.->|PlaceTarget unaire| CTRL
+```
+
+Pour aller plus loin : [`docs/architecture.fr.md`](docs/architecture.fr.md) (repères
+NED↔Unity, modèle de threads, catalogue des messages).
+
+### Pourquoi ces choix — ADR
+
+- [ADR-0001](docs/adr/0001-grpc-streaming.fr.md) — **gRPC server-streaming** pour
+  pousser le WorldState à 20 Hz (plutôt que du polling ou des WebSockets).
+- [ADR-0002](docs/adr/0002-no-spring-boot-for-mvp.fr.md) — **Pas de Spring Boot** pour
+  le MVP ; `main()` + `ScheduledExecutorService` + `ServerBuilder` suffisent.
+- [ADR-0003](docs/adr/0003-minimal-3d-assets.fr.md) — **Assets 3D minimalistes**
+  (capsules grises, primitives) pour la première version.
+- [ADR-0004](docs/adr/0004-target-placement-operator-triggered.fr.md) — **Cible placée
+  par l'opérateur** (clic), branchable plus tard sur une automatisation.
+- [ADR-0005](docs/adr/0005-mission-console-replaces-fleet-dashboard.fr.md) —
+  **mission-console** remplace l'ancien projet fleet-dashboard.
+
+### Configuration
+
+Tous les paramètres sont lus **une seule fois au démarrage**, dans cet ordre :
+**variable d'environnement → `application.properties` → valeur par défaut**.
 
 ```bash
 # exemples
@@ -97,181 +173,70 @@ SWARM_PORT=50052 mvn -pl swarm-server exec:java -Dexec.mainClass="…server.Swar
 SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.mainClass="…"
 ```
 
-| Variable | Propriété | Défaut | Signification |
-|----------|-----------|--------|---------------|
+| Variable | Propriété | Défaut | Rôle |
+|----------|-----------|--------|------|
 | `SWARM_PORT` | `swarm.port` | `50051` | Port d'écoute gRPC |
-| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Nombre d'agents explorers |
-| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | Étendue X du monde |
-| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Étendue Y du monde |
-| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Étendue Z du monde |
-| `SWARM_SEED` | `swarm.seed` | `42` | Graine RNG — voir ci-dessous |
-| `SWARM_BOIDS_*` | `swarm.boids.*` | (par règle) | Poids & rayons Boids (perception-radius, separation-weight, alignment-weight, cohesion-weight, wander-weight, max-speed, boundary-repulsion-{radius,weight}, obstacle-avoidance-{radius,weight}, threat-flee-{radius,weight}) |
-| `SWARM_DIAG_*` | `swarm.diag.*` | (par seuil) | Seuils de diagnostic (immobile-threshold-fraction, frozen-threshold-fraction, dispersal-limit-fraction, flocking-lost-fraction, stability-tolerance, stability-samples) |
+| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Nombre de drones dans l'essaim |
+| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | Taille du monde en X |
+| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Taille du monde en Y |
+| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Taille du monde en Z |
+| `SWARM_SEED` | `swarm.seed` | `42` | Graine aléatoire (`random` en tire une et l'écrit dans les logs) |
+| `SWARM_BOIDS_*` | `swarm.boids.*` | (par règle) | Poids et rayons des règles Boids |
+| `SWARM_DIAG_*` | `swarm.diag.*` | (par seuil) | Seuils des diagnostics |
 
-La liste complète des noms `SWARM_BOIDS_*` / `SWARM_DIAG_*` avec leurs défauts est présente,
-commentée, dans `application.properties`.
+La liste complète, avec les valeurs par défaut, est commentée dans
+[`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
 
-### Graine & reproductibilité
+À propos de la graine : la même graine donne les mêmes positions de départ et les mêmes
+tirages aléatoires. Mais la simulation tourne encore sur l'horloge réelle (par exemple
+le délai de réapparition après le prédateur), donc deux exécutions peuvent diverger avec
+le temps. Une horloge de simulation avec un moteur `step(dt)` est prévue avant
+l'optimiseur (étape 2).
 
-`SWARM_SEED` rend un run reproductible : **une même graine reproduit la même dynamique de
-simulation** — positions et vitesses des agents, respawn après prédateur et force de *wander*
-en dérivent tous. C'est la brique sur laquelle s'appuient le benchmarking et les runs CI headless.
+### Organisation du dépôt
 
-- `SWARM_SEED=<entier>` — run déterministe et reproductible.
-- `SWARM_SEED=random` (ou `none`) — une graine est tirée au démarrage **et loggée**, pour
-  pouvoir rejouer un run intéressant en repassant cette valeur.
-- *non défini* — vaut `42` (déterministe), conservant le comportement historique.
-
-Note : les **identifiants** d'agents (UUID) ne sont pas seedés et diffèrent donc d'un run à
-l'autre. La simulation physique (positions, métriques, ordre de détection) est identique ;
-seuls les IDs dans les logs du type `Target found by agent <id>` changent.
-
-> Astuce — pour comparer équitablement deux configurations Boids, lancer chacune sur le
-> **même jeu de graines** (p. ex. `SWARM_SEED=1…100` pour les deux) afin que la différence
-> reflète la configuration, pas les conditions initiales aléatoires.
-
----
-
-## Architecture
-
-Deux processus indépendants qui communiquent en gRPC. Le backend est la seule autorité
-sur l'état de simulation ; Unity n'est qu'un consommateur visuel.
-
-```mermaid
-flowchart LR
-    subgraph Backend["Backend Java (swarm-server)"]
-        SIM[SimulationLoop<br/>tick 30 Hz]
-        WORLD[(World<br/>agents, obstacles,<br/>prédateur, cible)]
-        BCAST[SwarmObserverImpl<br/>broadcaster 20 Hz]
-        CTRL[SimulationControlImpl<br/>RPC PlaceTarget]
-        SIM -->|écrit| WORLD
-        WORLD -->|lit| BCAST
-        CTRL -->|mute| WORLD
-    end
-
-    subgraph Unity["Client Unity"]
-        RECV[WorldStateReceiver<br/>Task background]
-        DISP[MainThreadDispatcher<br/>ConcurrentQueue]
-        VIZ[SwarmVisualizer<br/>+ Target/PredatorRenderer]
-        RECV -->|Enqueue| DISP
-        DISP -->|coroutine frame| VIZ
-    end
-
-    BCAST ==>|stream WorldState 20 Hz| RECV
-    VIZ -.->|PlaceTarget unary| CTRL
-```
-
-### Runtime flow — un tick
-
-```mermaid
-sequenceDiagram
-    participant Sim as SimulationLoop (30 Hz)
-    participant World as World
-    participant Bcast as SwarmObserverImpl (20 Hz)
-    participant Net as flux gRPC
-    participant Unity as thread principal Unity
-    participant Op as Operator (optionnel)
-
-    Sim->>World: calcul des forces Boids<br/>application Δv, Δp
-    Bcast->>World: snapshot agents/prédateur/cible
-    Bcast->>Net: onNext(WorldState)
-    Net-->>Unity: enqueue WorldState (background)
-    Unity->>Unity: dequeue + update Transforms
-    Op-->>Net: PlaceTarget(Vec3) [unary, à la demande]
-    Net->>World: pose la cible
-```
-
-Pour aller plus loin : [`docs/architecture.fr.md`](docs/architecture.fr.md)
-(remap de repère NED↔Unity, modèle de threading, accès concurrent au World, catalogue
-complet des messages).
-
-### Le pourquoi des choix — ADRs
-
-- [ADR-0001](docs/adr/0001-grpc-streaming.fr.md) — **gRPC server-streaming** pour
-  pousser WorldState à 20 Hz (vs polling ou WebSockets).
-- [ADR-0002](docs/adr/0002-no-spring-boot-for-mvp.fr.md) — **Pas de Spring Boot** pour
-  le MVP ; `main()` + `ScheduledExecutorService` + `ServerBuilder` suffisent.
-- [ADR-0003](docs/adr/0003-minimal-3d-assets.fr.md) — **Assets 3D minimalistes**
-  (capsules grises, primitives) pour garder l'attention sur le comportement émergent,
-  pas sur l'art.
-- [ADR-0004](docs/adr/0004-target-placement-operator-triggered.fr.md) — **Placement
-  de la cible déclenché par l'opérateur**, architecture prête pour de l'automatisation.
-
----
-
-## Structure du repo
-
-| Chemin           | Rôle                                                              |
-|------------------|-------------------------------------------------------------------|
+| Chemin           | Rôle                                                          |
+|------------------|---------------------------------------------------------------|
 | `contracts/`     | Fichiers `.proto` + stubs Java générés (package `gakkel.swarm.v1`) |
-| `swarm-server/`  | Serveur gRPC, modèle de domaine, boucle de simulation Boids       |
-| `tests/`         | Tests d'intégration bout en bout                                  |
-| `unity-client/`  | Projet Unity 6 (6000.4.6f1) / URP — client visuel                 |
-| `docs/`          | Architecture, ADRs, deep dives par domaine, snapshots tech-debt   |
+| `swarm-server/`  | Serveur gRPC, modèle métier, boucle de simulation Boids, tests unitaires |
+| `tests/`         | Module des tests d'intégration de bout en bout (vide pour l'instant) |
+| `unity-client/`  | Projet Unity 6 (6000.4.6f1) / URP — vue 3D                   |
+| `docs/`          | Produit, architecture, ADR, notes détaillées, dette technique |
 
----
+### Stack
 
-## Stack
+- **Backend** — Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
+- **Vue** — Unity 6 (6000.4.6f1, URP), client gRPC C#.
+- **Tests** — JUnit 5, Mockito, AssertJ (environ 170 tests unitaires, lancés par la CI
+  à chaque push).
 
-- **Backend** — Java 21, Maven 3.9+, grpc-java 1.81, protobuf 3.25, SLF4J + Logback.
-- **Client** — Unity 6 (6000.4.6f1, URP), Grpc.Core C# / Grpc.Net.Client.
-- **Tests** — JUnit 5, Mockito, AssertJ.
-- **Futur** — Raspberry Pi (Ubuntu Server 22.04) en client gRPC hybride (v0.3).
-
-Conventions de code, style de réponse et workflow Claude Code dans
-[`CLAUDE.md`](CLAUDE.md). TL;DR : Google Java Style, JUnit 5 + Mockito, conventional
-commits, anglais dans le code et FR+EN dans la doc.
-
----
-
-## Tests
+### Tests
 
 ```bash
-# tests unitaires (par module)
+# tests unitaires
 mvn -pl swarm-server test
 
-# tests d'intégration
-mvn -pl tests -am verify
-
-# build complet (compile + tests, tous modules)
+# build complet (compilation + tests, tous les modules)
 mvn verify
 ```
 
----
+### Pour aller plus loin
 
-## Roadmap
-
-| Version | Périmètre                                          | Statut     |
-|---------|----------------------------------------------------|------------|
-| v0.1    | Boids + obstacles + prédateur + scénario SAR       | 🚧 en cours |
-| v0.2    | Dockerisation                                      | ⏳ prévu    |
-| v0.3    | Agent Raspberry Pi hybride                         | ⏳ prévu    |
-| v0.4    | 3 types de drones différenciés                     | ⏳ prévu    |
-| v0.5    | ACO + tracking Kalman                              | ⏳ prévu    |
-| v0.6    | Démo physique multi-Pi                             | ⏳ prévu    |
-
----
-
-## Pour aller plus loin
-
-- [`docs/architecture.fr.md`](docs/architecture.fr.md) — flux backend ↔ Unity,
-  threading, remap de repère.
-- [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) — le cœur algorithmique.
-- [`docs/02-grpc-contract.fr.md`](docs/02-grpc-contract.fr.md) — référence du protocole
-  fil.
+- [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md) — Michel, l'opérateur.
+- [`docs/architecture.fr.md`](docs/architecture.fr.md) — flux backend ↔ Unity, threads,
+  changement de repère.
+- [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) — les règles Boids.
+- [`docs/02-grpc-contract.fr.md`](docs/02-grpc-contract.fr.md) — référence du protocole.
 - [`docs/03-unity-integration.fr.md`](docs/03-unity-integration.fr.md) — pont gRPC
-  thread-safe.
-- [`docs/notes-threading-grpc-unity.md`](docs/notes-threading-grpc-unity.md) — notes
-  de conception.
-- [`docs/tech-debt/`](docs/tech-debt/) — snapshots tech-debt périodiques.
+  thread-safe dans Unity.
+- [`docs/tech-debt/`](docs/tech-debt/) — instantanés de dette technique.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — comment contribuer.
 
 ---
 
 ## Crédits
 
 - Craig W. Reynolds — *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
-- L'univers Gakkel : [mission-console](https://github.com/gakkel-labs/mission-console),
-  [drone-embedded](https://github.com/gakkel-labs/drone-embedded).
 
 ## Licence
 

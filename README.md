@@ -14,21 +14,22 @@
 ## The idea
 
 An aircraft has disappeared at sea. Somewhere in an area of 50 to 100 km², its wreck
-lies on the seabed. **Michel** works in the operations centre of a research vessel. He
-coordinates several drone fleets to find it, and he must not miss it.
+lies on the seabed. **The operator** works in the operations centre of a research
+vessel. They coordinate several drone fleets to find it, and they must not miss it.
 
-Gakkel is the system that helps him prepare and follow this kind of mission. The wreck
-search is the reference mission, but Gakkel is meant for any drone mission: cable or
-pipeline inspection, seabed mapping, mine countermeasures.
+Gakkel is the system that helps the operator prepare and follow this kind of mission.
+The wreck search is the reference mission, but Gakkel is meant for any drone mission:
+cable or pipeline inspection, seabed mapping, mine countermeasures.
 
-Each fleet works like this:
+A fleet works in three steps:
 
-- A **swarm of low-cost drones** covers the area and makes a first detection.
-- A **drone carrier** talks to the swarm and relays the information to the operations centre.
-- One or more **specialised drones**, more expensive, are sent to confirm a contact on site.
-  Michel sends them himself, or lets Gakkel send them automatically.
+1. **Drop:** a **drone carrier** drops a **swarm of drones** in the search area.
+2. **Detect:** the swarm searches the area and finds the contacts (first detection).
+   The drone carrier talks to the swarm and relays the information to the operations centre.
+3. **Confirm:** **specialised drones** are then deployed to check a contact on site.
+   The operator sends them, or lets Gakkel send them automatically.
 
-More about Michel: [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md).
+More about the operator: [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md).
 
 ---
 
@@ -219,7 +220,7 @@ mvn verify
 
 ### Going further
 
-- [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md) — Michel, the operator.
+- [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md) — the operator persona.
 - [`docs/architecture.md`](docs/architecture.md) — backend ↔ Unity flow, threading,
   frame remapping.
 - [`docs/01-boids-rules.md`](docs/01-boids-rules.md) — the Boids rules.

@@ -14,22 +14,23 @@
 ## L'idée
 
 Un avion a disparu en mer. Quelque part dans une zone de 50 à 100 km², son épave
-repose sur le fond. **Michel** travaille au centre d'opérations d'un navire de
+repose sur le fond. **L'opérateur** travaille au centre d'opérations d'un navire de
 recherche. Il coordonne plusieurs flottes de drones pour la retrouver, et il ne doit
 pas la rater.
 
-Gakkel est le système qui l'aide à préparer et à suivre ce type de mission. La
-recherche d'épave est la mission de référence, mais Gakkel vise toute mission de
+Gakkel est le système qui aide l'opérateur à préparer et à suivre ce type de mission.
+La recherche d'épave est la mission de référence, mais Gakkel vise toute mission de
 drones : inspection de câbles ou de pipelines, cartographie des fonds, guerre des mines.
 
-Chaque flotte fonctionne ainsi :
+Une flotte travaille en trois temps :
 
-- Un **essaim de drones à bas coût** couvre la zone et fait une première détection.
-- Un **porte-drones** parle avec l'essaim et relaie les informations au centre d'opérations.
-- Un ou plusieurs **drones spécialisés**, plus chers, partent confirmer un contact sur place.
-  Michel les envoie lui-même, ou laisse Gakkel les envoyer automatiquement.
+1. **Déposer :** un **porte-drones** dépose un **essaim de drones** dans la zone de recherche.
+2. **Détecter :** l'essaim fouille la zone et trouve les contacts (première détection).
+   Le porte-drones parle avec l'essaim et relaie les informations au centre d'opérations.
+3. **Confirmer :** on déploie ensuite des **drones spécialisés** pour vérifier un contact
+   sur place. L'opérateur les envoie, ou laisse Gakkel les envoyer automatiquement.
 
-Plus d'infos sur Michel : [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md).
+Plus d'infos sur l'opérateur : [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md).
 
 ---
 
@@ -222,7 +223,7 @@ mvn verify
 
 ### Pour aller plus loin
 
-- [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md) — Michel, l'opérateur.
+- [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md) — le persona de l'opérateur.
 - [`docs/architecture.fr.md`](docs/architecture.fr.md) — flux backend ↔ Unity, threads,
   changement de repère.
 - [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) — les règles Boids.

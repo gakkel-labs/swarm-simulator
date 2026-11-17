@@ -19,7 +19,7 @@ vessel. They coordinate several drone fleets to find it, and they must not miss 
 
 Gakkel is the system that helps the operator prepare and follow this kind of mission.
 The wreck search is the reference mission, but Gakkel is meant for any drone mission:
-cable or pipeline inspection, seabed mapping, mine countermeasures.
+inspection, seabed mapping, mine countermeasures.
 
 A fleet works in three steps:
 

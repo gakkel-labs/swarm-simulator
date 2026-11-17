@@ -26,8 +26,8 @@ A fleet works in three steps:
 1. **Drop:** a **drone carrier** drops a **swarm of drones** in the search area.
 2. **Detect:** the swarm searches the area and finds the contacts (first detection).
    The drone carrier talks to the swarm and relays the information to the operations centre.
-3. **Confirm:** **specialised drones** are then deployed to check a contact on site.
-   The operator sends them, or lets Gakkel send them automatically.
+3. **Confirm:** the drone carrier then deploys **specialised drones** to check a contact
+   on site. The operator gives the order, or lets Gakkel do it automatically.
 
 More about the operator: [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md).
 

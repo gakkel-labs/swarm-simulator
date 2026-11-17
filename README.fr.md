@@ -27,8 +27,8 @@ Une flotte travaille en trois temps :
 1. **Déposer :** un **porte-drones** dépose un **essaim de drones** dans la zone de recherche.
 2. **Détecter :** l'essaim fouille la zone et trouve les contacts (première détection).
    Le porte-drones parle avec l'essaim et relaie les informations au centre d'opérations.
-3. **Confirmer :** on déploie ensuite des **drones spécialisés** pour vérifier un contact
-   sur place. L'opérateur les envoie, ou laisse Gakkel les envoyer automatiquement.
+3. **Confirmer :** le porte-drones déploie ensuite des **drones spécialisés** pour vérifier
+   un contact sur place. L'opérateur en donne l'ordre, ou laisse Gakkel le faire automatiquement.
 
 Plus d'infos sur l'opérateur : [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md).
 

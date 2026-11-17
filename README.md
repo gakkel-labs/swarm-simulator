@@ -19,15 +19,17 @@ vessel. They coordinate several drone fleets to find it, and they must not miss 
 
 Gakkel is the system that helps the operator prepare and follow this kind of mission.
 The wreck search is the reference mission, but Gakkel is meant for any drone mission:
-inspection, seabed mapping, mine countermeasures.
+inspection, seabed mapping (bathymetry), mine countermeasures.
 
-A fleet works in three steps:
+A fleet works in four steps:
 
-1. **Drop:** a **drone carrier** drops a **swarm of drones** in the search area.
+1. **Drop:** a **drone carrier** drops a **swarm of detection drones** in the search area.
 2. **Detect:** the swarm searches the area and finds the contacts (first detection).
    The drone carrier talks to the swarm and relays the information to the operations centre.
 3. **Confirm:** the drone carrier then deploys **specialised drones** to check a contact
    on site. The operator gives the order, or lets Gakkel do it automatically.
+4. **Intervene:** a specialised drone takes care of the confirmed contact, for example
+   recovers the black box or neutralises a mine.
 
 More about the operator: [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md).
 
@@ -52,7 +54,7 @@ What does **not** exist yet:
   protocol, but have no behaviour).
 - The drones do not search on purpose: they flock, and detection happens when one of
   them passes near the target.
-- No mission planning, no web station, no optimizer.
+- No mission planning, no control station, no optimizer.
 - No demo video yet (it comes with Step 1).
 
 ## The heart of the swarm: Boids
@@ -82,10 +84,11 @@ The next steps are tracked as GitHub milestones:
 [Step 5 — Edit the recommendations and rerun](https://github.com/gakkel-labs/swarm-simulator/milestone/9),
 [Step 6 — Follow the mission](https://github.com/gakkel-labs/swarm-simulator/milestone/10).
 
-The operator's web station lives in its own repository:
+The operator's control station (a web application) lives in its own repository:
 [mission-console](https://github.com/gakkel-labs/mission-console). The roles are:
-the **web station** defines the mission, the **Java backend** runs the simulations and
-chooses the best fleet configuration, and **Unity** only displays.
+the **control station** defines the mission, the **Java backend** runs the simulations and
+chooses the best fleet configuration, and **Unity** only displays: it will let you follow a
+mission live and replay it afterwards, watching the drones move.
 
 ---
 
@@ -238,6 +241,7 @@ mvn verify
 ### Going further
 
 - [`docs/produit/persona-operateur.md`](docs/produit/persona-operateur.md) — the operator persona.
+- [`docs/produit/glossaire.md`](docs/produit/glossaire.md) — the glossary (the words of the project).
 - [`docs/architecture.md`](docs/architecture.md) — backend ↔ Unity flow, threading,
   frame remapping.
 - [`docs/01-boids-rules.md`](docs/01-boids-rules.md) — the Boids rules.

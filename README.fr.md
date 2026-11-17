@@ -20,15 +20,17 @@ pas la rater.
 
 Gakkel est le système qui aide l'opérateur à préparer et à suivre ce type de mission.
 La recherche d'épave est la mission de référence, mais Gakkel vise toute mission de
-drones : inspection, cartographie des fonds, guerre des mines.
+drones : inspection, cartographie des fonds (bathymétrie), guerre des mines.
 
-Une flotte travaille en trois temps :
+Une flotte travaille en quatre temps :
 
-1. **Déposer :** un **porte-drones** dépose un **essaim de drones** dans la zone de recherche.
+1. **Déposer :** un **porte-drones** dépose un **essaim de drones de détection** dans la zone de recherche.
 2. **Détecter :** l'essaim fouille la zone et trouve les contacts (première détection).
    Le porte-drones parle avec l'essaim et relaie les informations au centre d'opérations.
 3. **Confirmer :** le porte-drones déploie ensuite des **drones spécialisés** pour vérifier
    un contact sur place. L'opérateur en donne l'ordre, ou laisse Gakkel le faire automatiquement.
+4. **Intervenir :** un drone spécialisé traite le contact confirmé, par exemple il récupère
+   la boîte noire ou neutralise une mine.
 
 Plus d'infos sur l'opérateur : [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md).
 
@@ -53,7 +55,7 @@ Ce qui **n'existe pas** encore :
   le protocole, mais n'ont aucun comportement).
 - Les drones ne cherchent pas exprès : ils volent en groupe, et la détection arrive
   quand l'un d'eux passe près de la cible.
-- Pas de préparation de mission, pas de poste web, pas d'optimiseur.
+- Pas de préparation de mission, pas de poste de contrôle, pas d'optimiseur.
 - Pas encore de vidéo de démo (elle arrive avec l'étape 1).
 
 ## Le cœur de l'essaim : Boids
@@ -84,10 +86,12 @@ Les prochaines étapes sont suivies dans les jalons (milestones) GitHub :
 [Step 5 — Modifier les recommandations et relancer](https://github.com/gakkel-labs/swarm-simulator/milestone/9),
 [Step 6 — Suivre la mission](https://github.com/gakkel-labs/swarm-simulator/milestone/10).
 
-Le poste web de l'opérateur a son propre dépôt :
+Le poste de contrôle de l'opérateur (application web) a son propre dépôt :
 [mission-console](https://github.com/gakkel-labs/mission-console). Les rôles sont :
-le **poste web** définit la mission, le **backend Java** lance les simulations et
-choisit la meilleure configuration de flotte, et **Unity** ne fait qu'afficher.
+le **poste de contrôle** définit la mission, le **backend Java** lance les simulations et
+choisit la meilleure configuration de flotte, et **Unity** ne fait qu'afficher : la vue 3D
+permettra de suivre une mission en temps réel et de la rejouer ensuite, en voyant les
+déplacements des drones.
 
 ---
 
@@ -242,6 +246,7 @@ mvn verify
 ### Pour aller plus loin
 
 - [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md) — le persona de l'opérateur.
+- [`docs/produit/glossaire.fr.md`](docs/produit/glossaire.fr.md) — le glossaire (les mots du projet).
 - [`docs/architecture.fr.md`](docs/architecture.fr.md) — flux backend ↔ Unity, threads,
   changement de repère.
 - [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) — les règles Boids.

@@ -12,7 +12,7 @@
 > Version française : [`README.fr.md`](README.fr.md)
 
 Part of the [Gakkel universe](https://github.com/gakkel-labs) of personal projects
-exploring deep-sea robotics: [fleet-dashboard](https://github.com/gakkel-labs/fleet-dashboard),
+exploring deep-sea robotics: [mission-console](https://github.com/gakkel-labs/mission-console),
 [drone-embedded](https://github.com/gakkel-labs/drone-embedded).
 
 ---
@@ -265,7 +265,7 @@ mvn verify
 ## Credits
 
 - Craig W. Reynolds — *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
-- The Gakkel universe: [fleet-dashboard](https://github.com/gakkel-labs/fleet-dashboard),
+- The Gakkel universe: [mission-console](https://github.com/gakkel-labs/mission-console),
   [drone-embedded](https://github.com/gakkel-labs/drone-embedded).
 
 ## License

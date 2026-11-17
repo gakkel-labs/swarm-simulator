@@ -24,7 +24,7 @@ drones : inspection, cartographie des fonds, guerre des mines.
 
 Une flotte travaille en trois temps :
 
-1. **Déposer :** un **porte-drones** dépose un **essaim de drones** dans la zone de recherche.
+1. **Déposer :** un **porte-drones** dépose un **essaim de drones de détection** dans la zone de recherche.
 2. **Détecter :** l'essaim fouille la zone et trouve les contacts (première détection).
    Le porte-drones parle avec l'essaim et relaie les informations au centre d'opérations.
 3. **Confirmer :** le porte-drones déploie ensuite des **drones spécialisés** pour vérifier

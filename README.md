@@ -23,7 +23,7 @@ inspection, seabed mapping, mine countermeasures.
 
 A fleet works in three steps:
 
-1. **Drop:** a **drone carrier** drops a **swarm of drones** in the search area.
+1. **Drop:** a **drone carrier** drops a **swarm of detection drones** in the search area.
 2. **Detect:** the swarm searches the area and finds the contacts (first detection).
    The drone carrier talks to the swarm and relays the information to the operations centre.
 3. **Confirm:** the drone carrier then deploys **specialised drones** to check a contact

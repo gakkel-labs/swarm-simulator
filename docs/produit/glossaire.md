@@ -31,16 +31,16 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **AIS** | The system that gives the position of nearby ships. The operator checks it before launch. | 🔜 |
 | **Mission report** | The final record: covered areas, contacts and their status, decisions taken. | 🔜 |
 
-## 2. The fleet and the vehicles
+## 2. The fleet and the drones
 
 | Word | Definition | In the code |
 |------|------------|:-----------:|
-| **Vehicle** | Any machine that moves at sea for the mission: a swarm drone, a drone carrier or a specialised drone. | 🔜 |
-| **Drone** | A vehicle without a crew. In Gakkel, the drones are underwater drones. | ✅ (*agent*) |
+| **Drone** | A machine without a crew. In Gakkel, the drones are underwater drones. A fleet uses detection drones and specialised drones. | ✅ (*agent*) |
 | **Fleet** | One team that works together: **one drone carrier + one swarm + one or more specialised drones**. The operator coordinates several fleets. | 🔜 |
-| **Drone carrier** | The vehicle that carries the swarm, **drops** it in the area, talks to the swarm and relays information to the operations centre. It also deploys the specialised drones. | 🔜 (type reserved) |
-| **Swarm** | A group of drones that move together, with no leader. The swarm does the **first detection** over the area. | ✅ |
-| **Specialised drone** | A drone sent by the drone carrier to **check a contact on site** (confirm it is the wreck, or not). | 🔜 |
+| **Drone carrier** | It carries the swarm, **drops** it in the area, talks to the swarm and relays information to the operations centre. It also deploys the specialised drones. | 🔜 (type reserved) |
+| **Swarm** | A group of **detection drones** that move together, with no leader. The swarm does the **first detection** over the area. | ✅ |
+| **Detection drone** | A drone of the swarm. It searches the area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
+| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **recover** an object. | 🔜 |
 | **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend tests many configurations and proposes the best one. | 🔜 |
 
 ## 3. How a fleet works: Drop, Detect, Confirm
@@ -48,7 +48,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | Word | Definition | In the code |
 |------|------------|:-----------:|
 | **Drop** | Step 1. The drone carrier drops the swarm in the search area. | 🔜 |
-| **Detect** | Step 2. The swarm, now in the water, searches the area with its sensors. When a drone sees a suspect object, it reports a **contact** to the drone carrier, which relays it to the operator. At this stage a contact is only a *possible* target: nobody knows yet if it is the wreck or a rock. | ✅ (simple version) |
+| **Detect** | Step 2. The swarm, now in the water, searches the area with its sensors. When a detection drone sees a suspect object, it reports a **contact** to the drone carrier, which relays it to the operator. At this stage a contact is only a *possible* target: nobody knows yet if it is the wreck or a rock. | ✅ (simple version) |
 | **Confirm** | Step 3. The drone carrier deploys a specialised drone to go and look at one contact up close. Detect says "there is something here"; Confirm says "yes, it is the wreck" or "no, it is not". The operator gives the order, or lets Gakkel do it automatically. | 🔜 |
 | **Manual / automatic dispatch** | Chosen during preparation: the operator sends each specialised drone themselves, or Gakkel sends it automatically. The operator can take back control at any time. | 🔜 |
 
@@ -90,7 +90,7 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 | **Viewer** (Unity) | The 3D display. It only shows what the backend sends; it decides nothing. | ✅ |
 | **Web station** | The operator's web application, where the mission is defined (repository `mission-console`). | 🔜 |
 | **Simulation** | A computer run that imitates the mission, to test it before going to sea. | ✅ |
-| **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (swarm drone), `CARRIER` (drone carrier). Careful: the type `OPERATOR` in the code is only reserved and is **not** the human operator. | ✅ |
+| **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `CARRIER` (drone carrier). Careful: the type `OPERATOR` in the code is only reserved and is **not** the human operator. | ✅ |
 | **Tick** | One step of the simulation. The backend computes 30 ticks per second. | ✅ |
 | **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, predator, target. The backend sends one 20 times per second. | ✅ |
 | **gRPC stream** | The connection that carries the WorldState from the backend to the viewer, non-stop. | ✅ |

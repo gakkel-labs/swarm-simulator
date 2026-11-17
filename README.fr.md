@@ -89,7 +89,9 @@ Les prochaines étapes sont suivies dans les jalons (milestones) GitHub :
 Le poste web de l'opérateur a son propre dépôt :
 [mission-console](https://github.com/gakkel-labs/mission-console). Les rôles sont :
 le **poste web** définit la mission, le **backend Java** lance les simulations et
-choisit la meilleure configuration de flotte, et **Unity** ne fait qu'afficher.
+choisit la meilleure configuration de flotte, et **Unity** ne fait qu'afficher : la vue 3D
+permettra de suivre une mission en temps réel et de la rejouer ensuite, en voyant les
+déplacements des drones.
 
 ---
 

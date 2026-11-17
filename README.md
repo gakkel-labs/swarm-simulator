@@ -87,7 +87,8 @@ The next steps are tracked as GitHub milestones:
 The operator's web station lives in its own repository:
 [mission-console](https://github.com/gakkel-labs/mission-console). The roles are:
 the **web station** defines the mission, the **Java backend** runs the simulations and
-chooses the best fleet configuration, and **Unity** only displays.
+chooses the best fleet configuration, and **Unity** only displays: it will let you follow a
+mission live and replay it afterwards, watching the drones move.
 
 ---
 

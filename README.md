@@ -37,7 +37,7 @@ More about Michel: [`docs/produit/persona-operateur.md`](docs/produit/persona-op
 This is an early stage. Today the repository contains **the swarm part only**:
 
 - A **Java backend** simulates a swarm of 20 drones in 3D. The drones move as a group
-  (Reynolds' Boids rules), avoid an obstacle, stay inside the area and flee a predator
+  (Reynolds' Boids rules), avoid obstacles, stay inside the area and flee a predator
   that hunts them.
 - A **Unity viewer** connects to the backend and shows the swarm live (simple grey
   capsules for now).

@@ -38,7 +38,7 @@ Plus d'infos sur Michel : [`docs/produit/persona-operateur.fr.md`](docs/produit/
 Le projet est à ses débuts. Aujourd'hui le dépôt contient **seulement la partie essaim** :
 
 - Un **backend Java** simule un essaim de 20 drones en 3D. Les drones se déplacent en
-  groupe (règles Boids de Reynolds), évitent un obstacle, restent dans la zone et fuient
+  groupe (règles Boids de Reynolds), évitent des obstacles, restent dans la zone et fuient
   un prédateur qui les chasse.
 - Une **vue Unity** se connecte au backend et affiche l'essaim en direct (de simples
   capsules grises pour l'instant).

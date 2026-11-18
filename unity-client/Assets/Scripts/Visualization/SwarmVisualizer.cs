@@ -35,6 +35,18 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private float rovScale = 2f;
         [SerializeField] private bool showRovModel = true;
 
+        [Header("Seabed (IBCAO / GEBCO bathymetry, see docs/04-seabed-bathymetry.md)")]
+        [Tooltip("Real relief of the Gakkel Ridge. Off = old flat floor.")]
+        [SerializeField] private bool useBathymetrySeabed = true;
+        [Tooltip("Vertical scale of the real relief. 1 = real relief (a 100 m grid is still smoother than the real seabed). " +
+                 "Can be changed in Play Mode.")]
+        [SerializeField, Range(1f, 10f)] private float seabedVerticalExaggeration = 3f;
+        [Tooltip("Sediment, basalt and hydrothermal textures. Off = plain sand colour.")]
+        [SerializeField] private bool useSeabedTextures = true;
+        [Tooltip("Point of the seabed placed under the swarm, in metres from the terrain centre (X east, Y north). " +
+                 "Default: flat ground near a 47 m wall (x3: 140 m), 0.9 km from the Aurora vents (0, 0).")]
+        [SerializeField] private Vector2 seabedFocusOffset = new(700f, -600f);
+
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
         private readonly Dictionary<string, GameObject> _agentCapsules = new();
@@ -52,6 +64,8 @@ namespace Gakkel.Swarm.Unity
         private Material _obstacleMaterial;
         private Material _mothershipMaterial;
         private Material _floorMaterial;
+        private SeabedTerrain _seabed;
+        private float _appliedSeabedExaggeration;
         private Material _trailMaterial;
         private Material _isolatedDetectionMaterial;
         private Material[] _groupMaterials;
@@ -81,6 +95,8 @@ namespace Gakkel.Swarm.Unity
         private const float TrailHeadAlpha = 0.8f;
         private const float TrailTailAlpha = 0f;
         private const float ObstacleHeightHalfFactor = 0.5f;
+        private static readonly Vector3 FloorCentre = new(50f, -100f, 25f);
+        private static readonly Vector2 FloorHalfSize = new(50f, 25f); // swarm footprint: 100 x 50 m (X x Z)
 
         private void Awake()
         {
@@ -109,7 +125,7 @@ namespace Gakkel.Swarm.Unity
             _isolatedTrailGradient = MakeTrailGradient(Color.gray);
 
             SpawnMothership();
-            SpawnFloor();
+            SpawnSeabed();
         }
 
         // URP/Lit needs explicit setup to render transparent: surface type, blend modes, ZWrite off,
@@ -150,6 +166,12 @@ namespace Gakkel.Swarm.Unity
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.vKey.wasPressedThisFrame)
                 SetShowRovModel(!showRovModel);
+
+            if (_seabed != null && !Mathf.Approximately(_appliedSeabedExaggeration, seabedVerticalExaggeration))
+            {
+                _seabed.SetVerticalExaggeration(seabedVerticalExaggeration);
+                _appliedSeabedExaggeration = seabedVerticalExaggeration;
+            }
         }
 
         public void Apply(WorldState worldState)
@@ -525,6 +547,18 @@ namespace Gakkel.Swarm.Unity
             mothershipObject.transform.position = Vector3.zero;
         }
 
+        // Falls back to the flat floor if the bathymetry is turned off or its heightmap is missing.
+        private void SpawnSeabed()
+        {
+            if (useBathymetrySeabed)
+            {
+                _seabed = SeabedTerrain.Spawn(FloorCentre, FloorHalfSize, seabedVerticalExaggeration,
+                    seabedFocusOffset, useSeabedTextures);
+                _appliedSeabedExaggeration = seabedVerticalExaggeration;
+            }
+            if (_seabed == null) SpawnFloor();
+        }
+
         private void SpawnFloor()
         {
             // World is 100×50 server units (X×Z); Plane default is 10×10, so scale (10,1,5).
@@ -535,7 +569,7 @@ namespace Gakkel.Swarm.Unity
             floorObject.name = "SeaFloor";
             floorObject.GetComponent<Renderer>().material = _floorMaterial;
             floorObject.transform.localScale = new Vector3(10f, 1f, 5f);
-            floorObject.transform.position = new Vector3(50f, -100f, 25f);
+            floorObject.transform.position = FloorCentre;
         }
 
         private void UpdateCentroid()

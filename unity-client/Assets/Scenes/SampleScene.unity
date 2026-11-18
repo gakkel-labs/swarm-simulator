@@ -721,6 +721,10 @@ MonoBehaviour:
   rovModel: {fileID: -4385283254109219805, guid: 6c70a495608aeab4b9c6d2be5646c8fc, type: 3}
   rovScale: 2
   showRovModel: 1
+  useBathymetrySeabed: 1
+  seabedVerticalExaggeration: 3.01
+  useSeabedTextures: 1
+  seabedFocusOffset: {x: -720, y: -1400}
 --- !u!1 &542286055
 GameObject:
   m_ObjectHideFlags: 0

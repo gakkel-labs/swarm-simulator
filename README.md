@@ -259,6 +259,10 @@ mvn verify
 ## Credits
 
 - Craig W. Reynolds — *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
+- Seabed bathymetry: IBCAO 5.2 (Jakobsson et al., 2024, [doi:10.1038/s41597-024-04278-w](https://doi.org/10.1038/s41597-024-04278-w)),
+  included in the GEBCO Compilation Group (2026) GEBCO 2026 Grid
+  (doi: [10.5285/4f68d5c7-45eb-f999e063-7086abc036fa](https://doi.org/10.5285/4f68d5c7-45eb-f999e063-7086abc036fa)),
+  public domain. Not for navigation. Details: [`docs/04-seabed-bathymetry.md`](docs/04-seabed-bathymetry.md).
 
 ## License
 

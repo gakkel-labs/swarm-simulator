@@ -20,7 +20,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 |-----|------------|:------------:|
 | **Mission** | Un travail confié à des flottes de drones, avec un objectif, une zone de recherche et une fenêtre de temps. Exemple : retrouver l'épave d'un avion dans une zone de recherche donnée. | 🔜 |
 | **Mission de référence** | La mission qui sert à construire et tester Gakkel en premier : la **recherche civile d'une épave** (avion ou navire). | — |
-| **Autres missions** | Les missions que Gakkel devra aussi gérer plus tard : **inspection**, **cartographie des fonds (bathymétrie)**, **guerre des mines**. | — |
+| **Autres missions** | Les missions que Gakkel devra aussi gérer plus tard : **inspection**, **cartographie des fonds (bathymétrie)**, **guerre des mines**, **exploration scientifique** (prélever des échantillons, poser ou récupérer des instruments, mesurer l'eau). | — |
 | **Objectif** | Ce que la mission doit atteindre. Exemple : « trouver l'épave », « cartographier cette zone ». | 🔜 |
 | **Opérateur** | La personne qui prépare et suit la mission depuis le centre d'opérations. Gakkel aide l'opérateur ; c'est l'opérateur qui décide. | — |
 | **Centre d'opérations** | La salle (souvent sur un navire de recherche) où travaille l'opérateur. Elle reçoit les informations envoyées par les porte-drones. | — |
@@ -41,7 +41,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Porte-drones** | Il transporte l'essaim, le **dépose** dans la zone de recherche, parle avec l'essaim et relaie les informations au centre d'opérations. Il déploie aussi les drones spécialisés. | 🔜 (type réservé) |
 | **Essaim** | Un groupe de **drones de détection** qui se déplacent ensemble, sans chef. L'essaim fait la **première détection** sur la zone de recherche. | ✅ |
 | **Drone de détection** | Un drone de l'essaim. Il fouille la zone de recherche avec ses capteurs et signale ce qu'il trouve. | ✅ (*agent* `EXPLORER`) |
-| **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). | 🔜 |
+| **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). Plus tard, d'autres rôles : **prélever** (des échantillons) ou **poser un instrument** (et le récupérer). | 🔜 |
 | **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend teste beaucoup de configurations et propose la meilleure. | 🔜 |
 
 ## 3. Comment travaille une flotte : Déposer, Détecter, Confirmer, Intervenir

@@ -20,7 +20,8 @@ pas la rater.
 
 Gakkel est le système qui aide l'opérateur à préparer et à suivre ce type de mission.
 La recherche d'épave est la mission de référence, mais Gakkel vise toute mission de
-drones : inspection, cartographie des fonds (bathymétrie), guerre des mines.
+drones : inspection, cartographie des fonds (bathymétrie), guerre des mines,
+exploration scientifique (prélèvements, pose d'instruments, mesures de l'eau).
 
 Une flotte travaille en quatre temps :
 

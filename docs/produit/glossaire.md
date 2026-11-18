@@ -20,7 +20,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 |------|------------|:-----------:|
 | **Mission** | A job given to drone fleets, with an objective, a search area and a time window. Example: find the wreck of an aircraft in a given search area. | 🔜 |
 | **Reference mission** | The mission used to build and test Gakkel first: the **civil search for a sunken wreck** (aircraft or ship). | — |
-| **Other missions** | Missions Gakkel must also handle later: **inspection**, **seabed mapping (bathymetry)**, **mine countermeasures**. | — |
+| **Other missions** | Missions Gakkel must also handle later: **inspection**, **seabed mapping (bathymetry)**, **mine countermeasures**, **scientific exploration** (take samples, deploy or recover instruments, measure the water). | — |
 | **Objective** | What the mission must achieve. Example: "find the wreck", "map this area". | 🔜 |
 | **Operator** | The person who prepares and follows the mission from the operations centre. Gakkel helps the operator; the operator decides. | — |
 | **Operations centre** | The room (often on a research vessel) where the operator works. It receives the information sent by the drone carriers. | — |
@@ -41,7 +41,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Drone carrier** | It carries the swarm, **drops** it in the search area, talks to the swarm and relays information to the operations centre. It also deploys the specialised drones. | 🔜 (type reserved) |
 | **Swarm** | A group of **detection drones** that move together, with no leader. The swarm does the **first detection** over the search area. | ✅ |
 | **Detection drone** | A drone of the swarm. It explores the search area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
-| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). | 🔜 |
+| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). Later, other roles: **take samples** or **deploy an instrument** (and recover it). | 🔜 |
 | **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend tests many configurations and proposes the best one. | 🔜 |
 
 ## 3. How a fleet works: Drop, Detect, Confirm, Intervene

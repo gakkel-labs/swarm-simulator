@@ -52,7 +52,7 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 
 ## Key moments of a mission
 
-1. **Prepare**: define the area and the objective, check weather and traffic, validate the proposed plan, choose whether specialised drones will be sent manually or automatically.
+1. **Prepare**: define the area and the objective, check weather and traffic, validate the proposed plan or build his own plan without simulation, choose whether specialised drones will be sent manually or automatically.
 2. **Launch**: deploy the fleets during the weather window.
 3. **Detect**: the swarms cover the area, the drone carriers report contacts.
 4. **Confirm**: Michel picks the contacts to check and sends a specialised drone, or lets Gakkel do it automatically if he planned it.
@@ -61,6 +61,7 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 ## His expectations of Gakkel
 
 - Automatically propose the best plan (number of fleets, swarm paths)
+- Also let him create a mission alone, from start to end, without the simulation
 - See everything on a single screen, fleet by fleet
 - Rank contacts to know which ones deserve a specialised drone
 - Be alerted only when it matters

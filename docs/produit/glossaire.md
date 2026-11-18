@@ -20,7 +20,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 |------|------------|:-----------:|
 | **Mission** | A job given to drone fleets, with an objective, a search area and a time window. Example: find the wreck of an aircraft in a given search area. | 🔜 |
 | **Reference mission** | The mission used to build and test Gakkel first: the **civil search for a sunken wreck** (aircraft or ship). | — |
-| **Other missions** | Missions Gakkel must also handle later: **inspection**, **seabed mapping (bathymetry)**, **mine countermeasures**. | — |
+| **Other missions** | Missions Gakkel must also handle later: **inspection**, **seabed mapping (bathymetry)**, **mine countermeasures**, **scientific exploration** (take samples, deploy or recover instruments, measure the water). | — |
 | **Objective** | What the mission must achieve. Example: "find the wreck", "map this area". | 🔜 |
 | **Operator** | The person who prepares and follows the mission from the operations centre. Gakkel helps the operator; the operator decides. | — |
 | **Operations centre** | The room (often on a research vessel) where the operator works. It receives the information sent by the drone carriers. | — |
@@ -41,8 +41,8 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Drone carrier** | It carries the swarm, **drops** it in the search area, talks to the swarm and relays information to the operations centre. It also deploys the specialised drones. | 🔜 (type reserved) |
 | **Swarm** | A group of **detection drones** that move together, with no leader. The swarm does the **first detection** over the search area. | ✅ |
 | **Detection drone** | A drone of the swarm. It explores the search area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
-| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). | 🔜 |
-| **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend tests many configurations and proposes the best one. | 🔜 |
+| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). Later, other roles: **take samples** or **deploy an instrument** (and recover it). | 🔜 |
+| **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend can test many configurations and propose the best one. But this is a help, not a must: the operator can also choose the configuration himself. | 🔜 |
 
 ## 3. How a fleet works: Drop, Detect, Confirm, Intervene
 
@@ -90,9 +90,9 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 |------|------------|:-----------:|
 | **Backend** | The Java program that runs the simulation. It is the only one that decides what happens. | ✅ |
 | **Viewer** (Unity) | The 3D display. It will let you follow a mission live and replay it afterwards, watching the drones move. It only shows what the backend sends; it decides nothing. | ✅ |
-| **Control station** | The operator's web application, where the mission is defined (repository `mission-console`). | 🔜 |
+| **Control station** | The operator's web application, where the mission is defined (repository `mission-console`). The operator can create a mission there alone, from start to end, without using the simulation. | 🔜 |
 | **Replay** | Play again a mission that is finished, in the viewer, to see how the drones moved and what happened. | 🔜 |
-| **Simulation** | A computer run that imitates the mission, to test it before going to sea. | ✅ |
+| **Simulation** | A computer run that imitates the mission, to test it before going to sea. It helps the operator; it is not a required step. | ✅ |
 | **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `CARRIER` (drone carrier). Careful: the type `OPERATOR` in the code is only reserved and is **not** the human operator. | ✅ |
 | **Tick** | One step of the simulation. The backend computes 30 ticks per second. | ✅ |
 | **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, predator, target. The backend sends one 20 times per second. | ✅ |

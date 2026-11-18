@@ -42,7 +42,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Essaim** | Un groupe de **drones de détection** qui se déplacent ensemble, sans chef. L'essaim fait la **première détection** sur la zone de recherche. | ✅ |
 | **Drone de détection** | Un drone de l'essaim. Il fouille la zone de recherche avec ses capteurs et signale ce qu'il trouve. | ✅ (*agent* `EXPLORER`) |
 | **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). Plus tard, d'autres rôles : **prélever** (des échantillons) ou **poser un instrument** (et le récupérer). | 🔜 |
-| **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend teste beaucoup de configurations et propose la meilleure. | 🔜 |
+| **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend peut tester beaucoup de configurations et proposer la meilleure. Mais c'est une aide, pas une obligation : l'opérateur peut aussi choisir la configuration lui-même. | 🔜 |
 
 ## 3. Comment travaille une flotte : Déposer, Détecter, Confirmer, Intervenir
 
@@ -90,9 +90,9 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 |-----|------------|:------------:|
 | **Backend** | Le programme Java qui fait tourner la simulation. C'est le seul qui décide de ce qui se passe. | ✅ |
 | **Vue 3D** (Unity) | L'affichage en 3D. Elle permettra de suivre une mission en temps réel et de la rejouer ensuite, en voyant les déplacements des drones. Elle montre seulement ce que le backend envoie ; elle ne décide rien. | ✅ |
-| **Poste de contrôle** | L'application web de l'opérateur, où la mission est définie (dépôt `mission-console`). | 🔜 |
+| **Poste de contrôle** | L'application web de l'opérateur, où la mission est définie (dépôt `mission-console`). L'opérateur peut y créer une mission seul, de bout en bout, sans passer par la simulation. | 🔜 |
 | **Rejouer** (replay) | Revoir une mission terminée dans la vue 3D, pour voir comment les drones se sont déplacés et ce qui s'est passé. | 🔜 |
-| **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. | ✅ |
+| **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. C'est une aide pour l'opérateur, pas une étape obligatoire. | ✅ |
 | **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `CARRIER` (porte-drones). Attention : le type `OPERATOR` dans le code est seulement réservé et **n'est pas** l'opérateur humain. | ✅ |
 | **Tick** | Un pas de la simulation. Le backend calcule 30 ticks par seconde. | ✅ |
 | **WorldState** | Une « photo » de la simulation à un instant : drones, obstacles, prédateur, cible. Le backend en envoie 20 par seconde. | ✅ |

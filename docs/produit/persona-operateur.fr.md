@@ -52,7 +52,7 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 
 ## Les moments clés d'une mission
 
-1. **Préparer** : définir la zone et l'objectif, vérifier la météo et le trafic, valider le plan proposé, choisir si l'envoi des drones spécialisés sera manuel ou automatique.
+1. **Préparer** : définir la zone et l'objectif, vérifier la météo et le trafic, valider le plan proposé ou construire son propre plan sans simulation, choisir si l'envoi des drones spécialisés sera manuel ou automatique.
 2. **Lancer** : mettre à l'eau les flottes pendant la fenêtre météo.
 3. **Détecter** : les essaims couvrent la zone, les porte-drones remontent les contacts.
 4. **Confirmer** : Michel choisit les contacts à vérifier et envoie un drone spécialisé, ou laisse Gakkel le faire automatiquement s'il l'a prévu.
@@ -61,6 +61,7 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 ## Ses attentes envers Gakkel
 
 - Proposer automatiquement le meilleur plan (nombre de flottes, trajets des essaims)
+- Le laisser aussi créer une mission seul, de bout en bout, sans passer par la simulation
 - Tout voir sur un seul écran, flotte par flotte
 - Classer les contacts pour savoir lesquels méritent un drone spécialisé
 - Être alerté seulement quand c'est important

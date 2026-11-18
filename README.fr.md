@@ -90,9 +90,11 @@ Les prochaines étapes sont suivies dans les jalons (milestones) GitHub :
 Le poste de contrôle de l'opérateur (application web) a son propre dépôt :
 [mission-console](https://github.com/gakkel-labs/mission-console). Les rôles sont :
 le **poste de contrôle** définit la mission, le **backend Java** lance les simulations et
-choisit la meilleure configuration de flotte, et **Unity** ne fait qu'afficher : la vue 3D
+propose la meilleure configuration de flotte, et **Unity** ne fait qu'afficher : la vue 3D
 permettra de suivre une mission en temps réel et de la rejouer ensuite, en voyant les
-déplacements des drones.
+déplacements des drones. La simulation est une aide, pas une obligation : l'opérateur
+peut aussi créer une mission seul, de bout en bout, en choisissant lui-même la
+configuration de flotte.
 
 ---
 

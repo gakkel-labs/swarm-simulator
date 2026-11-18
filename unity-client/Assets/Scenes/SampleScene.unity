@@ -718,6 +718,9 @@ MonoBehaviour:
   velocityVectorScale: 0.67
   showCentroids: 0
   showDetectionZones: 0
+  rovModel: {fileID: -4385283254109219805, guid: 6c70a495608aeab4b9c6d2be5646c8fc, type: 3}
+  rovScale: 2
+  showRovModel: 1
 --- !u!1 &542286055
 GameObject:
   m_ObjectHideFlags: 0
@@ -959,7 +962,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 1
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0

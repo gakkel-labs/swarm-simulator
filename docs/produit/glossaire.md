@@ -30,6 +30,8 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Weather window** | The period when the weather allows the drones to be launched and recovered. | 🔜 |
 | **AIS** | The system that gives the position of nearby ships. The operator checks it before launch. | 🔜 |
 | **Save / open a mission** | The operator can save a mission and open it again later, to reuse or change it. | 🔜 |
+| **Advance preparation** | Preparing a mission at the base, before leaving: the operator plans the mission ahead and decides which drones and equipment to load. | 🔜 |
+| **On-site preparation** | Preparing a mission on site, at sea: the operator opens a mission prepared in advance and adapts it to the real situation (weather, drones really on board, a failure). | 🔜 |
 | **Mission report** | The final record: covered areas, contacts and their status, decisions taken. | 🔜 |
 
 ## 2. The fleet and the drones
@@ -42,6 +44,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Swarm** | A group of **detection drones** that move together, with no leader. The swarm does the **first detection** over the search area. | ✅ |
 | **Detection drone** | A drone of the swarm. It explores the search area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
 | **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). Later, other roles: **take samples** or **deploy an instrument** (and recover it). | 🔜 |
+| **Drone pool** | All the drones available at the base, with their state: **ready**, **in maintenance** or **spare**. A drone can fail during a mission (or during a simulation); the backend can then propose **reserve drones** to take with the fleet. | 🔜 |
 | **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend can test many configurations and propose the best one. But this is a help, not a must: the operator can also choose the configuration himself. | 🔜 |
 
 ## 3. How a fleet works: Drop, Detect, Confirm, Intervene
@@ -79,7 +82,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Cohesion** | Rule: stay close to the group. | ✅ |
 | **Obstacle** | Something in the search area that drones must avoid (a sphere in the simulation). | ✅ |
 | **Boundary** | The edges of the search area (in the simulation, the edges of the world). Drones are pushed back when they get too close. | ✅ |
-| **Predator** | A hunter that chases the drones; nearby drones flee. Used to test how the swarm reacts to a threat. | ✅ |
+| **Danger** | Something the drones must flee or keep away from, because it can hurt or block them: a surface ship, a drifting fishing net, a large animal, a no-go area. Used to test how the swarm reacts. It can be switched ON or OFF in the simulation. | ✅ (*predator*, renamed soon) |
 | **Wander** | A little random movement so the swarm does not look mechanical. | ✅ |
 
 Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
@@ -95,7 +98,7 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 | **Simulation** | A computer run that imitates the mission, to test it before going to sea. It helps the operator; it is not a required step. | ✅ |
 | **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `CARRIER` (drone carrier). Careful: the type `OPERATOR` in the code is only reserved and is **not** the human operator. | ✅ |
 | **Tick** | One step of the simulation. The backend computes 30 ticks per second. | ✅ |
-| **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, predator, target. The backend sends one 20 times per second. | ✅ |
+| **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, danger, target. The backend sends one 20 times per second. | ✅ |
 | **gRPC stream** | The connection that carries the WorldState from the backend to the viewer, non-stop. | ✅ |
 | **Seed** | A number that sets the random choices. The same seed gives the same starting positions. | ✅ |
 | **Simulation clock** | A time that belongs to the simulation, not to the computer. It will make runs repeatable and faster than real time. | 🔜 |

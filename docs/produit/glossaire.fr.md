@@ -30,6 +30,8 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Fenêtre météo** | La période où la météo permet de mettre à l'eau et de récupérer les drones. | 🔜 |
 | **AIS** | Le système qui donne la position des navires proches. L'opérateur le consulte avant le lancement. | 🔜 |
 | **Enregistrer / ouvrir une mission** | L'opérateur peut enregistrer une mission et l'ouvrir plus tard, pour la réutiliser ou la modifier. | 🔜 |
+| **Préparation en amont** | Préparer une mission à la base, avant de partir : l'opérateur planifie la mission à l'avance et décide quels drones et quel matériel embarquer. | 🔜 |
+| **Préparation sur place** | Préparer une mission sur place, en mer : l'opérateur rouvre une mission préparée en amont et l'adapte à la situation réelle (météo, drones vraiment à bord, une panne). | 🔜 |
 | **Rapport de mission** | Le bilan final : zones couvertes, contacts et leur statut, décisions prises. | 🔜 |
 
 ## 2. La flotte et les drones
@@ -42,6 +44,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Essaim** | Un groupe de **drones de détection** qui se déplacent ensemble, sans chef. L'essaim fait la **première détection** sur la zone de recherche. | ✅ |
 | **Drone de détection** | Un drone de l'essaim. Il fouille la zone de recherche avec ses capteurs et signale ce qu'il trouve. | ✅ (*agent* `EXPLORER`) |
 | **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). Plus tard, d'autres rôles : **prélever** (des échantillons) ou **poser un instrument** (et le récupérer). | 🔜 |
+| **Parc** | Tous les drones disponibles à la base, avec leur état : **prêt**, **en maintenance** ou **de rechange**. Un drone peut tomber en panne pendant une mission (ou pendant une simulation) ; le backend peut alors proposer des **drones de réserve** à emmener avec la flotte. | 🔜 |
 | **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend peut tester beaucoup de configurations et proposer la meilleure. Mais c'est une aide, pas une obligation : l'opérateur peut aussi choisir la configuration lui-même. | 🔜 |
 
 ## 3. Comment travaille une flotte : Déposer, Détecter, Confirmer, Intervenir
@@ -79,7 +82,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Cohésion** | Règle : rester près du groupe. | ✅ |
 | **Obstacle** | Quelque chose dans la zone de recherche que les drones doivent éviter (une sphère dans la simulation). | ✅ |
 | **Limites** | Les bords de la zone de recherche (dans la simulation, les bords du monde). Les drones sont repoussés quand ils s'en approchent trop. | ✅ |
-| **Prédateur** | Un chasseur qui poursuit les drones ; les drones proches fuient. Sert à tester la réaction de l'essaim face à une menace. | ✅ |
+| **Danger** | Quelque chose que les drones doivent fuir ou éviter, parce qu'il peut les abîmer ou les bloquer : un navire en surface, un filet de pêche dérivant, un gros animal, une zone interdite. Sert à tester la réaction de l'essaim. On peut l'activer ou le désactiver dans la simulation. | ✅ (*predator*, bientôt renommé) |
 | **Errance** | Un petit mouvement aléatoire pour que l'essaim n'ait pas l'air mécanique. | ✅ |
 
 Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
@@ -95,7 +98,7 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 | **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. C'est une aide pour l'opérateur, pas une étape obligatoire. | ✅ |
 | **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `CARRIER` (porte-drones). Attention : le type `OPERATOR` dans le code est seulement réservé et **n'est pas** l'opérateur humain. | ✅ |
 | **Tick** | Un pas de la simulation. Le backend calcule 30 ticks par seconde. | ✅ |
-| **WorldState** | Une « photo » de la simulation à un instant : drones, obstacles, prédateur, cible. Le backend en envoie 20 par seconde. | ✅ |
+| **WorldState** | Une « photo » de la simulation à un instant : drones, obstacles, danger, cible. Le backend en envoie 20 par seconde. | ✅ |
 | **Flux gRPC** | La connexion qui transporte les WorldState du backend vers la vue 3D, en continu. | ✅ |
 | **Seed** (graine) | Un nombre qui fixe les tirages aléatoires. La même seed donne les mêmes positions de départ. | ✅ |
 | **Horloge de simulation** | Un temps propre à la simulation, pas celui de l'ordinateur. Elle rendra les essais répétables et plus rapides que le temps réel. | 🔜 |

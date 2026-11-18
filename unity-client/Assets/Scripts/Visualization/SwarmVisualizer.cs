@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Gakkel.Swarm.Contracts.V1;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Gakkel.Swarm.Unity
 {
@@ -28,8 +29,16 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private bool showCentroids = false;
         [SerializeField] private bool showDetectionZones = false;
 
+        [Header("Drone look (V key toggles ROV / capsule)")]
+        [Tooltip("ROV model to show for each drone (e.g. Assets/Models/GakkelROV.glb). Front must be +Z. Empty = capsules only.")]
+        [SerializeField] private GameObject rovModel;
+        [SerializeField] private float rovScale = 2f;
+        [SerializeField] private bool showRovModel = true;
+
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
+        private readonly Dictionary<string, GameObject> _agentCapsules = new();
+        private readonly Dictionary<string, GameObject> _agentRovs = new();
         private readonly Dictionary<string, TrailRenderer> _agentTrails = new();
         private readonly Dictionary<string, LineRenderer> _agentVelocityLines = new();
         private readonly Dictionary<string, GameObject> _agentDetectionSpheres = new();
@@ -65,6 +74,7 @@ namespace Gakkel.Swarm.Unity
         private const float VelocityArrowHeadSize = 0.15f;
         private const float VelocityArrowHeadOffsetFromTip = 0.3f;
         private const float VelocityArrowMinDirectionSqrMagnitude = 1e-6f;
+        private const float RovMinHeadingSqrMagnitude = 1e-4f;
         private const float VelocityArrowPerpendicularFallbackThreshold = 0.01f;
         private const float CentroidCrossArmHalfLength = 1f;
         private const float CentroidCrossArmWidth = 0.2f;
@@ -123,6 +133,25 @@ namespace Gakkel.Swarm.Unity
             return material;
         }
 
+#if UNITY_EDITOR
+        private const string DefaultRovModelPath = "Assets/Models/GakkelROV.glb";
+
+        // Editor only: if nobody has set the ROV model in the Inspector yet, pick the one in the repo.
+        // Save the scene (Ctrl+S) once to keep it.
+        private void OnValidate()
+        {
+            if (rovModel == null)
+                rovModel = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(DefaultRovModelPath);
+        }
+#endif
+
+        private void Update()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.vKey.wasPressedThisFrame)
+                SetShowRovModel(!showRovModel);
+        }
+
         public void Apply(WorldState worldState)
         {
             if (worldState.SensorRadiusM > 0f) _sensorRadiusMetres = worldState.SensorRadiusM;
@@ -162,6 +191,18 @@ namespace Gakkel.Swarm.Unity
         public int AgentCount      => _agents.Count;
         public int ObstacleCount   => _obstacles.Count;
         public float CohesionSpreadM { get; private set; }
+        public bool HasRovModel       => rovModel != null;
+        public bool IsShowingRovModel => showRovModel && rovModel != null;
+
+        public void SetShowRovModel(bool shouldShow)
+        {
+            showRovModel = shouldShow;
+            bool rovVisible = IsShowingRovModel;
+            foreach (var capsule in _agentCapsules.Values)
+                capsule.SetActive(!rovVisible);
+            foreach (var rov in _agentRovs.Values)
+                rov.SetActive(rovVisible);
+        }
 
         public void SetShowTrails(bool shouldShow)
         {
@@ -330,11 +371,13 @@ namespace Gakkel.Swarm.Unity
                 if (!_agents.TryGetValue(agent.Id, out var agentObject))
                 {
                     var displayId = agent.Id.Length >= 8 ? agent.Id[..8] : agent.Id;
-                    agentObject = CreateAgentVisual(displayId, out var agentRenderer, out var trail, out var velocityLine);
+                    agentObject = CreateAgentVisual(displayId, out var agentRenderer, out var capsule, out var rov, out var trail, out var velocityLine);
                     var detectionSphere = CreateDetectionSphere(displayId, out var detectionRenderer);
 
                     _agents[agent.Id]                  = agentObject;
                     _agentRenderers[agent.Id]          = agentRenderer;
+                    _agentCapsules[agent.Id]           = capsule;
+                    if (rov != null) _agentRovs[agent.Id] = rov;
                     _agentTrails[agent.Id]             = trail;
                     _agentVelocityLines[agent.Id]      = velocityLine;
                     _agentDetectionSpheres[agent.Id]   = detectionSphere;
@@ -343,6 +386,8 @@ namespace Gakkel.Swarm.Unity
 
                 var unityPosition = CoordinateUtils.NedToUnity(agent.PositionXyz);
                 agentObject.transform.position = unityPosition;
+                if (_agentRovs.TryGetValue(agent.Id, out var rovObject))
+                    OrientAlongVelocity(rovObject.transform, agent.VelocityMps);
                 if (_agentDetectionSpheres.TryGetValue(agent.Id, out var detectionSphereObject))
                     detectionSphereObject.transform.position = unityPosition;
             }
@@ -362,6 +407,8 @@ namespace Gakkel.Swarm.Unity
             {
                 _agents.Remove(agentId);
                 _agentRenderers.Remove(agentId);
+                _agentCapsules.Remove(agentId);
+                _agentRovs.Remove(agentId);
                 _agentTrails.Remove(agentId);
                 _agentVelocityLines.Remove(agentId);
                 _agentDetectionSpheres.Remove(agentId);
@@ -369,14 +416,43 @@ namespace Gakkel.Swarm.Unity
             }
         }
 
-        private GameObject CreateAgentVisual(string displayId, out Renderer agentRenderer, out TrailRenderer trail, out LineRenderer velocityLine)
+        // The ROV model's front is +Z, so LookRotation(velocity) points it where it is going.
+        // Below a minimal speed we keep the last heading instead of snapping to a default.
+        private static void OrientAlongVelocity(Transform rovTransform, Vec3 velocityNed)
         {
-            var agentObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            Destroy(agentObject.GetComponent<Collider>());
-            agentObject.name = $"Agent_{displayId}";
-            agentRenderer = agentObject.GetComponent<Renderer>();
+            var heading = CoordinateUtils.NedToUnity(velocityNed);
+            if (heading.sqrMagnitude < RovMinHeadingSqrMagnitude) return;
+            rovTransform.rotation = Quaternion.LookRotation(heading, Vector3.up);
+        }
+
+        // Agent root = empty GameObject that carries the trail and the velocity arrow.
+        // Two children hold the two looks: "Capsule" (always) and "ROV" (if a model is set).
+        // Only one of them is active at a time, see SetShowRovModel.
+        private GameObject CreateAgentVisual(string displayId, out Renderer agentRenderer, out GameObject capsule,
+                                             out GameObject rov, out TrailRenderer trail, out LineRenderer velocityLine)
+        {
+            var agentObject = new GameObject($"Agent_{displayId}");
+            bool rovVisible = IsShowingRovModel;
+
+            capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            Destroy(capsule.GetComponent<Collider>());
+            capsule.name = "Capsule";
+            capsule.transform.SetParent(agentObject.transform, false);
+            capsule.transform.localScale = new Vector3(AgentCapsuleScale, AgentCapsuleScale, AgentCapsuleScale);
+            agentRenderer = capsule.GetComponent<Renderer>();
             agentRenderer.material = _isolatedMaterial;
-            agentObject.transform.localScale = new Vector3(AgentCapsuleScale, AgentCapsuleScale, AgentCapsuleScale);
+            capsule.SetActive(!rovVisible);
+
+            rov = null;
+            if (rovModel != null)
+            {
+                rov = Instantiate(rovModel, agentObject.transform, false);
+                rov.name = "ROV";
+                rov.transform.localScale = new Vector3(rovScale, rovScale, rovScale);
+                foreach (var rovCollider in rov.GetComponentsInChildren<Collider>())
+                    Destroy(rovCollider);
+                rov.SetActive(rovVisible);
+            }
 
             trail = agentObject.AddComponent<TrailRenderer>();
             trail.time              = trailTime;

@@ -23,7 +23,7 @@ Voir `docs/produit/glossaire.fr.md` (FR) et `docs/produit/glossaire.md` (EN).
   La simulation est une **aide, pas une obligation** : l'opérateur peut aussi créer une mission seul, de bout en bout,
   en choisissant lui-même la configuration de flotte, sans passer par la simulation.
   Le framework web n'est **pas encore choisi** : n'en nommer aucun.
-- **Backend Java (ce dépôt, `swarm-server/`)** : lance beaucoup de simulations, choisit la meilleure
+- **Backend Java (ce dépôt, `swarm-server/`)** : lance beaucoup de simulations, propose la meilleure
   configuration (types et nombre de drones, réglages), génère les fichiers de mission, exécute la mission.
 - **Unity (`unity-client/`)** : affichage seulement (suivre une mission en direct, la rejouer). Aucune décision.
 

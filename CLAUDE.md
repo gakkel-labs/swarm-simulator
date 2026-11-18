@@ -90,6 +90,8 @@ Budget : environ 6 h par semaine.
 - **Projet d'apprentissage** : je développe ce projet pour apprendre (DDD, TDD, Unity, domaine maritime).
   Explique brièvement chaque choix et les notions nouvelles. Si je demande à écrire le code moi-même,
   guide-moi au lieu de l'écrire.
+- Quand tu utilises un concept de DDD (entité, objet-valeur, agrégat, bounded context…), explique-le
+  en une ou deux phrases simples, avec un exemple tiré de Gakkel.
 - Réponses en français, concises et pragmatiques
 - Explique le « pourquoi » des choix techniques
 - Propose un message de commit conventional à la fin

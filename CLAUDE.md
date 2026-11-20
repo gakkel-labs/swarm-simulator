@@ -75,6 +75,7 @@ Variables utiles : `SWARM_PORT`, `SWARM_SEED`, `SWARM_AGENT_COUNT`.
 - Ne pas parler de coût des drones (« low-cost », « plus cher ») pour l'instant
 - Quand une issue passe « In progress » : écrire en haut sa user story
   (« As an operator, I want… so that… ») et ses critères d'acceptation
+  et une ligne « **Metric.** Which indicator this should move. » (l'indicateur que l'issue doit faire bouger)
 
 ## Feuille de route
 6 étapes (milestones « Step 1 » à « Step 6 » sur GitHub). Étape 1 : une belle scène Unity

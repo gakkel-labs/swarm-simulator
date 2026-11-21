@@ -1,17 +1,20 @@
 package fr.gakkel.swarmsimulator.swarmserver.domain;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class World {
 
     private final double width;
     private final double height;
     private final double depth;
-    private final List<Agent> agents;
-    private final List<Obstacle> obstacles;
+    // Copy-on-write lists: the simulation thread adds and removes drones (rare), while the
+    // broadcast thread reads them 20 times per second. Each iteration works on a stable snapshot,
+    // so a read never throws ConcurrentModificationException and never sees a half-done change.
+    private final CopyOnWriteArrayList<Agent> agents;
+    private final CopyOnWriteArrayList<Obstacle> obstacles;
     private volatile Predator predator;
     private volatile Target target;
 
@@ -22,8 +25,8 @@ public final class World {
         this.width = width;
         this.height = height;
         this.depth = depth;
-        this.agents = new ArrayList<>();
-        this.obstacles = new ArrayList<>();
+        this.agents = new CopyOnWriteArrayList<>();
+        this.obstacles = new CopyOnWriteArrayList<>();
     }
 
     public double width () { return width; }
@@ -32,8 +35,8 @@ public final class World {
 
     public void addAgent(Agent agent) {
         Objects.requireNonNull(agent, "agent");
-        if (agents.contains(agent)) throw new IllegalArgumentException("agent already in world");
-        agents.add(agent);
+        // addIfAbsent checks and adds in one atomic step (no check-then-act race between threads)
+        if (!agents.addIfAbsent(agent)) throw new IllegalArgumentException("agent already in world");
     }
 
     public boolean removeAgent(Agent agent) {

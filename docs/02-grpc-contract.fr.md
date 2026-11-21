@@ -320,7 +320,7 @@ Le contrat est volontairement minimal pour que les itérations futures s'insère
 | Besoin futur                            | Extension probable                                                              |
 | --------------------------------------- | ------------------------------------------------------------------------------- |
 | Menaces (scénario SAR v0.1)             | ✅ **Fait** — `repeated PredatorState predators = 4` sur `WorldState`. Un prédateur autonome chasse les agents ; Unity le rend comme une sphère rouge (`PredatorRenderer.cs`). |
-| Drones différenciés (v0.4)              | L'enum `AgentType` couvre déjà `SPECIALIST` / `CARRIER`                           |
+| Drones différenciés (v0.4)              | L'enum `AgentType` couvre déjà `SPECIALIST` / `CARRIER`                         |
 | Canal de commande Pi-agent (v0.3)       | **Nouveau** service (`SwarmController`), RPC séparé — garder l'observer en lecture seule |
 | Télémétrie par agent (batterie, santé)  | Nouveaux champs `optional` sur `AgentState` (proto3 `optional` est wire-compatible) |
 | Multi-Pi (v0.6)                         | Scaling côté serveur d'abord ; protocole inchangé                               |

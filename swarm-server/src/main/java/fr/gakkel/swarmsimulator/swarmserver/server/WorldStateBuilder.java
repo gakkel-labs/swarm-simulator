@@ -84,12 +84,10 @@ public class WorldStateBuilder {
 
     private static AgentType toProtoType(fr.gakkel.swarmsimulator.swarmserver.domain.AgentType type) {
         return switch (type) {
+            // No default: the compiler checks that every AgentType is mapped.
             case EXPLORER -> AgentType.AGENT_TYPE_EXPLORER;
             case SPECIALIST -> AgentType.AGENT_TYPE_SPECIALIST;
-            case CARRIER  -> AgentType.AGENT_TYPE_CARRIER;
-            // Defensive default: switch is exhaustive at compile time, but this guards against
-            // binary-incompatible class evolution if the proto enum is updated independently.
-            default       -> throw new IllegalStateException("Unmapped AgentType: " + type);
+            case CARRIER -> AgentType.AGENT_TYPE_CARRIER;
         };
     }
 

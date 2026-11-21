@@ -320,7 +320,7 @@ The contract is intentionally minimal so future iterations slot in without break
 | Future need                           | Likely extension                                                                |
 | ------------------------------------- | ------------------------------------------------------------------------------- |
 | Threats (v0.1 SAR scenario)           | ✅ **Done** — `repeated PredatorState predators = 4` on `WorldState`. Autonomous predator chases agents; Unity renders it as a red sphere (see `PredatorRenderer.cs`). |
-| Differentiated drones (v0.4)          | Existing `AgentType` enum already covers `SPECIALIST` / `CARRIER`                 |
+| Differentiated drones (v0.4)          | Existing `AgentType` enum already covers `SPECIALIST` / `CARRIER`               |
 | Pi-agent command channel (v0.3)       | **New** service (`SwarmController`), separate RPC — keep observer read-only    |
 | Per-agent telemetry (battery, health) | New `optional` fields on `AgentState` (proto3 `optional` is wire-compatible)    |
 | Multi-Pi (v0.6)                       | Server-side scaling first; protocol unchanged                                   |

@@ -85,7 +85,7 @@ namespace Gakkel.Swarm.Contracts.V1 {
     [pbr::OriginalName("AGENT_TYPE_UNSPECIFIED")] Unspecified = 0,
     [pbr::OriginalName("AGENT_TYPE_EXPLORER")] Explorer = 1,
     /// <summary>
-    /// specialised drone (glossary); renamed from OPERATOR, same number
+    /// specialised drone (see glossary)
     /// </summary>
     [pbr::OriginalName("AGENT_TYPE_SPECIALIST")] Specialist = 2,
     [pbr::OriginalName("AGENT_TYPE_CARRIER")] Carrier = 3,

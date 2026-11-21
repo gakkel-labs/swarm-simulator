@@ -3,6 +3,11 @@ package fr.gakkel.swarmsimulator.swarmserver.domain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorldTest {
@@ -187,5 +192,54 @@ class WorldTest {
         world.setPredator(null);
 
         assertNull(world.predator());
+    }
+
+    // The simulation thread adds and removes drones (predator eats, respawn) while the broadcast
+    // thread reads world.agents() to build the WorldState. Reading must never fail.
+    @Test
+    void agents_droneAddedDuringIteration_iterationDoesNotFail() {
+        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(10, -10, 5)));
+        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(20, -20, 5)));
+
+        assertDoesNotThrow(() -> {
+            for (Agent ignored : world.agents()) {
+                world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(30, -30, 5)));
+            }
+        });
+    }
+
+    @Test
+    void agents_readByOneThreadWhileAnotherAddsAndRemoves_neverFails() throws InterruptedException {
+        for (int i = 0; i < 50; i++) {
+            world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(i, -i, 5)));
+        }
+        var stopWriter = new AtomicBoolean(false);
+        var writerStarted = new CountDownLatch(1);
+        Thread writer = new Thread(() -> {
+            writerStarted.countDown();
+            while (!stopWriter.get()) {
+                var drone = Agent.create(AgentType.EXPLORER, new Vector3D(1, -1, 1));
+                world.addAgent(drone);
+                world.removeAgent(drone);
+            }
+        }, "test-simulation-writer");
+        var readerFailure = new AtomicReference<Throwable>();
+
+        writer.start();
+        assertTrue(writerStarted.await(1, TimeUnit.SECONDS));
+        try {
+            for (int round = 0; round < 20_000; round++) {
+                for (Agent drone : world.agents()) {
+                    drone.position();
+                }
+            }
+        } catch (Throwable failure) {
+            readerFailure.set(failure);
+        } finally {
+            stopWriter.set(true);
+            writer.join();
+        }
+
+        assertNull(readerFailure.get(), () -> "reader failed: " + readerFailure.get());
     }
 }

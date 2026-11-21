@@ -30,6 +30,7 @@ Chaque élément décoratif de la scène a deux versions, et un seul interrupteu
 | Prédateur | modèle de requin du Groenland | sphère rouge |
 | Cible de recherche | modèle d'épave sur le fond : un ancien navire en bois (un modèle d'avion existe aussi) | forme de navire simple (boîtes, cylindre) |
 | Obstacle | cheminée hydrothermale (cratère ouvert, fumée noire) | colonne sombre unie |
+| Eau (#74) | brouillard bleu plus dense près du fond, lumière qui baisse avec la profondeur, caustiques, neige marine, bloom et vignette | brouillard léger seulement |
 
 - La touche **V** bascule toute la scène entre vue détaillée et vue simple pendant le Play.
   La case **Show Rov Model** de `SwarmVisualizer` donne la vue de départ.

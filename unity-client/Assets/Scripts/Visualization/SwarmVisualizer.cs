@@ -124,6 +124,7 @@ namespace Gakkel.Swarm.Unity
 
             SpawnMothership();
             SpawnSeabed();
+            UnderwaterAtmosphere.Create(this);
 
             // The Inspector value "Show Rov Model" sets the starting view.
             DetailedView.Changed += OnDetailedViewChanged;

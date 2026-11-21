@@ -29,6 +29,7 @@ Every decorative element of the scene has two versions, and one switch chooses b
 | Predator | Greenland shark model | red sphere |
 | Search target | wreck model on the seabed: an old wooden ship (an aircraft model is also available) | plain ship shape (boxes, cylinder) |
 | Obstacle | hydrothermal chimney (open crater, black smoke) | plain dark column |
+| Water (#74) | blue fog that gets denser near the seabed, light that fades with depth, caustics, marine snow, bloom and vignette | light fog only (the **Underwater look** check box turns the whole look off) |
 
 - The **V** key switches the whole scene between detailed and simple during Play.
   The **Show Rov Model** box of `SwarmVisualizer` sets the starting view.

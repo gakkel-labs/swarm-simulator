@@ -187,6 +187,8 @@ NED↔Unity, modèle de threads, catalogue des messages).
   par l'opérateur** (clic), branchable plus tard sur une automatisation.
 - [ADR-0005](docs/adr/0005-mission-console-replaces-fleet-dashboard.fr.md) —
   **mission-console** remplace l'ancien projet fleet-dashboard.
+- [ADR-0006](docs/adr/0006-detailed-and-simple-view.fr.md) — **Vue détaillée et vue simple** :
+  modèles 3D pour une démo, formes simples pour l'opérateur (touche V).
 
 ### Configuration
 
@@ -264,6 +266,10 @@ mvn verify
 ## Crédits
 
 - Craig W. Reynolds — *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
+- Bathymétrie du fond marin : IBCAO 5.2 (Jakobsson et al., 2024, [doi:10.1038/s41597-024-04278-w](https://doi.org/10.1038/s41597-024-04278-w)),
+  incluse dans GEBCO Compilation Group (2026) GEBCO 2026 Grid
+  (doi : [10.5285/4f68d5c7-45eb-f999e063-7086abc036fa](https://doi.org/10.5285/4f68d5c7-45eb-f999e063-7086abc036fa)),
+  domaine public. Pas pour la navigation. Détails : [`docs/04-seabed-bathymetry.fr.md`](docs/04-seabed-bathymetry.fr.md).
 
 ## Licence
 

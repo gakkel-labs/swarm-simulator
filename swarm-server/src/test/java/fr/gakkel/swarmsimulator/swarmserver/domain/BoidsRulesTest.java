@@ -204,13 +204,13 @@ class BoidsRulesTest {
 
         @Test
         void farFromWalls_returnsZero() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, 50, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -50, 25), Vector3D.ZERO);
             assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, world));
         }
 
         @Test
         void nearXMinWall_forcePushesPositiveX() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(5, 50, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(5, -50, 25), Vector3D.ZERO);
             var force = rules.boundaryRepulsion(a, world);
             assertTrue(force.x() > 0, "force should push away from x=0 wall");
             assertEquals(0.0, force.y(), DELTA);
@@ -220,16 +220,35 @@ class BoidsRulesTest {
         @Test
         void atExactRadiusBoundary_returnsZero() {
             var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER,
-                    new Vector3D(DEFAULT_CONFIG.boundaryRepulsionRadius(), 50, 25), Vector3D.ZERO);
+                    new Vector3D(DEFAULT_CONFIG.boundaryRepulsionRadius(), -50, 25), Vector3D.ZERO);
             assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, world));
         }
 
         @Test
         void nearXMaxWall_forcePushesNegativeX_andYZAreZero() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(95, 50, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(95, -50, 25), Vector3D.ZERO);
             var force = rules.boundaryRepulsion(a, world);
             assertTrue(force.x() < 0, "force should push away from x=width wall");
             assertEquals(0.0, force.y(), DELTA);
+            assertEquals(0.0, force.z(), DELTA);
+        }
+
+        // The world's Y axis goes from -height (seabed) to 0 (surface), see World.isInBounds.
+        @Test
+        void nearSurface_forcePushesDown() {
+            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -5, 25), Vector3D.ZERO);
+            var force = rules.boundaryRepulsion(a, world);
+            assertTrue(force.y() < 0, "force should push away from the surface (y = 0)");
+            assertEquals(0.0, force.x(), DELTA);
+            assertEquals(0.0, force.z(), DELTA);
+        }
+
+        @Test
+        void nearSeabed_forcePushesUp() {
+            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -95, 25), Vector3D.ZERO);
+            var force = rules.boundaryRepulsion(a, world);
+            assertTrue(force.y() > 0, "force should push away from the seabed (y = -height)");
+            assertEquals(0.0, force.x(), DELTA);
             assertEquals(0.0, force.z(), DELTA);
         }
     }

@@ -154,7 +154,7 @@ All `.proto` files live in [`contracts/src/main/proto/`](../contracts/src/main/p
 
 ```
 Vec3            { float x, y, z }                          # NED (North-East-Down)
-AgentType       enum { UNSPECIFIED, EXPLORER, OPERATOR, CARRIER }
+AgentType       enum { UNSPECIFIED, EXPLORER, SPECIALIST, CARRIER }
 AgentState      { string id (UUID), AgentType type, Vec3 position, Vec3 velocity }
 WorldState      { int64 timestamp_unix_ms,
                   repeated AgentState agents,

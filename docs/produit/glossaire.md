@@ -43,7 +43,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Drone carrier** | It carries the swarm, **drops** it in the search area, talks to the swarm and relays information to the operations centre. It also deploys the specialised drones. | 🔜 (type reserved) |
 | **Swarm** | A group of **detection drones** that move together, with no leader. The swarm does the **first detection** over the search area. | ✅ |
 | **Detection drone** | A drone of the swarm. It explores the search area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
-| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). Later, other roles: **take samples** or **deploy an instrument** (and recover it). | 🔜 |
+| **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). Later, other roles: **take samples** or **deploy an instrument** (and recover it). | 🔜 (type reserved) |
 | **Drone pool** | All the drones available at the base, with their state: **ready**, **in maintenance** or **spare**. A drone can fail during a mission (or during a simulation); the backend can then propose **reserve drones** to take with the fleet. | 🔜 |
 | **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend can test many configurations and propose the best one. But this is a help, not a must: the operator can also choose the configuration himself. | 🔜 |
 
@@ -96,7 +96,7 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 | **Control station** | The operator's web application, where the mission is defined (repository `mission-console`). The operator can create a mission there alone, from start to end, without using the simulation. | 🔜 |
 | **Replay** | Play again a mission that is finished, in the viewer, to see how the drones moved and what happened. | 🔜 |
 | **Simulation** | A computer run that imitates the mission, to test it before going to sea. It helps the operator; it is not a required step. | ✅ |
-| **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `CARRIER` (drone carrier). Careful: the type `OPERATOR` in the code is only reserved and is **not** the human operator. | ✅ |
+| **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `SPECIALIST` (specialised drone, type only reserved), `CARRIER` (drone carrier). | ✅ |
 | **Tick** | One step of the simulation. The backend computes 30 ticks per second. | ✅ |
 | **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, danger, target. The backend sends one 20 times per second. | ✅ |
 | **gRPC stream** | The connection that carries the WorldState from the backend to the viewer, non-stop. | ✅ |

@@ -184,6 +184,8 @@ remapping, thread model, message catalogue).
   the operator** (click), pluggable for later automation.
 - [ADR-0005](docs/adr/0005-mission-console-replaces-fleet-dashboard.md) —
   **mission-console** replaces the old fleet-dashboard project.
+- [ADR-0006](docs/adr/0006-detailed-and-simple-view.md) — **Detailed and simple view**:
+  3D models for a demo, plain shapes for the operator (V key).
 
 ### Configuration
 

@@ -45,6 +45,7 @@ namespace Gakkel.Swarm.Unity
         private Texture2D _sandTexture;
         private TerrainLayer[] _terrainLayers;
         private Material _terrainMaterial;
+        private SeabedRocks _rocks;
 
         /// <summary>
         /// Creates the seabed. The terrain point at <paramref name="focusOffset"/> (metres from the terrain
@@ -53,7 +54,7 @@ namespace Gakkel.Swarm.Unity
         /// at anchorPosition.y, so the relief never goes up into the swarm volume.
         /// </summary>
         public static SeabedTerrain Spawn(Vector3 anchorPosition, Vector2 footprintHalfSize,
-            float verticalExaggeration, Vector2 focusOffset, bool useTextures)
+            float verticalExaggeration, Vector2 focusOffset, bool useTextures, bool useRocks)
         {
             var heightmapAsset = Resources.Load<TextAsset>(HeightmapResourcePath);
             if (heightmapAsset == null)
@@ -86,6 +87,7 @@ namespace Gakkel.Swarm.Unity
 
             var textured = useTextures && seabed.TryApplyTexturedLayers();
             if (!textured) seabed.ApplySandLayer();
+            seabed.SetRocksVisible(useRocks);
 
             Debug.Log($"Seabed (IBCAO) spawned: {SideMetres / 1000f:F1} km wide, " +
                       $"vertical exaggeration x{verticalExaggeration:F2}, focus {focusOffset} m from centre, " +
@@ -112,6 +114,52 @@ namespace Gakkel.Swarm.Unity
             transform.position = position;
             position.y = _anchorPosition.y - HighestHeightInFootprint();
             transform.position = position;
+            if (_rocks != null) _rocks.SnapToSeabed();
+        }
+
+        public bool HasVisibleRocks => _rocks != null && _rocks.gameObject.activeSelf;
+
+        /// <summary>
+        /// Shows or hides the rocks. Hidden rocks cost nothing to draw. They are made the first time
+        /// they are shown, so a scene started without rocks does not pay for them.
+        /// </summary>
+        public void SetRocksVisible(bool visible)
+        {
+            if (visible && _rocks == null)
+                _rocks = SeabedRocks.Spawn(this, _anchorPosition, _footprintHalfSize);
+            if (_rocks != null) _rocks.gameObject.SetActive(visible);
+        }
+
+        /// <summary>World height of the seabed at a world X/Z.</summary>
+        public float GroundHeightAt(Vector3 worldPosition)
+            => transform.position.y + _terrain.SampleHeight(worldPosition);
+
+        /// <summary>Normal of the seabed as shown (with the vertical exaggeration) at a world X/Z.</summary>
+        public Vector3 GroundNormalAt(Vector3 worldPosition)
+        {
+            var (u, v) = ToTerrainFractions(worldPosition);
+            return _terrain.terrainData.GetInterpolatedNormal(u, v);
+        }
+
+        /// <summary>How much basalt (0..1) the painting rule puts at a world X/Z.</summary>
+        public float BasaltWeightAt(Vector3 worldPosition)
+        {
+            var (u, v) = ToTerrainFractions(worldPosition);
+            return BasaltWeight(u, v);
+        }
+
+        /// <summary>How much hydrothermal deposit (0..1) the painting rule puts at a world X/Z.</summary>
+        public float HydrothermalWeightAt(Vector3 worldPosition)
+        {
+            var (u, v) = ToTerrainFractions(worldPosition);
+            return HydrothermalWeight(u, v);
+        }
+
+        // u (east) and v (north) go from 0 to 1 across the terrain.
+        private (float u, float v) ToTerrainFractions(Vector3 worldPosition)
+        {
+            var localPosition = worldPosition - transform.position;
+            return (Mathf.Clamp01(localPosition.x / SideMetres), Mathf.Clamp01(localPosition.z / SideMetres));
         }
 
         // Terrain.SampleHeight gives the height above the terrain's own position, at a world X/Z.
@@ -202,7 +250,6 @@ namespace Gakkel.Swarm.Unity
             var terrainData = _terrain.terrainData;
             var resolution = terrainData.alphamapResolution;
             var weights = new float[resolution, resolution, _terrainLayers.Length];
-            var auroraLocal = new Vector2(SideMetres / 2f, SideMetres / 2f) + AuroraOffsetFromCentre;
 
             for (var row = 0; row < resolution; row++)
             {
@@ -210,24 +257,8 @@ namespace Gakkel.Swarm.Unity
                 for (var column = 0; column < resolution; column++)
                 {
                     var u = column / (resolution - 1f);
-                    var localX = u * SideMetres;
-                    var localZ = v * SideMetres;
-
-                    // Heights are normalised 0..1 over the whole area, so this is also "how high on the ridge".
-                    // GetSteepness measures the exaggerated slope: tan(real) = tan(shown) / exaggeration.
-                    var shownSlopeRadians = terrainData.GetSteepness(u, v) * Mathf.Deg2Rad;
-                    var slopeDegrees = Mathf.Atan(Mathf.Tan(shownSlopeRadians) / _verticalExaggeration) * Mathf.Rad2Deg;
-                    var height01 = terrainData.GetInterpolatedHeight(u, v) / terrainData.size.y;
-                    var edgeNoise = (Mathf.PerlinNoise(localX * EdgeNoiseScalePerMetre, localZ * EdgeNoiseScalePerMetre) - 0.5f)
-                                    * 2f * EdgeNoiseDegrees;
-                    var effectiveSlope = slopeDegrees + edgeNoise
-                        + RidgeBias * (height01 - 0.5f) * (BasaltSlopeEndDegrees - BasaltSlopeStartDegrees) * 2f;
-                    var basalt = SmoothStep(BasaltSlopeStartDegrees, BasaltSlopeEndDegrees, effectiveSlope);
-
-                    var distanceToAurora = Vector2.Distance(new Vector2(localX, localZ), auroraLocal);
-                    var ventRadius = HydrothermalRadiusMetres
-                        * (1f + 0.35f * (Mathf.PerlinNoise(localX * 0.05f + 7.3f, localZ * 0.05f) - 0.5f) * 2f);
-                    var hydrothermal = 1f - SmoothStep(ventRadius * 0.4f, ventRadius, distanceToAurora);
+                    var basalt = BasaltWeight(u, v);
+                    var hydrothermal = HydrothermalWeight(u, v);
 
                     weights[row, column, SedimentLayerIndex] = (1f - basalt) * (1f - hydrothermal);
                     weights[row, column, BasaltLayerIndex] = basalt * (1f - hydrothermal);
@@ -235,6 +266,37 @@ namespace Gakkel.Swarm.Unity
                 }
             }
             terrainData.SetAlphamaps(0, 0, weights);
+        }
+
+        // Basalt on slopes and crests. u, v go from 0 to 1 across the terrain.
+        private float BasaltWeight(float u, float v)
+        {
+            var terrainData = _terrain.terrainData;
+            var localX = u * SideMetres;
+            var localZ = v * SideMetres;
+
+            // Heights are normalised 0..1 over the whole area, so this is also "how high on the ridge".
+            // GetSteepness measures the exaggerated slope: tan(real) = tan(shown) / exaggeration.
+            var shownSlopeRadians = terrainData.GetSteepness(u, v) * Mathf.Deg2Rad;
+            var slopeDegrees = Mathf.Atan(Mathf.Tan(shownSlopeRadians) / _verticalExaggeration) * Mathf.Rad2Deg;
+            var height01 = terrainData.GetInterpolatedHeight(u, v) / terrainData.size.y;
+            var edgeNoise = (Mathf.PerlinNoise(localX * EdgeNoiseScalePerMetre, localZ * EdgeNoiseScalePerMetre) - 0.5f)
+                            * 2f * EdgeNoiseDegrees;
+            var effectiveSlope = slopeDegrees + edgeNoise
+                + RidgeBias * (height01 - 0.5f) * (BasaltSlopeEndDegrees - BasaltSlopeStartDegrees) * 2f;
+            return SmoothStep(BasaltSlopeStartDegrees, BasaltSlopeEndDegrees, effectiveSlope);
+        }
+
+        // Hydrothermal deposit in a ragged disc around the Aurora vent field.
+        private static float HydrothermalWeight(float u, float v)
+        {
+            var localX = u * SideMetres;
+            var localZ = v * SideMetres;
+            var auroraLocal = new Vector2(SideMetres / 2f, SideMetres / 2f) + AuroraOffsetFromCentre;
+            var distanceToAurora = Vector2.Distance(new Vector2(localX, localZ), auroraLocal);
+            var ventRadius = HydrothermalRadiusMetres
+                * (1f + 0.35f * (Mathf.PerlinNoise(localX * 0.05f + 7.3f, localZ * 0.05f) - 0.5f) * 2f);
+            return 1f - SmoothStep(ventRadius * 0.4f, ventRadius, distanceToAurora);
         }
 
         private static float SmoothStep(float edgeStart, float edgeEnd, float value)

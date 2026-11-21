@@ -187,6 +187,8 @@ NED↔Unity, modèle de threads, catalogue des messages).
   par l'opérateur** (clic), branchable plus tard sur une automatisation.
 - [ADR-0005](docs/adr/0005-mission-console-replaces-fleet-dashboard.fr.md) —
   **mission-console** remplace l'ancien projet fleet-dashboard.
+- [ADR-0006](docs/adr/0006-detailed-and-simple-view.fr.md) — **Vue détaillée et vue simple** :
+  modèles 3D pour une démo, formes simples pour l'opérateur (touche V).
 
 ### Configuration
 

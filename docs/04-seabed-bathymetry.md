@@ -115,6 +115,22 @@ The textures were made for this project.
 
 With the option off, the seabed has one plain sand colour.
 
+### Rocks
+
+The bathymetry grid (about 40 m per sample) only shows hills. Seen from the drones, the seabed
+looks smooth. With **Use Seabed Rocks** on, `SeabedRocks` places several hundred basalt boulders
+(0.3 m to 4 m, mostly small) within 250 m of the swarm:
+
+- many where the painting puts basalt (slopes, higher ground), few on sediment, none on the
+  hydrothermal field;
+- in clusters (Perlin noise), 30 % sunk into the sediment, tilted with the slope;
+- only small rocks (1 m at most) under the swarm, so they stay out of its volume.
+
+The shapes are made by code (a sphere of triangles, bumped, then cut by planes like broken lava),
+so no 3D model is needed. The seed is fixed: the scene is the same at every start. The rocks follow
+the seabed when the exaggeration changes in Play Mode. The **B** key shows or hides them in
+Play Mode (hidden rocks cost nothing to draw).
+
 ## 6. Data sources and licence
 
 Bathymetry (used): **IBCAO 5.2**, downloaded as "GEBCO 2026 – North Polar" from

@@ -119,6 +119,22 @@ Les textures ont été faites pour ce projet.
 
 Option décochée : le fond a une seule couleur sable unie.
 
+### Rochers
+
+La grille bathymétrique (environ 40 m par point) ne montre que des collines. Vu depuis les drones,
+le fond paraît lisse. Avec **Use Seabed Rocks** coché, `SeabedRocks` pose plusieurs centaines de
+blocs de basalte (de 0,3 m à 4 m, surtout des petits) dans un rayon de 250 m autour de l'essaim :
+
+- beaucoup là où la peinture met du basalte (pentes, hauteurs), peu sur le sédiment, aucun sur
+  le champ hydrothermal ;
+- en groupes (bruit de Perlin), enfoncés à 30 % dans le sédiment, penchés selon la pente ;
+- seulement des petits blocs (1 m au plus) sous l'essaim, pour ne pas entrer dans son volume.
+
+Les formes sont faites par le code (sphère de triangles déformée, puis coupée par des plans, comme
+de la lave cassée) : pas de modèle 3D à ajouter. La graine est fixe : la scène est la même à chaque
+lancement. Les rochers suivent le fond quand on change l'exagération en Play Mode. La touche **B**
+les affiche ou les cache en Play Mode (cachés, ils ne coûtent rien à dessiner).
+
 ## 6. Sources des données et licence
 
 Bathymétrie (utilisée) : **IBCAO 5.2**, téléchargée comme « GEBCO 2026 – North Polar » sur

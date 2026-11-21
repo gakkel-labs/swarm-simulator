@@ -204,7 +204,7 @@ namespace Gakkel.Swarm.Unity
         private static Light FindDirectionalLight()
         {
             if (RenderSettings.sun != null) return RenderSettings.sun;
-            foreach (var light in FindObjectsByType<Light>(FindObjectsSortMode.None))
+            foreach (var light in FindObjectsByType<Light>())
                 if (light.type == LightType.Directional) return light;
             return null;
         }

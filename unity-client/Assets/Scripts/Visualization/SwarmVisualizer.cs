@@ -65,6 +65,7 @@ namespace Gakkel.Swarm.Unity
         private Material _mothershipMaterial;
         private Material _floorMaterial;
         private SeabedTerrain _seabed;
+        private UnderwaterAtmosphere _atmosphere;
         private float _appliedSeabedExaggeration;
         private Material _trailMaterial;
         private Material _isolatedDetectionMaterial;
@@ -124,7 +125,7 @@ namespace Gakkel.Swarm.Unity
 
             SpawnMothership();
             SpawnSeabed();
-            UnderwaterAtmosphere.Create(this);
+            _atmosphere = UnderwaterAtmosphere.Create(this);
 
             // The Inspector value "Show Rov Model" sets the starting view.
             DetailedView.Changed += OnDetailedViewChanged;
@@ -234,6 +235,12 @@ namespace Gakkel.Swarm.Unity
         /// <summary>World height of the seabed (or of the flat floor) at a world X/Z.</summary>
         public float SeabedHeightAt(Vector3 worldPosition)
             => _seabed != null ? _seabed.GroundHeightAt(worldPosition) : FloorCentre.y;
+
+        // UI check box: underwater fog, light, caustics, marine snow and post-processing, or the plain scene.
+        public void SetShowUnderwaterAtmosphere(bool shouldShow)
+        {
+            if (_atmosphere != null) _atmosphere.enabled = shouldShow;
+        }
 
         // V key: detailed or simple view for the whole scene (see DetailedView).
         public void SetShowRovModel(bool shouldShow) => DetailedView.Set(shouldShow);

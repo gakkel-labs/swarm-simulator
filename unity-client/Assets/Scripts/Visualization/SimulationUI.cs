@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,6 +22,7 @@ namespace Gakkel.Swarm.Unity
         private float _cohesionRefreshTimer;
         private float _displayedSpread;
         private const float CohesionRefreshInterval = 0.2f;
+        private const float DefaultToggleSpacing = 20f;
 
         private void Start()
         {
@@ -32,7 +34,36 @@ namespace Gakkel.Swarm.Unity
                 centroidToggle.onValueChanged.AddListener(visualizer.SetShowCentroids);
             if (detectionZoneToggle != null)
                 detectionZoneToggle.onValueChanged.AddListener(visualizer.SetShowDetectionZones);
+            CreateAtmosphereToggle();
         }
+
+        // The underwater look check box is made by copying the top check box of the scene and
+        // placing the copy just above it: no need to add it by hand in the Canvas.
+        private void CreateAtmosphereToggle()
+        {
+            var existingToggles = new List<Toggle>();
+            foreach (var toggle in new[] { trailToggle, velocityVectorToggle, centroidToggle, detectionZoneToggle })
+                if (toggle != null) existingToggles.Add(toggle);
+            if (existingToggles.Count == 0) return;
+            existingToggles.Sort((first, second) => HeightOf(second).CompareTo(HeightOf(first)));
+
+            var topToggle = existingToggles[0];
+            var spacing = existingToggles.Count > 1
+                ? HeightOf(topToggle) - HeightOf(existingToggles[1])
+                : DefaultToggleSpacing;
+
+            var atmosphereToggle = Instantiate(topToggle, topToggle.transform.parent);
+            atmosphereToggle.name = "UnderwaterLook";
+            atmosphereToggle.onValueChanged = new Toggle.ToggleEvent(); // drop listeners copied from the original
+            atmosphereToggle.GetComponent<RectTransform>().anchoredPosition =
+                topToggle.GetComponent<RectTransform>().anchoredPosition + new Vector2(0f, spacing);
+            var label = atmosphereToggle.GetComponentInChildren<Text>();
+            if (label != null) label.text = "Underwater look";
+            atmosphereToggle.SetIsOnWithoutNotify(true);
+            atmosphereToggle.onValueChanged.AddListener(visualizer.SetShowUnderwaterAtmosphere);
+        }
+
+        private static float HeightOf(Toggle toggle) => toggle.GetComponent<RectTransform>().anchoredPosition.y;
 
         private void Update()
         {

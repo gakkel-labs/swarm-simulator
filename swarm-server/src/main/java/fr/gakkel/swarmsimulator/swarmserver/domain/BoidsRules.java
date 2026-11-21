@@ -63,8 +63,9 @@ public final class BoidsRules {
 
         force = force.add(wallForce(pos.x(),                  1,  0,  0, radius));
         force = force.add(wallForce(world.width()  - pos.x(), -1, 0,  0, radius));
-        force = force.add(wallForce(pos.y(),                  0,  1,  0, radius));
-        force = force.add(wallForce(world.height() - pos.y(), 0, -1,  0, radius));
+        // Y goes from -height (seabed) to 0 (surface), like World.isInBounds and World.clamp.
+        force = force.add(wallForce(pos.y() + world.height(), 0,  1,  0, radius));
+        force = force.add(wallForce(-pos.y(),                 0, -1,  0, radius));
         force = force.add(wallForce(pos.z(),                  0,  0,  1, radius));
         force = force.add(wallForce(world.depth()  - pos.z(), 0,  0, -1, radius));
 

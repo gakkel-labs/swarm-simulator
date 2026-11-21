@@ -300,7 +300,9 @@ Si cet overhead devient gênant en v0.4+ (par ex. 200 agents), le champ peut mig
 | Service côté serveur        | `swarm-server/.../server/SwarmObserverImpl.java` (abonnements + boucle de diffusion)      |
 | Bootstrap serveur gRPC      | `swarm-server/.../server/SwarmServer.java` (point d'entrée) + `SwarmServerBootstrap.java` (câblage ; port issu de `Settings`, défaut `50051`, surcharge `SWARM_PORT`) |
 | Source des frames           | `swarm-server/.../simulation/SimulationLoop.java` (tick Boids 30 Hz → `World`)            |
-| Mapping domaine → proto     | `swarm-server/.../server/WorldStateBuilder.java` (`build()` / `toAgentState()` / `toVec3()` / `toProtoObstacle()` / `toPredatorState()`) |
+| Mapping domaine → proto     | `swarm-server/.../server/WorldStateBuilder.java` (`build()` / `toAgentState()` / `toProtoObstacle()` / `toPredatorState()`) |
+| Coordonnées serveur ↔ NED   | `swarm-server/.../server/CoordinateConversions.java` (`serverToNed()` / `nedToServer()`), seul endroit Java qui permute les axes |
+| Coordonnées NED ↔ Unity     | `unity-client/Assets/Scripts/Visualization/CoordinateUtils.cs` (`NedToUnity()` / `UnityToNed()`), seul endroit C# qui permute les axes |
 
 Pour exercer le stream à la main :
 

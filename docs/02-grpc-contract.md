@@ -300,7 +300,9 @@ If that overhead matters in v0.4+ (e.g. 200 agents), the field can be migrated t
 | Server-side service    | `swarm-server/.../server/SwarmObserverImpl.java` (subscription + broadcast loop)          |
 | gRPC server bootstrap  | `swarm-server/.../server/SwarmServer.java` (entry point) + `SwarmServerBootstrap.java` (wiring; port from `Settings`, default `50051`, override `SWARM_PORT`) |
 | Frame source           | `swarm-server/.../simulation/SimulationLoop.java` (30 Hz Boids tick → `World`)            |
-| Domain → proto mapping | `swarm-server/.../server/WorldStateBuilder.java` (`build()` / `toAgentState()` / `toVec3()` / `toProtoObstacle()` / `toPredatorState()`) |
+| Domain → proto mapping | `swarm-server/.../server/WorldStateBuilder.java` (`build()` / `toAgentState()` / `toProtoObstacle()` / `toPredatorState()`) |
+| Coordinates server ↔ NED | `swarm-server/.../server/CoordinateConversions.java` (`serverToNed()` / `nedToServer()`), the only Java place that swaps axes |
+| Coordinates NED ↔ Unity | `unity-client/Assets/Scripts/Visualization/CoordinateUtils.cs` (`NedToUnity()` / `UnityToNed()`), the only C# place that swaps axes |
 
 To exercise the stream manually:
 

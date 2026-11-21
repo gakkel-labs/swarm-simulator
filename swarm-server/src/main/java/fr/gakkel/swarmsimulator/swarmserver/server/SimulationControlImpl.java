@@ -34,8 +34,7 @@ public class SimulationControlImpl extends SimulationControlGrpc.SimulationContr
         }
 
         Vec3 nedPosition = request.getPosition();
-        // NED → server coordinates: server.x = NED.y (East), server.y = -NED.z (Down→Up), server.z = NED.x (North)
-        Vector3D serverPosition = new Vector3D(nedPosition.getY(), -nedPosition.getZ(), nedPosition.getX());
+        Vector3D serverPosition = CoordinateConversions.nedToServer(nedPosition);
 
         simulationService.placeTarget(serverPosition, TriggerSource.OPERATOR_CLICK);
         LOG.info("PlaceTarget RPC — NED({}, {}, {})", nedPosition.getX(), nedPosition.getY(), nedPosition.getZ());

@@ -4,7 +4,6 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
-import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
@@ -14,14 +13,14 @@ import io.gakkel.swarm.contracts.v1.AgentType;
 import io.gakkel.swarm.contracts.v1.PredatorState;
 import io.gakkel.swarm.contracts.v1.SearchStatus;
 import io.gakkel.swarm.contracts.v1.TargetFoundEvent;
-import io.gakkel.swarm.contracts.v1.Vec3;
 import io.gakkel.swarm.contracts.v1.WorldState;
 
 import java.util.Objects;
 
 /**
  * Converts the in-memory {@link World} snapshot into the gRPC {@link WorldState} message.
- * Encapsulates NED axis remapping, proto enum mapping, and optional fields (target, predator).
+ * Maps proto enums and optional fields (target, predator). Axis remapping is in
+ * {@link CoordinateConversions}.
  */
 public class WorldStateBuilder {
 
@@ -52,7 +51,7 @@ public class WorldStateBuilder {
         if (target != null) {
             SearchStatus.Builder statusBuilder = SearchStatus.newBuilder()
                     .setTargetPlaced(true)
-                    .setTargetPosition(toVec3(target.position()))
+                    .setTargetPosition(CoordinateConversions.serverToNed(target.position()))
                     .setElapsedSimS((float) target.elapsedSeconds());
             if (target.isFound()) {
                 statusBuilder.setFoundEvent(TargetFoundEvent.newBuilder()
@@ -69,16 +68,16 @@ public class WorldStateBuilder {
         return AgentState.newBuilder()
                 .setId(agent.id().toString())
                 .setType(toProtoType(agent.type()))
-                .setPositionXyz(toVec3(agent.position()))
-                .setVelocityMps(toVec3(agent.velocity()))
+                .setPositionXyz(CoordinateConversions.serverToNed(agent.position()))
+                .setVelocityMps(CoordinateConversions.serverToNed(agent.velocity()))
                 .build();
     }
 
     PredatorState toPredatorState(Predator predator) {
         return PredatorState.newBuilder()
                 .setId("predator-0")
-                .setPositionXyz(toVec3(predator.position()))
-                .setVelocityMps(toVec3(predator.velocity()))
+                .setPositionXyz(CoordinateConversions.serverToNed(predator.position()))
+                .setVelocityMps(CoordinateConversions.serverToNed(predator.velocity()))
                 .build();
     }
 
@@ -91,20 +90,9 @@ public class WorldStateBuilder {
         };
     }
 
-    private static Vec3 toVec3(Vector3D vector) {
-        // Server uses Y=0 at the water surface; negative Y is underwater (AUVs), positive Y is above (drones).
-        // Proto contract is NED (North=X, East=Y, Down=Z): Down = -server.Y maps naturally to this convention
-        // (surface: server.Y=0 → NED.Down=0; sea floor: server.Y=-depth → NED.Down=depth).
-        return Vec3.newBuilder()
-                .setX((float)  vector.z())
-                .setY((float)  vector.x())
-                .setZ((float) -vector.y())
-                .build();
-    }
-
     private static io.gakkel.swarm.contracts.v1.Obstacle toProtoObstacle(Obstacle obstacle) {
         return io.gakkel.swarm.contracts.v1.Obstacle.newBuilder()
-                .setPositionXyz(toVec3(obstacle.position()))
+                .setPositionXyz(CoordinateConversions.serverToNed(obstacle.position()))
                 .setRadiusM((float) obstacle.radius())
                 .build();
     }

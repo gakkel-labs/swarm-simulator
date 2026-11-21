@@ -19,7 +19,7 @@ enum AgentType {
   // treat it as a contract violation (skip the agent or log a warning).
   AGENT_TYPE_UNSPECIFIED = 0;
   AGENT_TYPE_EXPLORER    = 1;
-  AGENT_TYPE_OPERATOR    = 2;
+  AGENT_TYPE_SPECIALIST  = 2;  // specialised drone (glossary); renamed from OPERATOR, same number
   AGENT_TYPE_CARRIER     = 3;
 }
 

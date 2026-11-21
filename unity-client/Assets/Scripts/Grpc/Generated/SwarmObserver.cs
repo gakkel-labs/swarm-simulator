@@ -47,16 +47,16 @@ namespace Gakkel.Swarm.Contracts.V1 {
             "Hi5nYWtrZWwuc3dhcm0udjEuUHJlZGF0b3JTdGF0ZRI0Cg1zZWFyY2hfc3Rh",
             "dHVzGAUgASgLMh0uZ2Fra2VsLnN3YXJtLnYxLlNlYXJjaFN0YXR1cxIXCg9z",
             "ZW5zb3JfcmFkaXVzX20YBiABKAISGQoRY29oZXNpb25fc3ByZWFkX20YByAB",
-            "KAIiJQoQU3Vic2NyaWJlUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkqcQoJ",
+            "KAIiJQoQU3Vic2NyaWJlUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkqcwoJ",
             "QWdlbnRUeXBlEhoKFkFHRU5UX1RZUEVfVU5TUEVDSUZJRUQQABIXChNBR0VO",
-            "VF9UWVBFX0VYUExPUkVSEAESFwoTQUdFTlRfVFlQRV9PUEVSQVRPUhACEhYK",
-            "EkFHRU5UX1RZUEVfQ0FSUklFUhADMmgKDVN3YXJtT2JzZXJ2ZXISVwoTU3Vi",
-            "c2NyaWJlV29ybGRTdGF0ZRIhLmdha2tlbC5zd2FybS52MS5TdWJzY3JpYmVS",
-            "ZXF1ZXN0GhsuZ2Fra2VsLnN3YXJtLnYxLldvcmxkU3RhdGUwATJtChFTaW11",
-            "bGF0aW9uQ29udHJvbBJYCgtQbGFjZVRhcmdldBIjLmdha2tlbC5zd2FybS52",
-            "MS5QbGFjZVRhcmdldFJlcXVlc3QaJC5nYWtrZWwuc3dhcm0udjEuUGxhY2VU",
-            "YXJnZXRSZXNwb25zZUI8Chxpby5nYWtrZWwuc3dhcm0uY29udHJhY3RzLnYx",
-            "UAGqAhlHYWtrZWwuU3dhcm0uQ29udHJhY3RzLlYxYgZwcm90bzM="));
+            "VF9UWVBFX0VYUExPUkVSEAESGQoVQUdFTlRfVFlQRV9TUEVDSUFMSVNUEAIS",
+            "FgoSQUdFTlRfVFlQRV9DQVJSSUVSEAMyaAoNU3dhcm1PYnNlcnZlchJXChNT",
+            "dWJzY3JpYmVXb3JsZFN0YXRlEiEuZ2Fra2VsLnN3YXJtLnYxLlN1YnNjcmli",
+            "ZVJlcXVlc3QaGy5nYWtrZWwuc3dhcm0udjEuV29ybGRTdGF0ZTABMm0KEVNp",
+            "bXVsYXRpb25Db250cm9sElgKC1BsYWNlVGFyZ2V0EiMuZ2Fra2VsLnN3YXJt",
+            "LnYxLlBsYWNlVGFyZ2V0UmVxdWVzdBokLmdha2tlbC5zd2FybS52MS5QbGFj",
+            "ZVRhcmdldFJlc3BvbnNlQjwKHGlvLmdha2tlbC5zd2FybS5jb250cmFjdHMu",
+            "djFQAaoCGUdha2tlbC5Td2FybS5Db250cmFjdHMuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Gakkel.Swarm.Contracts.V1.AgentType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -84,7 +84,10 @@ namespace Gakkel.Swarm.Contracts.V1 {
     /// </summary>
     [pbr::OriginalName("AGENT_TYPE_UNSPECIFIED")] Unspecified = 0,
     [pbr::OriginalName("AGENT_TYPE_EXPLORER")] Explorer = 1,
-    [pbr::OriginalName("AGENT_TYPE_OPERATOR")] Operator = 2,
+    /// <summary>
+    /// specialised drone (glossary); renamed from OPERATOR, same number
+    /// </summary>
+    [pbr::OriginalName("AGENT_TYPE_SPECIALIST")] Specialist = 2,
     [pbr::OriginalName("AGENT_TYPE_CARRIER")] Carrier = 3,
   }
 

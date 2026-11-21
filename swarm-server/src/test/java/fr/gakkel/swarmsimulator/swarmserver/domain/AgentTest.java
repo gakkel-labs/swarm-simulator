@@ -34,7 +34,7 @@ class AgentTest {
     @Test
     void update_changesPositionAndVelocity() {
         // Arrange
-        var agent = Agent.create(AgentType.OPERATOR, ORIGIN);
+        var agent = Agent.create(AgentType.SPECIALIST, ORIGIN);
 
         // Act
         agent.update(SOME_POS, SOME_VEL);
@@ -48,7 +48,7 @@ class AgentTest {
     void equals_sameId_returnsTrue() {
         var id = UUID.randomUUID();
         var a1 = new Agent(id, AgentType.EXPLORER, ORIGIN, Vector3D.ZERO);
-        var a2 = new Agent(id, AgentType.OPERATOR, SOME_POS, SOME_VEL);
+        var a2 = new Agent(id, AgentType.SPECIALIST, SOME_POS, SOME_VEL);
 
         assertEquals(a1, a2);
     }

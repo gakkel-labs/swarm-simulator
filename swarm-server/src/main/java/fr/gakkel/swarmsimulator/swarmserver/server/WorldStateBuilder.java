@@ -85,7 +85,7 @@ public class WorldStateBuilder {
     private static AgentType toProtoType(fr.gakkel.swarmsimulator.swarmserver.domain.AgentType type) {
         return switch (type) {
             case EXPLORER -> AgentType.AGENT_TYPE_EXPLORER;
-            case OPERATOR -> AgentType.AGENT_TYPE_OPERATOR;
+            case SPECIALIST -> AgentType.AGENT_TYPE_OPERATOR;
             case CARRIER  -> AgentType.AGENT_TYPE_CARRIER;
             // Defensive default: switch is exhaustive at compile time, but this guards against
             // binary-incompatible class evolution if the proto enum is updated independently.

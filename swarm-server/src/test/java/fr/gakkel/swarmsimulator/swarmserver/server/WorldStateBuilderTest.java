@@ -78,9 +78,9 @@ class WorldStateBuilderTest {
     }
 
     @Test
-    void toAgentState_operatorAgent_mapsToProtoOperatorType() {
+    void toAgentState_specialistAgent_mapsToProtoOperatorType() {
         Agent agent = new Agent(UUID.randomUUID(),
-                fr.gakkel.swarmsimulator.swarmserver.domain.AgentType.OPERATOR,
+                fr.gakkel.swarmsimulator.swarmserver.domain.AgentType.SPECIALIST,
                 new Vector3D(0, 0, 0), Vector3D.ZERO);
 
         AgentState result = builder.toAgentState(agent);

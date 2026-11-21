@@ -33,7 +33,7 @@ class WorldTest {
 
     @Test
     void removeAgent_presentAgent_removesAndReturnsTrue() {
-        var agent = Agent.create(AgentType.OPERATOR, new Vector3D(5, 5, 5));
+        var agent = Agent.create(AgentType.SPECIALIST, new Vector3D(5, 5, 5));
         world.addAgent(agent);
 
         boolean removed = world.removeAgent(agent);

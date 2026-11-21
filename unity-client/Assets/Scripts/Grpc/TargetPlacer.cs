@@ -39,14 +39,7 @@ namespace Gakkel.Swarm.Unity
             Ray ray = activeCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
             Vector3 unityPosition = ray.GetPoint(placementDistance);
 
-            var nedPosition = new Vec3
-            {
-                X = unityPosition.z,   // NED North = Unity Z
-                Y = unityPosition.x,   // NED East  = Unity X
-                Z = -unityPosition.y,  // NED Down  = -Unity Y
-            };
-
-            var request = new PlaceTargetRequest { Position = nedPosition };
+            var request = new PlaceTargetRequest { Position = CoordinateUtils.UnityToNed(unityPosition) };
 #if UNITY_EDITOR
             Debug.Log($"[PlaceTarget] unity={unityPosition:F1}");
 #endif

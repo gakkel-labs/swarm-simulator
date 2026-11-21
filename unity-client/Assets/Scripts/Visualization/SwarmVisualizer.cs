@@ -8,7 +8,6 @@ namespace Gakkel.Swarm.Unity
     public class SwarmVisualizer : MonoBehaviour
     {
         [SerializeField] private float groupingRadius = 15f;
-        [SerializeField] private float obstacleHeightMetres = 5f;
         [SerializeField] private PredatorRenderer predatorRenderer;
 
         private static readonly Color[] GroupColors =
@@ -35,6 +34,20 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private float rovScale = 2f;
         [SerializeField] private bool showRovModel = true;
 
+        [Header("Seabed (IBCAO / GEBCO bathymetry, see docs/04-seabed-bathymetry.md)")]
+        [Tooltip("Real relief of the Gakkel Ridge. Off = old flat floor.")]
+        [SerializeField] private bool useBathymetrySeabed = true;
+        [Tooltip("Vertical scale of the real relief. 1 = real relief (a 100 m grid is still smoother than the real seabed). " +
+                 "Can be changed in Play Mode.")]
+        [SerializeField, Range(1f, 10f)] private float seabedVerticalExaggeration = 3f;
+        [Tooltip("Sediment, basalt and hydrothermal textures. Off = plain sand colour.")]
+        [SerializeField] private bool useSeabedTextures = true;
+        [Tooltip("Basalt boulders and pebbles around the swarm, more on slopes. Off = bare seabed. B key toggles them in Play Mode.")]
+        [SerializeField] private bool useSeabedRocks = true;
+        [Tooltip("Point of the seabed placed under the swarm, in metres from the terrain centre (X east, Y north). " +
+                 "Default: flat ground near a 47 m wall (x3: 140 m), 0.9 km from the Aurora vents (0, 0).")]
+        [SerializeField] private Vector2 seabedFocusOffset = new(700f, -600f);
+
         private readonly Dictionary<string, GameObject> _agents = new();
         private readonly Dictionary<string, Renderer> _agentRenderers = new();
         private readonly Dictionary<string, GameObject> _agentCapsules = new();
@@ -49,9 +62,10 @@ namespace Gakkel.Swarm.Unity
         private readonly Vector3[] _velocityLinePositions = new Vector3[VelocityArrowPointCount];
 
         private Material _isolatedMaterial;
-        private Material _obstacleMaterial;
         private Material _mothershipMaterial;
         private Material _floorMaterial;
+        private SeabedTerrain _seabed;
+        private float _appliedSeabedExaggeration;
         private Material _trailMaterial;
         private Material _isolatedDetectionMaterial;
         private Material[] _groupMaterials;
@@ -80,7 +94,8 @@ namespace Gakkel.Swarm.Unity
         private const float CentroidCrossArmWidth = 0.2f;
         private const float TrailHeadAlpha = 0.8f;
         private const float TrailTailAlpha = 0f;
-        private const float ObstacleHeightHalfFactor = 0.5f;
+        private static readonly Vector3 FloorCentre = new(50f, -100f, 25f);
+        private static readonly Vector2 FloorHalfSize = new(50f, 25f); // swarm footprint: 100 x 50 m (X x Z)
 
         private void Awake()
         {
@@ -88,7 +103,6 @@ namespace Gakkel.Swarm.Unity
             var particleShader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
 
             _isolatedMaterial      = new Material(shader) { color = Color.gray };
-            _obstacleMaterial      = new Material(shader) { color = new Color(0.6f, 0.3f, 0.1f) };
             _mothershipMaterial    = new Material(shader) { color = Color.gray };
             _floorMaterial         = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
             _trailMaterial         = new Material(particleShader);
@@ -109,7 +123,11 @@ namespace Gakkel.Swarm.Unity
             _isolatedTrailGradient = MakeTrailGradient(Color.gray);
 
             SpawnMothership();
-            SpawnFloor();
+            SpawnSeabed();
+
+            // The Inspector value "Show Rov Model" sets the starting view.
+            DetailedView.Changed += OnDetailedViewChanged;
+            DetailedView.Set(showRovModel);
         }
 
         // URP/Lit needs explicit setup to render transparent: surface type, blend modes, ZWrite off,
@@ -149,7 +167,15 @@ namespace Gakkel.Swarm.Unity
         {
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.vKey.wasPressedThisFrame)
-                SetShowRovModel(!showRovModel);
+                DetailedView.Set(!DetailedView.IsOn);
+            if (keyboard != null && keyboard.bKey.wasPressedThisFrame)
+                SetShowSeabedRocks(!useSeabedRocks);
+
+            if (_seabed != null && !Mathf.Approximately(_appliedSeabedExaggeration, seabedVerticalExaggeration))
+            {
+                _seabed.SetVerticalExaggeration(seabedVerticalExaggeration);
+                _appliedSeabedExaggeration = seabedVerticalExaggeration;
+            }
         }
 
         public void Apply(WorldState worldState)
@@ -194,9 +220,27 @@ namespace Gakkel.Swarm.Unity
         public bool HasRovModel       => rovModel != null;
         public bool IsShowingRovModel => showRovModel && rovModel != null;
 
-        public void SetShowRovModel(bool shouldShow)
+        public bool HasSeabed            => _seabed != null;
+        public bool IsShowingSeabedRocks => _seabed != null && _seabed.HasVisibleRocks;
+
+        // B key: lighter scene without rocks, or the full one. The simple view (V) always hides them.
+        public void SetShowSeabedRocks(bool shouldShow)
         {
-            showRovModel = shouldShow;
+            useSeabedRocks = shouldShow;
+            if (_seabed != null) _seabed.SetRocksVisible(shouldShow && DetailedView.IsOn);
+        }
+
+        /// <summary>World height of the seabed (or of the flat floor) at a world X/Z.</summary>
+        public float SeabedHeightAt(Vector3 worldPosition)
+            => _seabed != null ? _seabed.GroundHeightAt(worldPosition) : FloorCentre.y;
+
+        // V key: detailed or simple view for the whole scene (see DetailedView).
+        public void SetShowRovModel(bool shouldShow) => DetailedView.Set(shouldShow);
+
+        private void OnDetailedViewChanged(bool isDetailed)
+        {
+            showRovModel = isDetailed;
+            if (_seabed != null) _seabed.SetRocksVisible(isDetailed && useSeabedRocks);
             bool rovVisible = IsShowingRovModel;
             foreach (var capsule in _agentCapsules.Values)
                 capsule.SetActive(!rovVisible);
@@ -502,16 +546,15 @@ namespace Gakkel.Swarm.Unity
 
         private void SpawnObstacles(IList<Obstacle> obstacles)
         {
-            foreach (var obstacle in obstacles)
+            // Each obstacle is drawn as a hydrothermal chimney rising from the seabed up to it.
+            // The server still sees a sphere, so drones can cross the chimney below it (issue #142).
+            for (var obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
-                var obstacleObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                Destroy(obstacleObject.GetComponent<Collider>());
-                obstacleObject.name = "Obstacle";
-                obstacleObject.GetComponent<Renderer>().material = _obstacleMaterial;
-                float diameter = obstacle.RadiusM * 2f;
-                obstacleObject.transform.localScale = new Vector3(diameter, obstacleHeightMetres * ObstacleHeightHalfFactor, diameter);
-                obstacleObject.transform.position = CoordinateUtils.NedToUnity(obstacle.PositionXyz);
-                _obstacles.Add(obstacleObject);
+                var obstacle = obstacles[obstacleIndex];
+                var obstaclePosition = CoordinateUtils.NedToUnity(obstacle.PositionXyz);
+                var chimney = HydrothermalChimney.Spawn(obstaclePosition, obstacle.RadiusM,
+                    SeabedHeightAt(obstaclePosition), seed: obstacleIndex + 1);
+                _obstacles.Add(chimney.gameObject);
             }
         }
 
@@ -525,6 +568,18 @@ namespace Gakkel.Swarm.Unity
             mothershipObject.transform.position = Vector3.zero;
         }
 
+        // Falls back to the flat floor if the bathymetry is turned off or its heightmap is missing.
+        private void SpawnSeabed()
+        {
+            if (useBathymetrySeabed)
+            {
+                _seabed = SeabedTerrain.Spawn(FloorCentre, FloorHalfSize, seabedVerticalExaggeration,
+                    seabedFocusOffset, useSeabedTextures, useSeabedRocks && showRovModel);
+                _appliedSeabedExaggeration = seabedVerticalExaggeration;
+            }
+            if (_seabed == null) SpawnFloor();
+        }
+
         private void SpawnFloor()
         {
             // World is 100×50 server units (X×Z); Plane default is 10×10, so scale (10,1,5).
@@ -535,7 +590,7 @@ namespace Gakkel.Swarm.Unity
             floorObject.name = "SeaFloor";
             floorObject.GetComponent<Renderer>().material = _floorMaterial;
             floorObject.transform.localScale = new Vector3(10f, 1f, 5f);
-            floorObject.transform.position = new Vector3(50f, -100f, 25f);
+            floorObject.transform.position = FloorCentre;
         }
 
         private void UpdateCentroid()
@@ -548,8 +603,8 @@ namespace Gakkel.Swarm.Unity
 
         private void OnDestroy()
         {
+            DetailedView.Changed -= OnDetailedViewChanged;
             Destroy(_isolatedMaterial);
-            Destroy(_obstacleMaterial);
             Destroy(_mothershipMaterial);
             Destroy(_floorMaterial);
             Destroy(_trailMaterial);

@@ -77,3 +77,10 @@ logs/
 # Simulation metrics (generated at runtime)
 # =============================================
 metrics/
+
+# =============================================
+# Python (tools/)
+# =============================================
+__pycache__/
+.venv/
+.pytest_cache/

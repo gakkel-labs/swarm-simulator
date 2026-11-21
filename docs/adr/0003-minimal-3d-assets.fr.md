@@ -7,6 +7,8 @@ Note (2026-11-16) : `fleet-dashboard`, cité plus bas, est remplacé par `missio
 
 Note (2026-11-18) : les drones peuvent maintenant s'afficher avec le modèle 3D low-poly `GakkelROV` (#73). Les capsules restent disponibles : la touche **V** bascule entre le ROV et les capsules pendant le Play (#125). Les capsules gardent la lecture des groupes par couleur.
 
+Note (2026-11-18) : le fond marin est maintenant un Terrain construit à partir de vraie bathymétrie (#75), avec des textures de sédiment, de basalte et hydrothermale (environ 20 Mo d'images). Les textures sont optionnelles (**Use Seabed Textures** dans l'Inspector). Aucun problème de performance constaté pour l'instant. Voir [`04-seabed-bathymetry.fr.md`](../04-seabed-bathymetry.fr.md).
+
 ## Context
 Le client Unity affiche un essaim d'AUVs, une cible SAR, un prédateur et des obstacles dans
 une scène 3D. La question esthétique se pose dès qu'on ouvre Unity : doit-on modéliser de

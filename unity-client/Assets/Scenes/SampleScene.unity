@@ -709,7 +709,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.SwarmVisualizer
   groupingRadius: 15
-  obstacleHeightMetres: 5
   predatorRenderer: {fileID: 1342856464}
   trailTime: 2
   trailStartWidth: 0.15
@@ -721,6 +720,11 @@ MonoBehaviour:
   rovModel: {fileID: -4385283254109219805, guid: 6c70a495608aeab4b9c6d2be5646c8fc, type: 3}
   rovScale: 2
   showRovModel: 1
+  useBathymetrySeabed: 1
+  seabedVerticalExaggeration: 3.01
+  useSeabedTextures: 1
+  useSeabedRocks: 1
+  seabedFocusOffset: {x: -720, y: -1400}
 --- !u!1 &542286055
 GameObject:
   m_ObjectHideFlags: 0
@@ -781,6 +785,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c845e62b81e5844a8ff927dedf9f74f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.TargetRenderer
+  wreckModel: {fileID: 3031821997582047129, guid: 2d488131a82247189b7396bf96d92d0b, type: 3}
+  woodTexture: {fileID: 2800000, guid: 3e6ad816430f42de8cf0c14ee6f3ebdf, type: 3}
+  woodTint: {r: 0.85, g: 0.85, b: 0.85, a: 1}
+  visualizer: {fileID: 0}
 --- !u!1 &730027346
 GameObject:
   m_ObjectHideFlags: 0
@@ -1815,6 +1823,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74edd781f6be99e498e99cbcbec2150d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gakkel.Swarm.Unity.PredatorRenderer
+  predatorModel: {fileID: -7968798590898563242, guid: d8e7432c6a5a4ff0b58448bb85658f6c, type: 3}
+  predatorModelScale: 1
 --- !u!4 &1342856465
 Transform:
   m_ObjectHideFlags: 0

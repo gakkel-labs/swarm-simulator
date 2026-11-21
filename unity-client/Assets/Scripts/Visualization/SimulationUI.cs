@@ -56,13 +56,18 @@ namespace Gakkel.Swarm.Unity
 
             string searchStatusLine = BuildSearchStatusLine();
             string viewLine = BuildViewLine();
-            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}\nSpread: {_displayedSpread:F1}m{searchStatusLine}{viewLine}";
+            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}\nSpread: {_displayedSpread:F1}m{searchStatusLine}{viewLine}{BuildRocksLine()}";
         }
 
         private string BuildViewLine()
         {
-            if (!visualizer.HasRovModel) return string.Empty;
-            return visualizer.IsShowingRovModel ? "\nView: ROV (V)" : "\nView: capsules (V)";
+            return DetailedView.IsOn ? "\nView: detailed (V)" : "\nView: simple (V)";
+        }
+
+        private string BuildRocksLine()
+        {
+            if (!visualizer.HasSeabed) return string.Empty;
+            return visualizer.IsShowingSeabedRocks ? "\nRocks: on (B)" : "\nRocks: off (B)";
         }
 
                 private string BuildSearchStatusLine()

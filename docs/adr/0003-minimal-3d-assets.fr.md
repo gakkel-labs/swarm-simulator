@@ -9,6 +9,8 @@ Note (2026-11-18) : les drones peuvent maintenant s'afficher avec le modèle 3D 
 
 Note (2026-11-18) : le fond marin est maintenant un Terrain construit à partir de vraie bathymétrie (#75), avec des textures de sédiment, de basalte et hydrothermale (environ 20 Mo d'images). Les textures sont optionnelles (**Use Seabed Textures** dans l'Inspector). Aucun problème de performance constaté pour l'instant. Voir [`04-seabed-bathymetry.fr.md`](../04-seabed-bathymetry.fr.md).
 
+Note (2026-11-21) : le type `OPERATOR`, cité plus bas, s'appelle maintenant `SPECIALIST` (drone spécialisé, voir le [glossaire](../produit/glossaire.fr.md)). « Opérateur » désigne seulement la personne humaine (#124).
+
 ## Context
 Le client Unity affiche un essaim d'AUVs, une cible SAR, un prédateur et des obstacles dans
 une scène 3D. La question esthétique se pose dès qu'on ouvre Unity : doit-on modéliser de

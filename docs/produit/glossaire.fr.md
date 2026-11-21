@@ -43,7 +43,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Porte-drones** | Il transporte l'essaim, le **dépose** dans la zone de recherche, parle avec l'essaim et relaie les informations au centre d'opérations. Il déploie aussi les drones spécialisés. | 🔜 (type réservé) |
 | **Essaim** | Un groupe de **drones de détection** qui se déplacent ensemble, sans chef. L'essaim fait la **première détection** sur la zone de recherche. | ✅ |
 | **Drone de détection** | Un drone de l'essaim. Il fouille la zone de recherche avec ses capteurs et signale ce qu'il trouve. | ✅ (*agent* `EXPLORER`) |
-| **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). Plus tard, d'autres rôles : **prélever** (des échantillons) ou **poser un instrument** (et le récupérer). | 🔜 |
+| **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). Plus tard, d'autres rôles : **prélever** (des échantillons) ou **poser un instrument** (et le récupérer). | 🔜 (type réservé) |
 | **Parc** | Tous les drones disponibles à la base, avec leur état : **prêt**, **en maintenance** ou **de rechange**. Un drone peut tomber en panne pendant une mission (ou pendant une simulation) ; le backend peut alors proposer des **drones de réserve** à emmener avec la flotte. | 🔜 |
 | **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend peut tester beaucoup de configurations et proposer la meilleure. Mais c'est une aide, pas une obligation : l'opérateur peut aussi choisir la configuration lui-même. | 🔜 |
 
@@ -96,7 +96,7 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 | **Poste de contrôle** | L'application web de l'opérateur, où la mission est définie (dépôt `mission-console`). L'opérateur peut y créer une mission seul, de bout en bout, sans passer par la simulation. | 🔜 |
 | **Rejouer** (replay) | Revoir une mission terminée dans la vue 3D, pour voir comment les drones se sont déplacés et ce qui s'est passé. | 🔜 |
 | **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. C'est une aide pour l'opérateur, pas une étape obligatoire. | ✅ |
-| **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `CARRIER` (porte-drones). Attention : le type `OPERATOR` dans le code est seulement réservé et **n'est pas** l'opérateur humain. | ✅ |
+| **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `SPECIALIST` (drone spécialisé, type seulement réservé), `CARRIER` (porte-drones). | ✅ |
 | **Tick** | Un pas de la simulation. Le backend calcule 30 ticks par seconde. | ✅ |
 | **WorldState** | Une « photo » de la simulation à un instant : drones, obstacles, danger, cible. Le backend en envoie 20 par seconde. | ✅ |
 | **Flux gRPC** | La connexion qui transporte les WorldState du backend vers la vue 3D, en continu. | ✅ |

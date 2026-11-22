@@ -8,6 +8,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 public class CohesionCsvExporter implements Closeable {
 
@@ -28,7 +29,8 @@ public class CohesionCsvExporter implements Closeable {
 
     public void record(long timestampMs, double elapsedS, double spreadM) {
         try {
-            writer.write(timestampMs + "," + String.format("%.2f", elapsedS) + "," + String.format("%.2f", spreadM));
+            // Locale.ROOT: a French system would write "1,50" and add a column to the CSV.
+            writer.write(String.format(Locale.ROOT, "%d,%.2f,%.2f", timestampMs, elapsedS, spreadM));
             writer.newLine();
         } catch (IOException e) {
             LOG.warn("CSV write failed", e);

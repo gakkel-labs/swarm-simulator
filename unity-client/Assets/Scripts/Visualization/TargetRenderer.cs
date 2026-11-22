@@ -83,7 +83,7 @@ namespace Gakkel.Swarm.Unity
             _simpleWreck = BuildSimpleWreck(_simpleWreckMaterial);
             _simpleWreck.transform.SetParent(_wreck.transform, false);
 
-            _foundRingMaterial = MakeTransparentMaterial(litShader, FoundColor);
+            _foundRingMaterial = RenderingUtils.MakeTransparentMaterial(litShader, FoundColor);
             _foundRing = CreatePart(PrimitiveType.Cylinder, _foundRingMaterial, _wreck.transform,
                 new Vector3(0f, 0.3f, 0f), new Vector3(2f * FoundRingRadiusMetres, 0.05f, 2f * FoundRingRadiusMetres));
             _foundRing.name = "FoundRing";
@@ -131,7 +131,7 @@ namespace Gakkel.Swarm.Unity
                 _isBlinking = false;
                 return;
             }
-            _foundRingMaterial.color = Mathf.Sin(elapsed * BlinkFrequency) > 0 ? FoundColor : BlinkColor;
+            _foundRingMaterial.color = IsInBlinkFlash(_blinkStartTime) ? BlinkColor : FoundColor;
         }
 
         public void Apply(SearchStatus searchStatus)
@@ -169,11 +169,14 @@ namespace Gakkel.Swarm.Unity
             }
         }
 
-        public static Color ComputeBlinkColor(Color baseColor, float startTime, float duration = 5f, float frequency = 10f)
+        /// <summary>
+        /// True during the "flash" half of a blink that started at <paramref name="startTime"/>,
+        /// false otherwise and once the blink is over. Same rhythm for the ring and the finder drone.
+        /// </summary>
+        public static bool IsInBlinkFlash(float startTime)
         {
             float elapsed = Time.time - startTime;
-            if (elapsed > duration) return baseColor;
-            return Mathf.Sin(elapsed * frequency) > 0 ? baseColor : Color.white;
+            return elapsed <= BlinkDuration && Mathf.Sin(elapsed * BlinkFrequency) <= 0;
         }
 
         // About the size of the ship model (36 m long, 8 m wide), +Z = bow, sitting on y = 0.
@@ -199,22 +202,6 @@ namespace Gakkel.Swarm.Unity
             part.transform.localScale = localScale;
             part.GetComponent<Renderer>().sharedMaterial = material;
             return part;
-        }
-
-        private static Material MakeTransparentMaterial(Shader litShader, Color color)
-        {
-            var material = new Material(litShader);
-            material.SetOverrideTag("RenderType", "Transparent");
-            material.SetFloat("_Surface", 1f);
-            material.SetFloat("_Blend", 0f);
-            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetFloat("_ZWrite", 0f);
-            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-            material.SetColor("_BaseColor", color);
-            material.color = color;
-            return material;
         }
 
         private void OnDestroy()

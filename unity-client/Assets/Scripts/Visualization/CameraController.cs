@@ -48,7 +48,6 @@ namespace Gakkel.Swarm.Unity
 
         private const float DefaultOverviewPitch = 30f;
         private const float MinHeadingSqrMagnitude = 1e-4f;
-        private const int ShortDroneIdLength = 8;
         // The server sends positions 20 times per second: never guess further ahead than two updates.
         private const float MaxExtrapolationSeconds = 0.1f;
 
@@ -74,7 +73,7 @@ namespace Gakkel.Swarm.Unity
         // Short text for the HUD, for example "follow drone 1a2b3c4d (N next, F overview)".
         public string ModeLabel => _mode switch
         {
-            CameraMode.Follow => $"follow drone {ShortId(_followedDroneId)} (N next, F overview)",
+            CameraMode.Follow => $"follow drone {DroneIdText.Short(_followedDroneId)} (N next, F overview)",
             CameraMode.Free   => "free (Tab overview)",
             _                 => "overview (F follow, Tab free)",
         };
@@ -291,12 +290,6 @@ namespace Gakkel.Swarm.Unity
             var horizontalVelocity = new Vector3(droneVelocity.x, 0f, droneVelocity.z);
             if (horizontalVelocity.sqrMagnitude >= MinHeadingSqrMagnitude)
                 _followHeading = horizontalVelocity.normalized;
-        }
-
-        private static string ShortId(string droneId)
-        {
-            if (string.IsNullOrEmpty(droneId)) return "-";
-            return droneId.Length > ShortDroneIdLength ? droneId[..ShortDroneIdLength] : droneId;
         }
 
         private void UpdateFree(Keyboard keyboard)

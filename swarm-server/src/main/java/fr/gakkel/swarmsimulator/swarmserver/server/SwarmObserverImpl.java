@@ -60,9 +60,16 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
         broadcaster.shutdown();
     }
 
+    // scheduleAtFixedRate cancels a task for good, without any log, the first time it throws.
     void broadcast() {
         if (subscribers.isEmpty()) return;
-        WorldState state = worldStateBuilder.build();
+        WorldState state;
+        try {
+            state = worldStateBuilder.build();
+        } catch (RuntimeException exception) {
+            LOG.error("Could not build the world state, skipping this frame", exception);
+            return;
+        }
         for (ServerCallStreamObserver<WorldState> obs : subscribers) {
             if (obs.isCancelled()) {
                 subscribers.remove(obs);

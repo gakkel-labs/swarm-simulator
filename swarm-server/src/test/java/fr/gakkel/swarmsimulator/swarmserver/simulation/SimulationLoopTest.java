@@ -438,4 +438,37 @@ class SimulationLoopTest {
     private static Agent createAgent(Vector3D position) {
         return new Agent(UUID.randomUUID(), AgentType.EXPLORER, position, Vector3D.ZERO);
     }
+
+    @Nested
+    class Robustness {
+
+        @Test
+        void tick_withEmptySwarm_keepsCohesionSpreadANumber() {
+            // All drones can be eaten by the predator: the swarm is empty until they respawn.
+            var emptyWorld = new World(100, 100, 50);
+            var emptyLoop = new SimulationLoop(emptyWorld, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
+
+            emptyLoop.tick();
+
+            assertFalse(Double.isNaN(emptyLoop.cohesionSpreadM()), "spread must not be NaN");
+        }
+
+        @Test
+        void scheduledTick_whenTickThrows_doesNotPropagateTheException() {
+            // scheduleAtFixedRate stops a task for good, with no log, if it throws once.
+            CohesionCsvExporter failingExporter = mock(CohesionCsvExporter.class);
+            doThrow(new IllegalStateException("disk full")).when(failingExporter)
+                    .record(anyLong(), anyDouble(), anyDouble());
+            ScheduledExecutorService mockExecutor = mock(ScheduledExecutorService.class);
+            var testLoop = new SimulationLoop(world, CONFIG, DIAGNOSTICS, mockExecutor, failingExporter);
+            ArgumentCaptor<Runnable> tickCaptor = ArgumentCaptor.forClass(Runnable.class);
+            testLoop.start();
+            verify(mockExecutor).scheduleAtFixedRate(tickCaptor.capture(), anyLong(), anyLong(), any());
+            Runnable scheduledTick = tickCaptor.getValue();
+
+            assertDoesNotThrow(() -> {
+                for (int tick = 0; tick < SimulationLoop.TICK_RATE_HZ; tick++) scheduledTick.run();
+            });
+        }
+    }
 }

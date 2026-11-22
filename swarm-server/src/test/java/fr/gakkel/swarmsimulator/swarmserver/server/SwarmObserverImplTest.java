@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.ScheduledExecutorService;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -70,5 +71,17 @@ class SwarmObserverImplTest {
         impl.broadcast();
 
         verify(mockObserver, never()).onNext(any());
+    }
+
+    @Test
+    void broadcast_whenBuildingTheStateThrows_doesNotPropagateTheException() {
+        // scheduleAtFixedRate stops a task for good, with no log, if it throws once.
+        World world = new World(100, 100, 50);
+        SwarmObserverImpl failingImpl = new SwarmObserverImpl(world, () -> {
+            throw new IllegalStateException("metric not ready");
+        }, mockExecutor);
+        failingImpl.subscribeWorldState(SubscribeRequest.newBuilder().setClientId("unity").build(), mockObserver);
+
+        assertDoesNotThrow(failingImpl::broadcast);
     }
 }

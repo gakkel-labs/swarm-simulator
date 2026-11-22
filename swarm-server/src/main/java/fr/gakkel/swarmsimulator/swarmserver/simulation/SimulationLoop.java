@@ -84,7 +84,7 @@ public class SimulationLoop {
         LOG.info("Simulation demarree — {}Hz | {} agents | maxSpeed={} | perceptionRadius={}",
                 TICK_RATE_HZ, world.agentCount(), config.maxSpeed(), config.perceptionRadius());
         long periodMs = 1000L / TICK_RATE_HZ;
-        executor.scheduleAtFixedRate(this::tick, 0, periodMs, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(this::tickSafely, 0, periodMs, TimeUnit.MILLISECONDS);
     }
 
     public void stop() throws InterruptedException {
@@ -94,6 +94,16 @@ public class SimulationLoop {
             executor.shutdownNow();
         }
         if (csvExporter != null) csvExporter.close();
+    }
+
+    // scheduleAtFixedRate cancels a task for good, without any log, the first time it throws.
+    // Logging and going on keeps the simulation alive and makes the problem visible.
+    private void tickSafely() {
+        try {
+            tick();
+        } catch (RuntimeException exception) {
+            LOG.error("Simulation tick {} failed, going on with the next tick", tickCount, exception);
+        }
     }
 
     // snapshot steer forces before applying — parallel Boids update, all forces
@@ -121,8 +131,11 @@ public class SimulationLoop {
                 newPosition = world.clamp(newPosition);
                 agent.update(newPosition, newVelocity);
             }
-            Vector3D centroid = computeCentroid(agents);
-            cohesionMetric.record(computePositionStandardDeviation(agents, centroid));
+            // An empty swarm (all drones eaten) has no centroid: skip it instead of recording NaN.
+            if (!agents.isEmpty()) {
+                Vector3D centroid = computeCentroid(agents);
+                cohesionMetric.record(computePositionStandardDeviation(agents, centroid));
+            }
 
             Predator predator = world.predator();
             if (predator != null) {

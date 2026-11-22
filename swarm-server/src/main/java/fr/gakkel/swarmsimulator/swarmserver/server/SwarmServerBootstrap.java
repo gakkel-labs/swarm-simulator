@@ -70,6 +70,11 @@ public final class SwarmServerBootstrap {
         simulation.stop();
     }
 
+    /** The port the server listens on: the real one when the settings asked for port 0 (any free port). */
+    public int port() {
+        return grpcServer.getPort();
+    }
+
     public void awaitTermination() throws InterruptedException {
         grpcServer.awaitTermination();
     }

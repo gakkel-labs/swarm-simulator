@@ -1,19 +1,20 @@
 package fr.gakkel.swarmsimulator.swarmserver.server;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Motion;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
-import fr.gakkel.swarmsimulator.swarmserver.domain.Motion;
-import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import io.gakkel.swarm.contracts.v1.AgentState;
 import io.gakkel.swarm.contracts.v1.AgentType;
 import io.gakkel.swarm.contracts.v1.PredatorState;
 import io.gakkel.swarm.contracts.v1.SearchStatus;
 import io.gakkel.swarm.contracts.v1.TargetFoundEvent;
+import io.gakkel.swarm.contracts.v1.Vec3;
 import io.gakkel.swarm.contracts.v1.WorldState;
 
 import java.time.Clock;
@@ -77,8 +78,9 @@ public class WorldStateBuilder {
 
     // The search area goes from the surface (server Y = 0) down to Y = -height. Its far corner,
     // converted like any point, gives the size along North, East and Down (all positive).
-    private io.gakkel.swarm.contracts.v1.Vec3 searchAreaSizeInNed() {
-        return CoordinateConversions.serverToNed(new Vector3D(world.width(), -world.height(), world.depth()));
+    private Vec3 searchAreaSizeInNed() {
+        Vector3D farCorner = new Vector3D(world.width(), -world.height(), world.depth());
+        return CoordinateConversions.serverToNed(farCorner);
     }
 
     AgentState toAgentState(Agent agent) {

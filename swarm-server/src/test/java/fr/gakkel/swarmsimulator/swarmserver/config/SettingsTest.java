@@ -12,6 +12,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SettingsTest {
 
@@ -126,6 +127,14 @@ class SettingsTest {
                 props("swarm.predator.eat-radius", "2.5"));
 
         assertEquals(new PredatorConfig(4.5, 2.5), settings.predator());
+    }
+
+    @Test
+    void predator_zeroSpeed_throwsWithTheVariableName() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> load(Map.of("SWARM_PREDATOR_SPEED", "0"), new Properties()));
+
+        assertTrue(exception.getMessage().contains("SWARM_PREDATOR_SPEED"));
     }
 
     @Test

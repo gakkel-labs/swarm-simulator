@@ -42,7 +42,8 @@ class PredatorTest {
     @Test
     void predatorTryEat_whenInEatRadius_removesAgentFromWorld() {
         var predator = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10 + PredatorConfig.defaults().eatRadius() * 0.5, -50, 25));
+        double eatRadius = PredatorConfig.defaults().eatRadius();
+        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10 + eatRadius * 0.5, -50, 25));
         world.addAgent(agent);
 
         Agent eaten = predator.tryEat(world);
@@ -54,7 +55,8 @@ class PredatorTest {
     @Test
     void predatorTryEat_whenOutsideEatRadius_returnsNull() {
         var predator = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10 + PredatorConfig.defaults().eatRadius() * 2, -50, 25));
+        double eatRadius = PredatorConfig.defaults().eatRadius();
+        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10 + eatRadius * 2, -50, 25));
         world.addAgent(agent);
 
         Agent eaten = predator.tryEat(world);
@@ -81,7 +83,9 @@ class PredatorTest {
                 new PredatorConfig(3.0, 5.0));
         world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(14, -50, 25)));
 
-        assertNotNull(predator.tryEat(world));
+        Agent eaten = predator.tryEat(world);
+
+        assertNotNull(eaten);
     }
 
     @Test

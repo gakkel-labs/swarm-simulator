@@ -38,10 +38,18 @@ public final class SwarmServerBootstrap {
     }
 
     public static SwarmServerBootstrap create(Settings settings) {
+        return create(settings, createCsvExporter());
+    }
+
+    /**
+     * Same as {@link #create(Settings)} with a chosen cohesion CSV exporter; {@code null} writes
+     * no CSV file (useful in tests).
+     */
+    public static SwarmServerBootstrap create(Settings settings, CohesionCsvExporter csvExporter) {
         SimulationLoop.Wiring wiring = SimulationLoop.wire(
                 settings.agentCount(), settings.worldWidth(), settings.worldHeight(), settings.worldDepth(),
                 settings.boids(), settings.diagnostics(), settings.predator(), settings.seed(),
-                singleDaemonThreadExecutor("sim-loop"), createCsvExporter());
+                singleDaemonThreadExecutor("sim-loop"), csvExporter);
         World world = wiring.world();
         SimulationLoop simulation = wiring.loop();
 
@@ -70,7 +78,7 @@ public final class SwarmServerBootstrap {
         simulation.stop();
     }
 
-    /** The port the server listens on: the real one when the settings asked for port 0 (any free port). */
+    /** The port the server listens on (the real one when the settings asked for port 0). */
     public int port() {
         return grpcServer.getPort();
     }

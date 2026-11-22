@@ -47,6 +47,7 @@ public class SimulationLoop {
     private final Random rng;
 
     private int tickCount = 0;
+    private int consecutiveFailedTicks = 0;
 
     public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
                           ScheduledExecutorService executor) {
@@ -99,11 +100,21 @@ public class SimulationLoop {
 
     // scheduleAtFixedRate cancels a task for good, without any log, the first time it throws.
     // Logging and going on keeps the simulation alive and makes the problem visible.
+    // A failure that repeats on each tick would print 30 stack traces per second: the first one
+    // has the full stack trace, then one short line per second until a tick succeeds again.
     private void tickSafely() {
         try {
             tick();
+            consecutiveFailedTicks = 0;
         } catch (RuntimeException exception) {
-            LOG.error("Simulation tick {} failed, going on with the next tick", tickCount, exception);
+            consecutiveFailedTicks++;
+            if (consecutiveFailedTicks == 1) {
+                LOG.error("Simulation tick {} failed, going on with the next tick", tickCount,
+                        exception);
+            } else if (consecutiveFailedTicks % TICK_RATE_HZ == 0) {
+                LOG.error("Simulation ticks still failing ({} in a row): {}", consecutiveFailedTicks,
+                        exception.toString());
+            }
         }
     }
 
@@ -288,10 +299,11 @@ public class SimulationLoop {
      * {@code createWorld} primitive or the per-stream RNGs directly.
      */
     public static Wiring wire(int agentCount, double width, double height, double depth,
-                              BoidsConfig boids, DiagnosticsConfig diagnostics, PredatorConfig predator,
-                              long masterSeed, ScheduledExecutorService executor,
-                              CohesionCsvExporter csvExporter) {
-        World world = createWorld(agentCount, width, height, depth, predator, new Random(masterSeed));
+                              BoidsConfig boids, DiagnosticsConfig diagnostics,
+                              PredatorConfig predator, long masterSeed,
+                              ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
+        World world = createWorld(agentCount, width, height, depth, predator,
+                new Random(masterSeed));
         SimulationLoop loop = new SimulationLoop(world, boids, diagnostics, executor, csvExporter,
                 new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
         return new Wiring(world, loop);
@@ -337,7 +349,8 @@ public class SimulationLoop {
         world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
         world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
         Vector3D predatorStart = new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth);
-        world.setPredator(new Predator(UUID.randomUUID(), predatorStart, Vector3D.ZERO, predatorConfig));
+        world.setPredator(
+                new Predator(UUID.randomUUID(), predatorStart, Vector3D.ZERO, predatorConfig));
         return world;
     }
 }

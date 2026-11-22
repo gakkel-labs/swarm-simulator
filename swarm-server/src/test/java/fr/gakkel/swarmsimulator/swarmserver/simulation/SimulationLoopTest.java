@@ -443,14 +443,17 @@ class SimulationLoopTest {
     class Robustness {
 
         @Test
-        void tick_withEmptySwarm_keepsCohesionSpreadANumber() {
+        void tick_withEmptySwarm_keepsTheLastSpreadInsteadOfNaN() {
             // All drones can be eaten by the predator: the swarm is empty until they respawn.
-            var emptyWorld = new World(100, 100, 50);
-            var emptyLoop = new SimulationLoop(emptyWorld, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
+            // Design choice: an empty swarm has no spread to measure, so the last value is kept.
+            loop.tick();
+            double spreadWithDrones = loop.cohesionSpreadM();
+            for (Agent agent : List.copyOf(world.agents())) world.removeAgent(agent);
 
-            emptyLoop.tick();
+            loop.tick();
 
-            assertFalse(Double.isNaN(emptyLoop.cohesionSpreadM()), "spread must not be NaN");
+            assertTrue(spreadWithDrones > 0, "the swarm of 10 drones has a spread");
+            assertEquals(spreadWithDrones, loop.cohesionSpreadM(), 1e-12);
         }
 
         @Test

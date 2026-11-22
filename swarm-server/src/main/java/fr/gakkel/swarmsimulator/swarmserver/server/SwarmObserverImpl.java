@@ -28,12 +28,13 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     private final Set<ServerCallStreamObserver<WorldState>> subscribers = ConcurrentHashMap.newKeySet();
     private final ScheduledExecutorService broadcaster;
 
-    /** Builds the service without sending anything yet: call {@link #start()} to begin the stream. */
+    /** Builds the service without sending anything yet: {@link #start()} begins the stream. */
     public SwarmObserverImpl(World world, DoubleSupplier cohesionSpreadM, ScheduledExecutorService executor) {
         this.worldStateBuilder = new WorldStateBuilder(world, cohesionSpreadM);
         this.broadcaster = Objects.requireNonNull(executor, "executor");
     }
 
+    /** Starts sending the world state to every client, {@value #STREAM_RATE_HZ} times per second. */
     public void start() {
         broadcaster.scheduleAtFixedRate(this::broadcast, 0, 1000L / STREAM_RATE_HZ, TimeUnit.MILLISECONDS);
     }
@@ -70,14 +71,22 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
         }
     }
 
-    /** Stops the broadcaster and closes the stream of each client. */
+    /**
+     * Closes the stream of each client, then stops the broadcaster. A StreamObserver is not
+     * thread-safe, so the streams are closed on the broadcaster thread, after the last broadcast,
+     * never at the same time as an onNext.
+     */
     public void stop() {
+        broadcaster.execute(this::closeAllClientStreams);
         broadcaster.shutdown();
+    }
+
+    private void closeAllClientStreams() {
         for (ServerCallStreamObserver<WorldState> clientStream : subscribers) {
             try {
                 clientStream.onCompleted();
             } catch (RuntimeException exception) {
-                LOG.debug("could not close a client stream", exception);
+                LOG.warn("could not close a client stream", exception);
             }
         }
         subscribers.clear();

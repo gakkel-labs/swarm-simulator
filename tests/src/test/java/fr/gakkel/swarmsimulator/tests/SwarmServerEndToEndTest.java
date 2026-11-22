@@ -41,10 +41,13 @@ class SwarmServerEndToEndTest {
     void startServer() throws Exception {
         // Port 0: the system picks a free port, so the test never clashes with a running server.
         Settings settings = new Settings(0, DRONE_COUNT, 100, 100, 50, 42L,
-                BoidsConfig.builder().build(), DiagnosticsConfig.builder().build(), PredatorConfig.defaults());
-        server = SwarmServerBootstrap.create(settings);
+                BoidsConfig.builder().build(), DiagnosticsConfig.builder().build(),
+                PredatorConfig.defaults());
+        server = SwarmServerBootstrap.create(settings, null); // null: no metrics CSV file
         server.start();
-        channel = ManagedChannelBuilder.forAddress("localhost", server.port()).usePlaintext().build();
+        channel = ManagedChannelBuilder.forAddress("localhost", server.port())
+                .usePlaintext()
+                .build();
     }
 
     @AfterEach

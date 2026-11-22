@@ -80,7 +80,8 @@ public record Settings(
         LOG.info("Settings - port={} | agents={} | world={}x{}x{} | seed={}",
                 port, agentCount, worldWidth, worldHeight, worldDepth, seed);
 
-        return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed, boids, diagnostics, predator);
+        return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed,
+                boids, diagnostics, predator);
     }
 
     private static BoidsConfig resolveBoids(Map<String, String> env, Properties props) {
@@ -113,10 +114,16 @@ public record Settings(
 
     private static PredatorConfig resolvePredator(Map<String, String> env, Properties props) {
         PredatorConfig defaults = PredatorConfig.defaults();
-        double speed = doubleValue(env, props, "SWARM_PREDATOR_SPEED", "swarm.predator.speed", defaults.speed());
-        double eatRadius = doubleValue(env, props, "SWARM_PREDATOR_EAT_RADIUS", "swarm.predator.eat-radius",
-                defaults.eatRadius());
-        return new PredatorConfig(speed, eatRadius);
+        double speed = doubleValue(env, props, "SWARM_PREDATOR_SPEED", "swarm.predator.speed",
+                defaults.speed());
+        double eatRadius = doubleValue(env, props, "SWARM_PREDATOR_EAT_RADIUS",
+                "swarm.predator.eat-radius", defaults.eatRadius());
+        try {
+            return new PredatorConfig(speed, eatRadius);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("SWARM_PREDATOR_SPEED and SWARM_PREDATOR_EAT_RADIUS "
+                    + "must be positive: " + exception.getMessage(), exception);
+        }
     }
 
     /**

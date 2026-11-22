@@ -7,7 +7,8 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
-import java.util.function.DoubleSupplier;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Motion;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import io.gakkel.swarm.contracts.v1.AgentState;
 import io.gakkel.swarm.contracts.v1.AgentType;
 import io.gakkel.swarm.contracts.v1.PredatorState;
@@ -15,7 +16,9 @@ import io.gakkel.swarm.contracts.v1.SearchStatus;
 import io.gakkel.swarm.contracts.v1.TargetFoundEvent;
 import io.gakkel.swarm.contracts.v1.WorldState;
 
+import java.time.Clock;
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 
 /**
  * Converts the in-memory {@link World} snapshot into the gRPC {@link WorldState} message.
@@ -26,15 +29,23 @@ public class WorldStateBuilder {
 
     private final World world;
     private final DoubleSupplier cohesionSpreadM;
+    private final Clock clock;
 
     public WorldStateBuilder(World world, DoubleSupplier cohesionSpreadM) {
+        this(world, cohesionSpreadM, Clock.systemUTC());
+    }
+
+    /** The clock is injectable so a test can check the timestamp of a frame. */
+    public WorldStateBuilder(World world, DoubleSupplier cohesionSpreadM, Clock clock) {
         this.world = Objects.requireNonNull(world, "world");
         this.cohesionSpreadM = Objects.requireNonNull(cohesionSpreadM, "cohesionSpreadM");
+        this.clock = Objects.requireNonNull(clock, "clock");
     }
 
     public WorldState build() {
         WorldState.Builder worldStateBuilder = WorldState.newBuilder()
-                .setTimestampUnixMs(System.currentTimeMillis())
+                .setTimestampUnixMs(clock.millis())
+                .setSearchAreaSizeM(searchAreaSizeInNed())
                 .setSensorRadiusM((float) SimulationConstants.SENSOR_RADIUS_M)
                 .setCohesionSpreadM((float) cohesionSpreadM.getAsDouble());
         for (Agent agent : world.agents()) {
@@ -64,20 +75,28 @@ public class WorldStateBuilder {
         return worldStateBuilder.build();
     }
 
+    // The search area goes from the surface (server Y = 0) down to Y = -height. Its far corner,
+    // converted like any point, gives the size along North, East and Down (all positive).
+    private io.gakkel.swarm.contracts.v1.Vec3 searchAreaSizeInNed() {
+        return CoordinateConversions.serverToNed(new Vector3D(world.width(), -world.height(), world.depth()));
+    }
+
     AgentState toAgentState(Agent agent) {
+        Motion motion = agent.motion(); // one read: position and velocity of the same step
         return AgentState.newBuilder()
                 .setId(agent.id().toString())
                 .setType(toProtoType(agent.type()))
-                .setPositionXyz(CoordinateConversions.serverToNed(agent.position()))
-                .setVelocityMps(CoordinateConversions.serverToNed(agent.velocity()))
+                .setPositionXyz(CoordinateConversions.serverToNed(motion.position()))
+                .setVelocityMps(CoordinateConversions.serverToNed(motion.velocity()))
                 .build();
     }
 
     PredatorState toPredatorState(Predator predator) {
+        Motion motion = predator.motion(); // one read: position and velocity of the same step
         return PredatorState.newBuilder()
-                .setId("predator-0")
-                .setPositionXyz(CoordinateConversions.serverToNed(predator.position()))
-                .setVelocityMps(CoordinateConversions.serverToNed(predator.velocity()))
+                .setId(predator.id().toString())
+                .setPositionXyz(CoordinateConversions.serverToNed(motion.position()))
+                .setVelocityMps(CoordinateConversions.serverToNed(motion.velocity()))
                 .build();
     }
 

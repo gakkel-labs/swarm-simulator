@@ -209,3 +209,18 @@ The HUD Canvas Scaler was set to **Constant Pixel Size**, so the UI kept a fixed
 Two related editor gotchas when verifying this:
 - **Test the Game view at a fixed `1920×1080`, not *Free Aspect*.** Free Aspect re-scales the UI live as you drag the window, which looks like elements "disappearing" — a real build behaves like a fixed resolution, not like Free Aspect.
 - **Component changes made in Play mode are discarded on exit.** Set the Canvas Scaler in **Edit mode**, then save the scene (`Ctrl+S`).
+
+## 9. Cameras and controls
+
+`CameraController` (on the Main Camera) offers three cameras. The HUD shows which one is on.
+
+| Key | Action |
+|-----|--------|
+| **F** | Switch between the **overview** (orbits around the swarm centre) and the **follow camera** |
+| **N** / **Shift+N** | Follow camera: next / previous drone |
+| **Tab** | Free camera (**W A S D** to move); Tab again goes back to the overview |
+| **R** | Reset the zoom (and the angle in the overview) |
+| Right mouse button | Turn the view (overview and free camera) |
+| Mouse wheel | Zoom |
+
+The follow camera stays **behind and slightly above** the drone (third person), so its neighbours and the Boids behaviour stay visible. It starts on the drone closest to the swarm centre. Position and turns are smoothed (`followPositionSmoothTime`, `followVerticalSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` in the Inspector) so the image does not shake when the drone changes direction. The camera never goes below the seabed.

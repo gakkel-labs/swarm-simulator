@@ -59,6 +59,7 @@ namespace Gakkel.Swarm.Unity
         private readonly Dictionary<int, GameObject> _groupCentroidSpheres = new();
         private readonly List<GameObject> _obstacles = new();
         private readonly Dictionary<string, Vector3> _agentPositions = new();
+        private readonly Dictionary<string, Vector3> _droneVelocities = new();
         private readonly Vector3[] _velocityLinePositions = new Vector3[VelocityArrowPointCount];
 
         private Material _isolatedMaterial;
@@ -193,8 +194,12 @@ namespace Gakkel.Swarm.Unity
             UpdateCentroid();
 
             _agentPositions.Clear();
+            _droneVelocities.Clear();
             foreach (var agentState in worldState.Agents)
-                _agentPositions[agentState.Id] = CoordinateUtils.NedToUnity(agentState.PositionXyz);
+            {
+                _agentPositions[agentState.Id]  = CoordinateUtils.NedToUnity(agentState.PositionXyz);
+                _droneVelocities[agentState.Id] = CoordinateUtils.NedToUnity(agentState.VelocityMps);
+            }
             var groupIds   = GroupDetector.Compute(_agentPositions, groupingRadius);
             var groupSizes = ComputeGroupSizes(groupIds);
 
@@ -216,6 +221,18 @@ namespace Gakkel.Swarm.Unity
         }
 
         public Vector3 GetCentroid() => _centroid;
+
+        // Ids of the drones shown right now (used by the follow camera to pick a drone).
+        public IEnumerable<string> DroneIds => _agentPositions.Keys;
+
+        // Position and velocity of one drone, in Unity coordinates. False if the drone is gone.
+        public bool TryGetDroneMotion(string droneId, out Vector3 position, out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            return _agentPositions.TryGetValue(droneId, out position)
+                && _droneVelocities.TryGetValue(droneId, out velocity);
+        }
+
         public int AgentCount      => _agents.Count;
         public int ObstacleCount   => _obstacles.Count;
         public float CohesionSpreadM { get; private set; }

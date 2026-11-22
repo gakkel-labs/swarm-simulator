@@ -1,106 +1,143 @@
+# Architecture — simulateur d'essaim Gakkel
 
-# Architecture — Gakkel Swarm Simulator
+[English](architecture.md)
 
-> Vue d'ensemble du flux backend Java ↔ Unity pour la v0.1 (MVP SAR).
-> Doc bilingue : narration en français, identifiants/composants en anglais.
+> Comment le backend Java et la vue 3D Unity travaillent ensemble aujourd'hui (fin de l'étape 1).
 
 ---
 
 ## 1. Vue d'ensemble
 
-Le simulateur est découpé en deux processus indépendants qui communiquent par **gRPC** :
+Deux processus indépendants parlent par **gRPC** :
 
-- **Backend Java** : autorité de la simulation. Tient l'état du monde, exécute les règles Boids à 30 Hz, expose le `WorldState` en streaming à 20 Hz.
-- **Client Unity** : pur consommateur visuel. Reçoit le `WorldState`, déplace des capsules grises sur le main thread. Renvoie ponctuellement des commandes opérateur (`PlaceTarget`).
+- **Backend Java** (`swarm-server`) : la seule autorité sur la simulation. Il tient le monde,
+  applique les règles Boids à 30 Hz et envoie un `WorldState` 20 fois par seconde.
+- **Vue 3D Unity** (`unity-client`) : affichage seulement. Elle reçoit le `WorldState` et
+  déplace les drones à l'écran. Elle envoie une seule commande : `PlaceTarget`, quand l'opérateur clique.
 
 ```mermaid
 flowchart LR
     subgraph Backend["Backend Java (swarm-server)"]
-        SIM[SimulationLoop<br/>30 Hz tick]
-        WORLD[(World<br/>agents, obstacles,<br/>predator, target)]
-        BCAST[SwarmObserverImpl<br/>broadcaster 20 Hz]
-        CTRL[SimulationControlImpl<br/>PlaceTarget RPC]
+        SIM[SimulationLoop<br/>tick 30 Hz]
+        WORLD[(World<br/>drones, obstacles,<br/>danger, cible)]
+        BCAST[SwarmObserverImpl<br/>diffusion 20 Hz]
+        CTRL[SimulationControlImpl<br/>RPC PlaceTarget]
         SIM -->|écrit| WORLD
         WORLD -->|lit| BCAST
-        CTRL -->|mute| WORLD
+        CTRL -->|pose la cible| WORLD
     end
 
-    subgraph Unity["Unity Client"]
-        RECV[WorldStateReceiver<br/>background Task]
+    subgraph Unity["Vue 3D Unity"]
+        RECV[WorldStateReceiver<br/>Task en arrière-plan]
         DISP[MainThreadDispatcher<br/>ConcurrentQueue]
         VIZ[SwarmVisualizer<br/>+ Target/PredatorRenderer]
+        PLACE[TargetPlacer<br/>clic gauche]
         RECV -->|Enqueue| DISP
-        DISP -->|coroutine frame| VIZ
+        DISP -->|à chaque frame| VIZ
     end
 
     BCAST ==>|stream WorldState 20 Hz| RECV
-    VIZ -.->|PlaceTarget unaire| CTRL
+    PLACE -.->|PlaceTarget unaire| CTRL
 ```
 
-Pourquoi ce découpage ? Voir [ADR-0001 — gRPC streaming](adr/0001-grpc-streaming.fr.md) pour le choix du transport, [ADR-0002 — pas de Spring Boot](adr/0002-no-spring-boot-for-mvp.fr.md) pour la frugalité du backend, et [ADR-0003 — assets 3D minimaux](adr/0003-minimal-3d-assets.fr.md) pour le parti pris visuel.
+Pourquoi ce découpage : [ADR-0001 — gRPC streaming](adr/0001-grpc-streaming.fr.md),
+[ADR-0002 — pas de Spring Boot](adr/0002-no-spring-boot-for-mvp.fr.md),
+[ADR-0003 — assets 3D minimaux](adr/0003-minimal-3d-assets.fr.md) et
+[ADR-0006 — vue détaillée et vue simple](adr/0006-detailed-and-simple-view.fr.md).
+
+Le poste de contrôle de l'opérateur (web) vivra dans son propre dépôt,
+[mission-console](https://github.com/gakkel-labs/mission-console), à partir de l'étape 4
+([ADR-0005](adr/0005-mission-console-replaces-fleet-dashboard.fr.md)).
 
 ---
 
-## 2. Structure modulaire
+## 2. Découpage en modules
 
 ### Backend — Maven multi-modules
 
-Racine `pom.xml` (`fr.gakkel.swarmsimulator:swarm-simulator:0.1-SNAPSHOT`, packaging `pom`) avec 3 modules :
+`pom.xml` racine (`fr.gakkel.swarmsimulator:swarm-simulator:0.1-SNAPSHOT`, packaging `pom`) avec 3 modules :
 
-| Module          | Rôle                                               | Dépend de    |
-|-----------------|----------------------------------------------------|--------------|
-| `contracts/`    | Fichiers `.proto` + stubs Java générés (proto3)    | —            |
-| `swarm-server/` | Serveur gRPC, domaine, boucle de simulation Boids  | `contracts`  |
-| `tests/`        | Tests d'intégration end-to-end                     | `swarm-server` |
+| Module          | Rôle                                               | Dépend de      |
+|-----------------|----------------------------------------------------|----------------|
+| `contracts/`    | Fichiers `.proto` + stubs Java générés (proto3)    | —              |
+| `swarm-server/` | Serveur gRPC, domaine, boucle de simulation Boids  | `contracts`    |
+| `tests/`        | Tests d'intégration de bout en bout (vide pour l'instant) | `swarm-server` |
 
-Versions clés gérées dans la racine : Java **21**, gRPC **1.81.0**, Protobuf **3.25.5**, JUnit **5.10.2**, Mockito **5.23.0**.
+Versions principales dans le POM racine : Java **21**, gRPC **1.81.0**, Protobuf **3.25.5**,
+JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 
 ### Backend — packages
 
 ```
 fr.gakkel.swarmsimulator.swarmserver
-├── domain         # Agent, AgentType, World, Vector3D, Predator, Target, Obstacle, BoidsConfig, BoidsRules
+├── config         # Settings : lit variables d'env → application.properties → défauts, une fois au démarrage
+├── domain         # Agent, AgentType, World, Vector3D, Predator (le danger), Target, Obstacle,
+│                  # TriggerSource, BoidsConfig, BoidsRules
 ├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician,
-│                  # CohesionMetric (fenêtre glissante), CohesionCsvExporter
-└── server         # SwarmServer (main), SwarmServerBootstrap (wiring),
-                   # SwarmObserverImpl, SimulationControlImpl, PingServiceImpl,
-                   # WorldStateBuilder
+│                  # DiagnosticsConfig, CohesionMetric (dispersion sur fenêtre glissante), CohesionCsvExporter
+└── server         # SwarmServer (main), SwarmServerBootstrap (assemblage), SwarmObserverImpl,
+                   # SimulationControlImpl, PingServiceImpl, WorldStateBuilder, CoordinateConversions
 ```
 
-### Unity — scripts principaux
+`Predator` est le nom de code du **danger** (voir le [glossaire](produit/glossaire.fr.md)) ;
+il sera renommé.
+
+### Unity — scripts
 
 ```
-unity-client/Assets/Scripts/
-├── Grpc/
-│   ├── WorldStateReceiver.cs       # ouvre le stream, retry auto
-│   └── MainThreadDispatcher.cs     # ConcurrentQueue<Action>, coroutine par frame
-└── Visualization/
-    ├── SwarmVisualizer.cs          # GameObjects agents (capsules)
-    ├── TargetRenderer.cs           # sphère cible
-    ├── PredatorRenderer.cs         # menace
-    ├── SimulationUI.cs             # HUD texte
-    └── CameraController.cs         # caméra runtime
+unity-client/Assets/
+├── Scripts/
+│   ├── Grpc/
+│   │   ├── WorldStateReceiver.cs     # ouvre le stream, réessaie après 3 s si le serveur est arrêté
+│   │   ├── MainThreadDispatcher.cs   # ConcurrentQueue<Action>, vidée à chaque frame
+│   │   ├── TargetPlacer.cs           # clic gauche → PlaceTarget
+│   │   ├── GrpcConnectionTest.cs     # vérifie que le serveur répond
+│   │   └── Generated/                # code C# créé par contracts/generate-csharp.ps1 (ne pas modifier)
+│   ├── Visualization/
+│   │   ├── SwarmVisualizer.cs        # un GameObject par drone ; touches V et B
+│   │   ├── DetailedView.cs           # interrupteur commun vue détaillée / simple (ADR-0006)
+│   │   ├── TargetRenderer.cs         # la cible (épave)
+│   │   ├── PredatorRenderer.cs       # le danger
+│   │   ├── HydrothermalChimney.cs    # obstacles en vue détaillée
+│   │   ├── SeabedTerrain.cs          # vrai fond marin à partir de la bathymétrie IBCAO
+│   │   ├── SeabedRocks.cs            # rochers sur le fond
+│   │   ├── UnderwaterAtmosphere.cs   # brouillard, lumière, bloom
+│   │   ├── CausticsTexture.cs        # reflets de lumière sur le fond
+│   │   ├── MarineSnow.cs             # particules dans l'eau
+│   │   ├── GroupDetector.cs          # trouve les groupes de drones pour le HUD
+│   │   ├── SimulationUI.cs           # HUD texte
+│   │   ├── CameraController.cs       # caméras vue d'ensemble, suivi et libre
+│   │   └── CoordinateUtils.cs        # le seul endroit C# qui échange les axes
+│   └── Rotator.cs
+└── Editor/
+    └── SeabedTextureImporter.cs      # réglages d'import des textures du fond
 ```
+
+La scène est `Assets/Scenes/SampleScene.unity`. Touches et caméras :
+[intégration Unity §9](03-unity-integration.fr.md#9-caméras-et-commandes).
+Données du fond : [bathymétrie du fond marin](04-seabed-bathymetry.fr.md).
 
 ---
 
 ## 3. Cycle de vie du backend
 
-`SwarmServer.main()` ([`SwarmServer.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/server/SwarmServer.java)) délègue tout le wiring à `SwarmServerBootstrap.create(port)` ([`SwarmServerBootstrap.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/server/SwarmServerBootstrap.java)).
+`SwarmServer.main()` lit les réglages (`Settings.load()`) et les donne à
+`SwarmServerBootstrap.create(settings)`, qui construit tout.
 
 ```mermaid
 flowchart TD
     MAIN[SwarmServer.main]
-    BOOT[SwarmServerBootstrap.create 50051]
-    W[World 100x100x50]
-    SIMEX[ScheduledExecutor sim-loop<br/>1 daemon thread]
-    SIM[SimulationLoop<br/>scheduleAtFixedRate 33 ms]
-    BCASTEX[ScheduledExecutor swarm-broadcaster<br/>1 daemon thread]
-    OBS[SwarmObserverImpl<br/>scheduleAtFixedRate 50 ms]
-    GRPC[gRPC ServerBuilder port 50051]
+    SET[Settings.load<br/>env → properties → défauts]
+    BOOT[SwarmServerBootstrap.create]
+    W[World 100 x 100 x 50<br/>20 drones, graine 42]
+    SIMEX[ScheduledExecutor sim-loop<br/>1 thread daemon]
+    SIM[SimulationLoop<br/>toutes les 33 ms]
+    BCASTEX[ScheduledExecutor swarm-broadcaster<br/>1 thread daemon]
+    OBS[SwarmObserverImpl<br/>toutes les 50 ms]
+    GRPC[gRPC ServerBuilder<br/>port 50051]
     HOOK[Runtime ShutdownHook]
 
-    MAIN --> BOOT
+    MAIN --> SET --> BOOT
     BOOT --> W
     BOOT --> SIMEX --> SIM --> W
     BOOT --> BCASTEX --> OBS --> W
@@ -112,61 +149,75 @@ flowchart TD
     MAIN --> HOOK
 ```
 
-Trois groupes de threads coexistent :
+Tous les réglages et leurs valeurs par défaut : [README — Configuration](../README.fr.md#configuration).
 
-1. **`sim-loop`** (1 thread daemon) — exécute `SimulationLoop.tick()` toutes les **33 ms** (TICK_RATE = 30 Hz). Écrit dans `World` (positions/vélocités des `Agent`).
-2. **`swarm-broadcaster`** (1 thread daemon) — exécute `SwarmObserverImpl.broadcast()` toutes les **50 ms** (STREAM_RATE = 20 Hz). Lit `World`, construit le proto via `WorldStateBuilder`, pousse `onNext()` à chaque subscriber.
-3. **Pool gRPC Netty** — gère les RPC entrants (`SubscribeWorldState`, `PlaceTarget`, `SendPing`).
+Trois groupes de threads travaillent en même temps :
 
-### Lecture/écriture concurrente du World
+1. **`sim-loop`** (1 thread daemon) exécute `SimulationLoop.tick()` toutes les **33 ms**
+   (`TICK_RATE_HZ = 30`). Il déplace les drones et le danger, et retire ou ajoute des drones.
+2. **`swarm-broadcaster`** (1 thread daemon) exécute `SwarmObserverImpl.broadcast()` toutes les
+   **50 ms** (`STREAM_RATE_HZ = 20`). Il lit le `World`, construit le message avec
+   `WorldStateBuilder` et l'envoie à chaque abonné.
+3. **Les threads gRPC** traitent les appels entrants (`SubscribeWorldState`, `PlaceTarget`, `SendPing`).
 
-L'état partagé est volontairement minimal et tolère le _read tearing_ entre champs (cohérence par champ, pas par snapshot) :
+### Partager le World entre les threads
 
-- `Agent.position` et `Agent.velocity` sont `volatile Vector3D` (réassignation atomique de la référence).
-- `World.predator` / `World.target` sont `volatile`.
-- `World.agents` / `World.obstacles` sont des `List` immutables construites à l'init.
+Pas de verrou. Chaque morceau d'état partagé utilise l'outil sûr le plus léger :
 
-Pas de `synchronized`, pas de `ReadWriteLock` : à 20 Hz un agent peut apparaître entre deux ticks avec une position et une vélocité d'instants légèrement différents — invisible à l'œil.
+- `World.agents` et `World.obstacles` sont des **`CopyOnWriteArrayList`** : un lecteur parcourt
+  toujours une copie stable, même si un drone est retiré au même moment.
+- `World.predator` et `World.target` sont `volatile`.
+- `Agent.position` et `Agent.velocity` sont des `volatile Vector3D` (un record immuable).
+- La détection de la cible utilise une `AtomicReference` : seul le premier drone gagne.
+
+Chaque drone est toujours entier, mais un `WorldState` peut mélanger des drones de deux ticks
+voisins. Cela ne se voit pas à 20 Hz. Détails et limites :
+[ADR-0008 — partager le World sans verrou](adr/0008-shared-world-concurrency.fr.md).
 
 ---
 
-## 4. Contrats gRPC
+## 4. Contrat gRPC
 
-Tous les `.proto` vivent dans [`contracts/src/main/proto/`](../contracts/src/main/proto/) — package `gakkel.swarm.v1`.
+Tous les fichiers `.proto` sont dans [`contracts/src/main/proto/`](../contracts/src/main/proto/).
+Référence complète : [contrat gRPC](02-grpc-contract.fr.md).
 
-### Services exposés
+| Service             | RPC                       | Type              | Rôle                                  | Package proto |
+|---------------------|---------------------------|-------------------|---------------------------------------|---------------|
+| `SwarmObserver`     | `SubscribeWorldState`     | server-streaming  | Pousser le `WorldState` à 20 Hz       | `gakkel.swarm.v1` |
+| `SimulationControl` | `PlaceTarget`             | unaire            | Placer la cible (voir ADR-0004)       | `gakkel.swarm.v1` |
+| `PingService`       | `SendPing`                | unaire            | Vérifier que le serveur répond        | `gakkel` |
 
-| Service             | RPC                       | Cardinalité       | Rôle                                |
-|---------------------|---------------------------|-------------------|-------------------------------------|
-| `SwarmObserver`     | `SubscribeWorldState`     | server-streaming  | Pousser `WorldState` à 20 Hz        |
-| `SimulationControl` | `PlaceTarget`             | unaire            | Placer la cible SAR (cf. ADR-0004)  |
-| `PingService`       | `SendPing`                | unaire            | Healthcheck                          |
-
-### Messages clés (`swarm_observer.proto`)
+Messages principaux (`swarm_observer.proto`) :
 
 ```
-Vec3            { float x, y, z }                          # NED (North-East-Down)
+Vec3            { float x, y, z }                          # NED, mètres
 AgentType       enum { UNSPECIFIED, EXPLORER, SPECIALIST, CARRIER }
-AgentState      { string id (UUID), AgentType type, Vec3 position, Vec3 velocity }
+AgentState      { string id (UUID), AgentType type, Vec3 position_xyz, Vec3 velocity_mps }
+Obstacle        { Vec3 position_xyz, float radius_m }
+PredatorState   { string id, Vec3 position_xyz, Vec3 velocity_mps }    # le danger
 WorldState      { int64 timestamp_unix_ms,
                   repeated AgentState agents,
-                  repeated ObstacleState obstacles,
+                  repeated Obstacle obstacles,
                   repeated PredatorState predators,
                   SearchStatus search_status,
-                  float sensor_radius_m }
+                  float sensor_radius_m,
+                  float cohesion_spread_m }
 SearchStatus    { bool target_placed, Vec3 target_position,
-                  float elapsed_sim_s, optional TargetFoundEvent found_event }
+                  float elapsed_sim_s, TargetFoundEvent found_event }
 ```
 
-### Remappage de coordonnées
+### Repères
 
-Le backend utilise un repère **NED** orienté terrain ; Unity utilise un repère **gauche Y-up**. La conversion se fait dans `WorldStateBuilder` ([`WorldStateBuilder.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/server/WorldStateBuilder.java)) au moment de sérialiser :
+Le backend, le réseau et Unity n'utilisent **pas** les mêmes axes :
 
-```
-server (x_north, y_east, z_down)  →  proto (x, y, z) = (z_down, x_north, -y_east)
-```
+| | X | Y | Z |
+|---|---|---|---|
+| Backend | Est | Haut | Nord |
+| Contrat (NED) | Nord | Est | Bas |
+| Unity | Est | Haut | Nord |
 
-Conséquence : **toutes les transformations de repère sont centralisées dans `WorldStateBuilder`**. Le domaine Java raisonne en NED, Unity ne voit que des `Vec3` déjà compatibles avec son monde.
+Chaque côté convertit à un seul endroit : `CoordinateConversions` en Java, `CoordinateUtils` en C#.
+Détails : [ADR-0007 — repères](adr/0007-coordinate-frames.fr.md).
 
 ---
 
@@ -174,62 +225,70 @@ Conséquence : **toutes les transformations de repère sont centralisées dans `
 
 ```mermaid
 sequenceDiagram
-    participant Exec as sim-loop executor
+    participant Exec as exécuteur sim-loop
     participant Loop as SimulationLoop
     participant Rules as BoidsRules
     participant World as World
-    participant Diag as FlockingDiagnostician
+    participant Danger as Predator (danger)
 
     loop toutes les 33 ms
         Exec->>Loop: tick()
-        Loop->>World: snapshot agents
-        Loop->>Rules: computeForces(agent, neighbors, predator)
-        Rules-->>Loop: cohesion + separation + alignment + flee
-        Loop->>World: agent.moveAndUpdate(force, dt)
-        Loop->>World: detect target found / predator catch
-        Loop->>Diag: tick++ (log toutes les 5 ticks)
+        Loop->>World: copie de la liste des drones
+        Loop->>Rules: steer(drone, voisins, monde) pour chaque drone
+        Rules-->>Loop: somme des 7 règles
+        Loop->>World: déplace chaque drone (vitesse max, obstacles, parois)
+        Loop->>Danger: mise à jour, essaie d'attraper un drone (retour après 5 s)
+        Loop->>World: vérifie la détection de la cible (rayon capteur 10 m)
+        Loop->>Loop: mesure de cohésion, CSV chaque seconde, diagnostic toutes les 5 s
     end
 ```
 
-Détails dans [`SimulationLoop.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/simulation/SimulationLoop.java) et [`BoidsRules.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/domain/BoidsRules.java).
+Toutes les forces sont calculées à partir de la même copie avant qu'un drone bouge : l'ordre
+des drones ne change pas le résultat. Détails : [`SimulationLoop.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/simulation/SimulationLoop.java)
+et les [règles Boids](01-boids-rules.fr.md).
 
 ---
 
-## 6. Le flux Unity (threading)
+## 6. Le côté Unity (threads)
 
-Unity impose que **seul le main thread touche aux `Transform`**. Le stream gRPC arrive sur un thread .NET du pool réseau — il faut un sas. Le pattern complet est documenté dans [`docs/notes-threading-grpc-unity.md`](notes-threading-grpc-unity.md) ; vue condensée :
+Unity ne laisse **que le thread principal** toucher à la scène. Le stream gRPC arrive sur un
+thread .NET en arrière-plan : il faut un sas. Le modèle complet :
+[intégration Unity](03-unity-integration.fr.md).
 
 ```mermaid
 sequenceDiagram
     participant Server as swarm-server
-    participant Net as .NET network thread
+    participant Net as thread .NET en arrière-plan
     participant Queue as ConcurrentQueue
-    participant Main as Unity main thread
+    participant Main as thread principal Unity
     participant Viz as SwarmVisualizer
 
     loop 20 Hz
-        Server-->>Net: WorldState (onNext)
+        Server-->>Net: WorldState
         Net->>Queue: Enqueue(() => OnWorldStateReceived(ws))
     end
 
-    loop chaque frame (~60 Hz)
-        Main->>Queue: Dequeue all
+    loop à chaque frame (~60 Hz)
+        Main->>Queue: exécute toutes les actions en attente
         Main->>Viz: OnWorldStateReceived(ws)
-        Viz->>Viz: update Transforms
+        Viz->>Viz: met à jour les Transform
     end
 ```
 
-À 20 Hz côté serveur et 60 fps côté Unity, on traite **~3 WorldState par frame** en moyenne. La queue absorbe le décalage et un retry automatique se déclenche après 3 s si le serveur tombe (`StatusCode.Unavailable`).
+Si le serveur s'arrête (`StatusCode.Unavailable`), le récepteur réessaie après 3 s.
 
 ---
 
-## 7. Récap des fréquences
+## 7. Fréquences
 
-| Boucle                                | Fréquence | Période  | Thread                     |
-|---------------------------------------|-----------|----------|----------------------------|
-| `SimulationLoop.tick`                 | 30 Hz     | 33 ms    | `sim-loop` (1 daemon)      |
+| Boucle                                | Fréquence | Période  | Thread                         |
+|---------------------------------------|-----------|----------|--------------------------------|
+| `SimulationLoop.tick`                 | 30 Hz     | 33 ms    | `sim-loop` (1 daemon)          |
 | `SwarmObserverImpl.broadcast`         | 20 Hz     | 50 ms    | `swarm-broadcaster` (1 daemon) |
-| Unity `MainThreadDispatcher.ProcessQueue` | 60 fps    | ~16 ms   | Unity main thread          |
+| Unity `MainThreadDispatcher`          | ~60 fps   | ~16 ms   | thread principal Unity         |
+
+Pour l'instant, la simulation suit l'horloge de l'ordinateur. Une horloge de simulation
+(`step(dt)`), nécessaire pour des exécutions rejouables, est prévue à l'étape 2.
 
 ---
 
@@ -238,6 +297,11 @@ sequenceDiagram
 - [ADR-0001 — gRPC streaming](adr/0001-grpc-streaming.fr.md)
 - [ADR-0002 — pas de Spring Boot pour le MVP](adr/0002-no-spring-boot-for-mvp.fr.md)
 - [ADR-0003 — assets 3D minimaux](adr/0003-minimal-3d-assets.fr.md)
-- [ADR-0004 — placement de cible déclenché opérateur](adr/0004-target-placement-operator-triggered.fr.md)
-- [Notes threading gRPC/Unity](notes-threading-grpc-unity.md)
-- [Snapshot tech debt 2026-05-25](tech-debt/tech-debt-2026-05-25.md)
+- [ADR-0004 — placement de cible déclenché par l'opérateur](adr/0004-target-placement-operator-triggered.fr.md)
+- [ADR-0005 — mission-console](adr/0005-mission-console-replaces-fleet-dashboard.fr.md)
+- [ADR-0006 — vue détaillée et vue simple](adr/0006-detailed-and-simple-view.fr.md)
+- [ADR-0007 — repères](adr/0007-coordinate-frames.fr.md)
+- [ADR-0008 — partager le World sans verrou](adr/0008-shared-world-concurrency.fr.md)
+- [Règles Boids](01-boids-rules.fr.md) · [Contrat gRPC](02-grpc-contract.fr.md) ·
+  [Intégration Unity](03-unity-integration.fr.md) · [Bathymétrie du fond marin](04-seabed-bathymetry.fr.md)
+- [Dette technique, 2026-11-22](tech-debt/tech-debt-2026-11-22.fr.md)

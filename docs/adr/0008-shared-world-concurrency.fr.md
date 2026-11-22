@@ -30,7 +30,7 @@ léger qui le rend sûr :
 |---|---|---|
 | `World.agents`, `World.obstacles` | `CopyOnWriteArrayList` | Beaucoup de lectures (à chaque tick, à chaque diffusion), peu d'écritures (un drone attrapé ou remis). Un lecteur parcourt toujours une copie stable. |
 | `World.predator`, `World.target` | champ `volatile` | Remplacés d'un bloc ; les lecteurs voient la référence la plus récente. |
-| Position et vitesse d'`Agent` / `Predator` | `volatile Vector3D` (record immuable) | Un lecteur ne voit jamais un vecteur à moitié écrit. |
+| Position et vitesse d'`Agent` / `Predator` | un seul `volatile Motion` (record immuable qui porte les deux vecteurs) | Un lecteur ne voit jamais un vecteur à moitié écrit, et la position et la vitesse viennent toujours du même tick. |
 | Détection de la `Target` | `AtomicReference` | Seul le premier drone qui détecte la cible gagne (compare-and-set). |
 | Résultats de `CohesionMetric`, `FlockingDiagnostician` | champ `volatile` | Écrits par `sim-loop`, lus par le diffuseur. |
 
@@ -41,8 +41,8 @@ Ce que cela garantit :
 - **Cohérence par élément** : chaque drone est soit dans la liste, soit absent, et chaque vecteur
   est entier.
 - **Pas de cohérence par photo** : un `WorldState` peut mélanger des drones du tick N et du
-  tick N+1, et la position et la vitesse d'un drone peuvent venir de deux ticks voisins. À 20 Hz
-  à l'écran, cela ne se voit pas.
+  tick N+1. Pour un même drone, la position et la vitesse vont toujours ensemble, car elles sont
+  lues d'un seul `Motion`. À 20 Hz à l'écran, le mélange entre drones ne se voit pas.
 
 ## Conséquences
 + Plus de plantage quand des drones partent et reviennent pendant une diffusion.

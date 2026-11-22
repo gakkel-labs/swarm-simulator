@@ -28,7 +28,7 @@ No `synchronized` and no lock. Each piece of shared state uses the lightest tool
 |---|---|---|
 | `World.agents`, `World.obstacles` | `CopyOnWriteArrayList` | Many reads (every tick, every broadcast), rare writes (a drone caught or respawned). A reader always walks a stable copy. |
 | `World.predator`, `World.target` | `volatile` field | Replaced as a whole; readers see the newest reference. |
-| `Agent` / `Predator` position and velocity | `volatile Vector3D` (immutable record) | A reader never sees a half-written vector. |
+| `Agent` / `Predator` position and velocity | one `volatile Motion` (immutable record holding both vectors) | A reader never sees a half-written vector, and position and velocity always come from the same tick. |
 | `Target` found record | `AtomicReference` | Only the first drone that detects the target wins (compare-and-set). |
 | `CohesionMetric`, `FlockingDiagnostician` results | `volatile` field | Written by `sim-loop`, read by the broadcaster. |
 
@@ -38,9 +38,9 @@ computes all forces from that copy, then moves the drones.
 What this gives:
 - **Per-item consistency**: each drone is either in the list or not, and each vector is
   whole.
-- **No snapshot consistency**: one `WorldState` can mix drones from tick N and tick N+1, and a
-  drone's position and velocity can come from two ticks next to each other. At 20 Hz on screen
-  this cannot be seen.
+- **No snapshot consistency**: one `WorldState` can mix drones from tick N and tick N+1. Inside one
+  drone, position and velocity always match, because they are read together from one `Motion`.
+  At 20 Hz on screen the mix between drones cannot be seen.
 
 ## Consequences
 + No crash when drones come and go during a broadcast.

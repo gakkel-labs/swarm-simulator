@@ -213,6 +213,8 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Water column, surface to seabed (m) |
 | `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | North–South size of the search area (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | RNG seed (`random` draws one and logs it) |
+| `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Danger speed (m/s), slower than the drones |
+| `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance at which the danger catches a drone (m) |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (per rule) | Boids weights and radii |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (per threshold) | Diagnostics thresholds |
 
@@ -238,7 +240,7 @@ after the danger), so two runs can drift apart over time. A simulation clock wit
 
 - **Backend** — Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
 - **Viewer** — Unity 6 (6000.4.6f1, URP), gRPC C# client.
-- **Tests** — JUnit 5, Mockito, AssertJ (about 175 unit tests, run by CI on every push).
+- **Tests** — JUnit 5, Mockito, AssertJ (about 200 unit tests and 3 end-to-end tests in `tests/`, run by CI on every push).
 
 ### Tests
 

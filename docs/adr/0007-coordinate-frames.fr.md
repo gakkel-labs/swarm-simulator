@@ -53,6 +53,9 @@ la dette technique.
 + Unity et le backend ont les mêmes axes : la conversion C# est le miroir de la conversion Java,
   et chacune est testée de son côté.
 + Un bug d'axes n'a que deux endroits où chercher.
++ La taille de la zone de recherche passe aussi en NED sur le réseau
+  (`WorldState.search_area_size_m`, convertie par `CoordinateConversions`) : Unity peut placer le
+  fond marin sans connaître les noms du backend.
 − Deux repères dans le projet au lieu d'un : un nouveau lecteur doit connaître le tableau ci-dessus.
 − Les noms « height » et « depth » du backend ne disent pas ce qu'ils sont, tant qu'ils ne sont pas renommés.
 

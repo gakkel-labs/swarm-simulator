@@ -217,6 +217,8 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Colonne d'eau, de la surface au fond (m) |
 | `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Taille Nord–Sud de la zone de recherche (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | Graine aléatoire (`random` en tire une et l'écrit dans les logs) |
+| `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Vitesse du danger (m/s), plus lent que les drones |
+| `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance à laquelle le danger attrape un drone (m) |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (par règle) | Poids et rayons des règles Boids |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (par seuil) | Seuils des diagnostics |
 
@@ -243,7 +245,7 @@ l'optimiseur (étape 2).
 
 - **Backend** — Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
 - **Vue** — Unity 6 (6000.4.6f1, URP), client gRPC C#.
-- **Tests** — JUnit 5, Mockito, AssertJ (environ 175 tests unitaires, lancés par la CI
+- **Tests** — JUnit 5, Mockito, AssertJ (environ 200 tests unitaires et 3 tests de bout en bout dans `tests/`, lancés par la CI
   à chaque push).
 
 ### Tests

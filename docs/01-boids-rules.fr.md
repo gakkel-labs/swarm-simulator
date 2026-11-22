@@ -182,7 +182,7 @@ fonction predatorFlee(agent, danger):
     retourner away / d²                         # = unitaire(away) / d, NON normalisé
 ```
 
-Le danger lui-même (`Predator`) va tout droit vers le drone le plus proche à 3 m/s. S'il passe à
+Le danger lui-même (`Predator`) va tout droit vers le drone le plus proche à 3 m/s (par défaut). S'il passe à
 moins de 1,5 m, il attrape le drone : le drone est retiré, puis revient 5 s plus tard, à au moins
 30 m du danger.
 
@@ -243,9 +243,10 @@ d'environnement `SWARM_BOIDS_*` ou une propriété `swarm.boids.*` (voir le [REA
 | `maxSpeed`                 | `5.0` m/s         | Vitesse maximale d'un drone                                     | Essaim plus rapide et plus réactif           |
 | `dt` *(boucle)*            | `1/30 s ≈ 33 ms`  | Pas de temps (30 Hz)                                            | Pas plus grands → moins stable               |
 
-Autres valeurs fixes (dans le code, pas encore réglables) : rayon du capteur 10 m
-(`SimulationConstants.SENSOR_RADIUS_M`), vitesse du danger 3 m/s et rayon de capture 1,5 m
-(`Predator`), retour après 5 s à au moins 30 m du danger (`SimulationLoop`).
+Le danger a ses propres réglages : vitesse 3 m/s (`SWARM_PREDATOR_SPEED`) et rayon de capture
+1,5 m (`SWARM_PREDATOR_EAT_RADIUS`), tous deux dans `PredatorConfig`. Autres valeurs fixes (dans
+le code, pas encore réglables) : rayon du capteur 10 m (`SimulationConstants.SENSOR_RADIUS_M`),
+retour après 5 s à au moins 30 m du danger (`SimulationLoop`).
 
 **Repères :**
 - `w_sep` un peu plus grand que `w_align` et `w_coh` → pas de collision, l'essaim tient.

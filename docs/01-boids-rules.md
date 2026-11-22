@@ -185,7 +185,7 @@ function predatorFlee(agent, danger):
     return away / d²                            # = unit(away) / d, NOT normalized
 ```
 
-The danger itself (`Predator`) goes straight to the nearest drone at 3 m/s. If it gets closer
+The danger itself (`Predator`) goes straight to the nearest drone at 3 m/s (by default). If it gets closer
 than 1.5 m, it catches the drone: the drone is removed, then comes back 5 s later, at least 30 m
 away from the danger.
 
@@ -245,9 +245,10 @@ Default values (`BoidsConfig`). Each one can be changed at start with an environ
 | `maxSpeed`                 | `5.0` m/s         | Speed limit of a drone                                          | Faster, more reactive swarm                  |
 | `dt` *(simulation loop)*   | `1/30 s ≈ 33 ms`  | Time step (30 Hz)                                               | Larger steps → less stable                   |
 
-Other fixed values (in the code, not configurable yet): sensor radius 10 m
-(`SimulationConstants.SENSOR_RADIUS_M`), danger speed 3 m/s and catch radius 1.5 m (`Predator`),
-respawn after 5 s at least 30 m from the danger (`SimulationLoop`).
+The danger has its own settings: speed 3 m/s (`SWARM_PREDATOR_SPEED`) and catch radius 1.5 m
+(`SWARM_PREDATOR_EAT_RADIUS`), both in `PredatorConfig`. Other fixed values (in the code, not
+configurable yet): sensor radius 10 m (`SimulationConstants.SENSOR_RADIUS_M`), respawn after 5 s
+at least 30 m from the danger (`SimulationLoop`).
 
 **Rules of thumb:**
 - `w_sep` a little higher than `w_align` and `w_coh` → no collisions, the swarm still holds.

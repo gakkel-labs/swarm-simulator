@@ -52,6 +52,9 @@ is the North extent. These names are confusing; renaming them is listed in the t
 + Unity and the backend share the same axes, so the C# conversion is the mirror of the Java one,
   and both are tested on their own.
 + A bug with axes has only two places to look.
++ The size of the search area goes on the wire in NED too (`WorldState.search_area_size_m`,
+  converted by `CoordinateConversions`), so Unity can place the seabed without knowing the
+  backend names.
 − Two frames inside the project instead of one: a new reader must know the table above.
 − The backend's "height" and "depth" names do not match their meaning until they are renamed.
 

@@ -61,7 +61,7 @@ Root `pom.xml` (`fr.gakkel.swarmsimulator:swarm-simulator:0.1-SNAPSHOT`, packagi
 |-----------------|-----------------------------------------------------|----------------|
 | `contracts/`    | `.proto` files + generated Java stubs (proto3)      | —              |
 | `swarm-server/` | gRPC server, domain, Boids simulation loop          | `contracts`    |
-| `tests/`        | End-to-end integration tests (empty for now)        | `swarm-server` |
+| `tests/`        | End-to-end tests (`SwarmServerEndToEndTest`: real server on a free port, real gRPC client) | `swarm-server` |
 
 Main versions in the root POM: Java **21**, gRPC **1.81.0**, Protobuf **3.25.5**,
 JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
@@ -71,8 +71,8 @@ JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 ```
 fr.gakkel.swarmsimulator.swarmserver
 ├── config         # Settings: reads env vars → application.properties → defaults, once at start
-├── domain         # Agent, AgentType, World, Vector3D, Predator (the danger), Target, Obstacle,
-│                  # TriggerSource, BoidsConfig, BoidsRules
+├── domain         # Agent, AgentType, World, Vector3D, Predator (the danger), PredatorConfig,
+│                  # Motion (position + velocity), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules
 ├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician,
 │                  # DiagnosticsConfig, CohesionMetric (sliding-window spread), CohesionCsvExporter
 └── server         # SwarmServer (main), SwarmServerBootstrap (wiring), SwarmObserverImpl,
@@ -157,7 +157,9 @@ Three groups of threads work at the same time:
    (`TICK_RATE_HZ = 30`). It moves the drones and the danger, and removes or adds drones.
 2. **`swarm-broadcaster`** (1 daemon thread) runs `SwarmObserverImpl.broadcast()` every
    **50 ms** (`STREAM_RATE_HZ = 20`). It reads the `World`, builds the message with
-   `WorldStateBuilder` and sends it to every subscriber.
+   `WorldStateBuilder` and sends it to every subscriber that is ready (gRPC flow control:
+   a slow client skips a frame). `SwarmServerBootstrap` calls `SwarmObserverImpl.start()`; the
+   constructor starts nothing, which keeps tests simple.
 3. **gRPC threads** handle the incoming calls (`SubscribeWorldState`, `PlaceTarget`, `SendPing`).
 
 ### Sharing the World between threads

@@ -6,7 +6,22 @@
 
 L'opérateur prépare une mission de recherche d'une épave coulée. Il ne sait pas quelle configuration de flotte choisir (nombre de drones de détection, drones spécialisés, schéma de recherche), ni si l'épave se trouve vraiment dans la zone de recherche. Gakkel l'aide à choisir la configuration qui a le plus de chances de réussir, sans mettre en danger les drones les plus importants.
 
-## 2. Une mission réussie
+## 2. Causes supposées
+
+Ce sont des hypothèses, à vérifier avec de vrais opérateurs.
+
+- La position de l'épave n'est connue qu'à peu près (dernière position connue, dérive) : la zone de recherche est grande et ne contient peut-être pas l'épave.
+- Il y a trop de configurations de flotte possibles pour les comparer à la main avant la mission.
+- Chaque choix est un compromis entre sûreté, rapidité et usure de la flotte, et aujourd'hui rien ne le mesure avant la mission.
+
+## 3. Contraintes
+
+- La mission doit finir avant le **temps limite** (énergie des drones, météo).
+- Le porte-drones ne doit jamais être perdu ; les drones spécialisés non plus, par défaut.
+- Pour démontrer l'absence, la couverture doit atteindre le **seuil de couverture** (95 % par défaut) et chaque contact doit être classifié.
+- Le résultat doit être reproductible : chaque configuration est comparée sur les mêmes scénarios.
+
+## 4. Une mission réussie
 
 Une mission est réussie si elle **se termine avant le temps limite** (fin obligatoire : énergie des drones, météo) et si l'un des deux cas est vrai :
 
@@ -15,7 +30,7 @@ Une mission est réussie si elle **se termine avant le temps limite** (fin oblig
 
 L'opérateur n'est jamais sûr que l'épave est dans la zone de recherche : démontrer son absence est donc aussi une réussite. Dépasser le **temps estimé** rend la mission en retard, mais pas en échec.
 
-## 3. La métrique nord
+## 5. La métrique nord
 
 **Probabilité de réussite de la mission.**
 
@@ -23,7 +38,7 @@ Avant la mission, le backend la calcule sur un **jeu de scénarios commun** : l'
 
 Avec des missions réelles, la métrique devient la **part des missions réelles réussies**.
 
-## 4. Les garde-fous
+## 6. Les garde-fous
 
 | Garde-fou | Type | Seuil |
 |---|---|---|
@@ -33,12 +48,12 @@ Avec des missions réelles, la métrique devient la **part des missions réelles
 
 Une configuration qui viole un garde-fou **strict** est éliminée. Un garde-fou **souple** est surveillé, mais n'élimine rien.
 
-## 5. Indicateurs secondaires
+## 7. Indicateurs secondaires
 
 - **Temps estimé** : la durée prévue ; plus il est court, plus il laisse de marge avant le temps limite.
 - **Ressources engagées** : heures du porte-drones, drones engagés, heures de fonctionnement, énergie. Elles permettent d'estimer le coût d'une mission.
 - **Usure de la flotte** : heures de fonctionnement, cycles de batterie, chocs contre le fond. Elle dit quand la flotte sera de nouveau disponible.
 
-## 6. En cas d'égalité
+## 8. En cas d'égalité
 
 Il n'y a pas de règle unique : selon la mission, l'opérateur préfère la sûreté, la rapidité ou l'économie de la flotte. Parmi les configurations qui respectent les garde-fous stricts, le backend en propose trois : **la plus sûre** (meilleure probabilité de réussite), **la plus rapide** (temps estimé le plus court) et **la plus économe** (moins de ressources engagées et d'usure). Si deux configurations sont à égalité sur leur critère, on garde celle qui perd le moins de drones de détection. L'opérateur choisit.

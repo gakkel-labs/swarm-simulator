@@ -78,7 +78,6 @@ namespace Gakkel.Swarm.Unity
         private Gradient _isolatedTrailGradient;
 
         private bool _obstaclesSpawned;
-        private bool _searchAreaSceneSpawned;
         private MaterialPropertyBlock _blinkPropertyBlock;
         private Vector3 _centroid;
         private string _blinkAgentId;
@@ -176,7 +175,7 @@ namespace Gakkel.Swarm.Unity
 
         public void Apply(WorldState worldState)
         {
-            if (!_searchAreaSceneSpawned) SpawnSearchAreaScene(worldState.SearchAreaSizeM);
+            PlaceSeabedForSearchArea(worldState.SearchAreaSizeM);
             if (worldState.SensorRadiusM > 0f) _sensorRadiusMetres = worldState.SensorRadiusM;
             CohesionSpreadM = worldState.CohesionSpreadM;
             SyncAgents(worldState.Agents);
@@ -327,8 +326,8 @@ namespace Gakkel.Swarm.Unity
                 agentRenderer.sharedMaterial = inGroup ? _groupMaterials[groupId % _groupMaterials.Length] : _isolatedMaterial;
                 if (agent.Id == _blinkAgentId)
                     ShowFinderBlink(agent.Id, agentRenderer, baseColor);
-                else
-                    agentRenderer.SetPropertyBlock(null);
+                else if (agentRenderer.HasPropertyBlock())
+                    agentRenderer.SetPropertyBlock(null); // only when needed: a block breaks SRP batching
 
                 if (_agentTrails.TryGetValue(agent.Id, out var trail))
                     trail.colorGradient = inGroup ? _groupTrailGradients[groupId % _groupTrailGradients.Length] : _isolatedTrailGradient;
@@ -625,15 +624,15 @@ namespace Gakkel.Swarm.Unity
 
         // Called with the first WorldState: the seabed is placed from the search area size sent by
         // the server, so changing SWARM_WORLD_* keeps the swarm above the seabed with no Unity change.
-        private void SpawnSearchAreaScene(Vec3 searchAreaSizeNed)
+        // Checked on every WorldState: a new mission (or a restarted server) can change the size.
+        private void PlaceSeabedForSearchArea(Vec3 searchAreaSizeNed)
         {
-            _searchAreaSceneSpawned = true;
             // NED size: X = North, Y = East, Z = Down. All zero means an older server: keep the default.
             if (searchAreaSizeNed == null || searchAreaSizeNed.X <= 0f || searchAreaSizeNed.Y <= 0f
                 || searchAreaSizeNed.Z <= 0f)
                 return;
             var receivedSize = new Vector3(searchAreaSizeNed.Y, searchAreaSizeNed.Z, searchAreaSizeNed.X);
-            if (receivedSize == _searchAreaSize) return;
+            if ((receivedSize - _searchAreaSize).sqrMagnitude < 0.01f) return;
 
             _searchAreaSize = receivedSize;
             if (_seabed != null) Destroy(_seabed.gameObject); // its rocks are children: gone too

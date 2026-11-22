@@ -99,4 +99,12 @@ class Vector3DTest {
         assertEquals(6.0, a.dot(b), 1e-9);
     }
 
+
+    @Test
+    void distanceSquaredTo_returnsTheSquareOfTheDistance() {
+        var first = new Vector3D(1, 2, 3);
+        var second = new Vector3D(4, 6, 3);
+
+        assertEquals(25.0, first.distanceSquaredTo(second), 1e-9);
+    }
 }

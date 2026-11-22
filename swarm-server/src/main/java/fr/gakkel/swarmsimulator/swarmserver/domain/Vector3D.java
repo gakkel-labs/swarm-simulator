@@ -32,6 +32,14 @@ public record Vector3D(double x, double y, double z) {
         return subtract(other).magnitude();
     }
 
+    // No square root and no temporary vector: for distance comparisons in hot loops.
+    public double distanceSquaredTo(Vector3D other) {
+        double deltaX = x - other.x;
+        double deltaY = y - other.y;
+        double deltaZ = z - other.z;
+        return deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
+    }
+
     public double dot(Vector3D other) {
         return x * other.x + y * other.y + z * other.z;
     }

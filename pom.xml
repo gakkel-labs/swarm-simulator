@@ -27,6 +27,8 @@
         <slf4j.version>2.0.13</slf4j.version>
         <logback.version>1.5.32</logback.version>
         <logstash.encoder.version>9.0</logstash.encoder.version>
+        <assertj.version>3.27.3</assertj.version>
+        <surefire.version>3.2.5</surefire.version>
     </properties>
 
     <dependencyManagement>
@@ -69,7 +71,24 @@
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>${logstash.encoder.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
 </project>

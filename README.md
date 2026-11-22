@@ -92,7 +92,9 @@ the **control station** defines the mission, the **Java backend** runs the simul
 proposes the best fleet configuration, and **Unity** only displays: it will let you follow a
 mission live and replay it afterwards, watching the drones move. The simulation is a help,
 not a must: the operator can also create a mission alone, from start to end, choosing the
-fleet configuration themselves.
+fleet configuration themselves. Later, the operator will also be able to create a
+**campaign**: a sequence of several missions, prepared together (see the
+[glossary](docs/produit/glossaire.md)).
 
 ---
 

@@ -96,7 +96,9 @@ propose la meilleure configuration de flotte, et **Unity** ne fait qu'afficher :
 permettra de suivre une mission en temps réel et de la rejouer ensuite, en voyant les
 déplacements des drones. La simulation est une aide, pas une obligation : l'opérateur
 peut aussi créer une mission seul, de bout en bout, en choisissant lui-même la
-configuration de flotte.
+configuration de flotte. Plus tard, l'opérateur pourra aussi créer une **campagne** :
+une suite de plusieurs missions, préparées ensemble (voir le
+[glossaire](docs/produit/glossaire.fr.md)).
 
 ---
 

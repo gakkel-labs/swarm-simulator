@@ -62,6 +62,7 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 
 - Automatically propose the best plan (number of fleets, swarm paths)
 - Also let him create a mission alone, from start to end, without the simulation
+- Later, let him create a **campaign**: a sequence of several missions, prepared together
 - See everything on a single screen, fleet by fleet
 - Rank contacts to know which ones deserve a specialised drone
 - Be alerted only when it matters

@@ -62,6 +62,7 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 
 - Proposer automatiquement le meilleur plan (nombre de flottes, trajets des essaims)
 - Le laisser aussi créer une mission seul, de bout en bout, sans passer par la simulation
+- Plus tard, le laisser créer une **campagne** : une suite de plusieurs missions, préparées ensemble
 - Tout voir sur un seul écran, flotte par flotte
 - Classer les contacts pour savoir lesquels méritent un drone spécialisé
 - Être alerté seulement quand c'est important

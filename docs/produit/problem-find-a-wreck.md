@@ -6,6 +6,8 @@
 
 The operator prepares a mission to search for a sunken wreck. The operator does not know which fleet configuration to choose (number of detection drones, specialised drones, search pattern), or if the wreck is really inside the search area. Gakkel helps the operator choose the configuration with the best chance to succeed, without putting the most important drones at risk.
 
+This sheet is about one mission. Later, the operator will be able to group several missions in a **campaign** (a sequence of missions, see the [glossary](glossaire.md)).
+
 ## 2. Assumed causes
 
 These are hypotheses, to check with real operators.

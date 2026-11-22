@@ -26,7 +26,7 @@ exploration scientifique (prélèvements, pose d'instruments, mesures de l'eau).
 Une flotte travaille en quatre temps :
 
 1. **Déposer :** un **porte-drones** dépose un **essaim de drones de détection** dans la zone de recherche.
-2. **Détecter :** l'essaim fouille la zone et trouve les contacts (première détection).
+2. **Détecter :** l'essaim fouille la zone de recherche et trouve les contacts (première détection).
    Le porte-drones parle avec l'essaim et relaie les informations au centre d'opérations.
 3. **Confirmer :** le porte-drones déploie ensuite des **drones spécialisés** pour vérifier
    un contact sur place. L'opérateur en donne l'ordre, ou laisse Gakkel le faire automatiquement.
@@ -39,13 +39,16 @@ Plus d'infos sur l'opérateur : [`docs/produit/persona-operateur.fr.md`](docs/pr
 
 ## Ce qui marche aujourd'hui
 
-Le projet est à ses débuts. Aujourd'hui le dépôt contient **seulement la partie essaim** :
+L'étape 1 (une belle scène Unity) est terminée. Aujourd'hui le dépôt contient **seulement la partie essaim** :
 
 - Un **backend Java** simule un essaim de 20 drones en 3D. Les drones se déplacent en
-  groupe (règles Boids de Reynolds), évitent des obstacles, restent dans la zone et fuient
-  un prédateur qui les chasse.
-- Une **vue Unity** se connecte au backend et affiche l'essaim en direct (de simples
-  capsules grises pour l'instant).
+  groupe (règles Boids de Reynolds), évitent des obstacles, restent dans la zone de
+  recherche et fuient un danger qui les chasse.
+- Une **vue Unity** se connecte au backend et affiche l'essaim en direct, au-dessus d'un
+  vrai fond marin (bathymétrie de la dorsale de Gakkel). La **vue détaillée** montre des
+  modèles 3D (drones, un requin pour le danger, une épave, des cheminées hydrothermales) ;
+  la **vue simple** (touche V) montre des formes simples. Trois caméras : vue d'ensemble,
+  suivi d'un drone, caméra libre.
 - Dans la vue, un **clic gauche place une cible** (l'« épave »). Le premier drone qui
   passe à moins de 10 m la détecte : le drone clignote et l'écran affiche quel drone l'a
   trouvée et au bout de combien de secondes.
@@ -57,7 +60,6 @@ Ce qui **n'existe pas** encore :
 - Les drones ne cherchent pas exprès : ils volent en groupe, et la détection arrive
   quand l'un d'eux passe près de la cible.
 - Pas de préparation de mission, pas de poste de contrôle, pas d'optimiseur.
-- Pas encore de vidéo de démo (elle arrive avec l'étape 1).
 
 ## Le cœur de l'essaim : Boids
 
@@ -72,8 +74,8 @@ voisins proches et suit trois règles simples.
 De ces règles locales naît un comportement de groupe. C'est bien adapté à un essaim de
 drones : pas de cerveau central, donc perdre un drone n'arrête pas les autres, et
 l'essaim reste groupé sans communication lourde. Gakkel ajoute quelques règles :
-éviter les obstacles, rester dans la zone, fuir un prédateur, et un peu d'errance
-aléatoire.
+éviter les obstacles, rester dans la zone de recherche, fuir un danger, et un peu
+d'errance aléatoire (désactivée par défaut).
 
 Détails, schémas et formules : [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md).
 
@@ -131,10 +133,12 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
 
 ### 3. Résultat attendu
 
-- Des capsules grises apparaissent et se déplacent en groupe.
-- Un prédateur rouge traverse la zone ; les capsules proches s'enfuient.
-- Clic gauche dans la scène pour placer la cible. Quand une capsule passe près d'elle,
-  la capsule clignote et l'écran affiche « Found by … in …s ».
+- Des drones apparaissent au-dessus du fond marin et se déplacent en groupe.
+- Un danger (un requin, ou une sphère rouge en vue simple) les chasse ; les drones proches s'enfuient.
+- Clic gauche dans la scène pour placer la cible. Quand un drone passe près d'elle,
+  le drone clignote et l'écran affiche « Found by … in …s ».
+- Touches : **V** vue détaillée / simple, **B** rochers du fond, **F** caméra de suivi,
+  **N** drone suivant, **Tab** caméra libre. Liste complète : [intégration Unity §9](docs/03-unity-integration.fr.md#9-caméras-et-commandes).
 
 Si rien n'apparaît, la cause la plus fréquente est un port gRPC déjà utilisé : arrêter
 la JVM précédente ou lancer le backend sur un autre port avec `SWARM_PORT=50052 …`.
@@ -152,7 +156,7 @@ l'état de la simulation ; Unity ne fait que l'afficher.
 flowchart LR
     subgraph Backend["Backend Java (swarm-server)"]
         SIM[SimulationLoop<br/>tick 30 Hz]
-        WORLD[(World<br/>agents, obstacles,<br/>prédateur, cible)]
+        WORLD[(World<br/>drones, obstacles,<br/>danger, cible)]
         BCAST[SwarmObserverImpl<br/>diffusion 20 Hz]
         CTRL[SimulationControlImpl<br/>RPC PlaceTarget]
         SIM -->|écrit| WORLD
@@ -172,8 +176,8 @@ flowchart LR
     VIZ -.->|PlaceTarget unaire| CTRL
 ```
 
-Pour aller plus loin : [`docs/architecture.fr.md`](docs/architecture.fr.md) (repères
-NED↔Unity, modèle de threads, catalogue des messages).
+Pour aller plus loin : [`docs/architecture.fr.md`](docs/architecture.fr.md) (repères,
+threads, catalogue des messages).
 
 ### Pourquoi ces choix — ADR
 
@@ -189,6 +193,10 @@ NED↔Unity, modèle de threads, catalogue des messages).
   **mission-console** remplace l'ancien projet fleet-dashboard.
 - [ADR-0006](docs/adr/0006-detailed-and-simple-view.fr.md) — **Vue détaillée et vue simple** :
   modèles 3D pour une démo, formes simples pour l'opérateur (touche V).
+- [ADR-0007](docs/adr/0007-coordinate-frames.fr.md) — **Repères** : le backend garde ses
+  propres axes, le réseau est en NED, Unity convertit de son côté.
+- [ADR-0008](docs/adr/0008-shared-world-concurrency.fr.md) — **Partager le World sans verrou**
+  entre le thread de simulation et le thread de diffusion.
 
 ### Configuration
 
@@ -205,9 +213,9 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 |----------|-----------|--------|------|
 | `SWARM_PORT` | `swarm.port` | `50051` | Port d'écoute gRPC |
 | `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Nombre de drones dans l'essaim |
-| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | Taille du monde en X |
-| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Taille du monde en Y |
-| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Taille du monde en Z |
+| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | Taille Est–Ouest de la zone de recherche (m) |
+| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Colonne d'eau, de la surface au fond (m) |
+| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Taille Nord–Sud de la zone de recherche (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | Graine aléatoire (`random` en tire une et l'écrit dans les logs) |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (par règle) | Poids et rayons des règles Boids |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (par seuil) | Seuils des diagnostics |
@@ -217,7 +225,7 @@ La liste complète, avec les valeurs par défaut, est commentée dans
 
 À propos de la graine : la même graine donne les mêmes positions de départ et les mêmes
 tirages aléatoires. Mais la simulation tourne encore sur l'horloge réelle (par exemple
-le délai de réapparition après le prédateur), donc deux exécutions peuvent diverger avec
+le délai de réapparition après le danger), donc deux exécutions peuvent diverger avec
 le temps. Une horloge de simulation avec un moteur `step(dt)` est prévue avant
 l'optimiseur (étape 2).
 
@@ -235,7 +243,7 @@ l'optimiseur (étape 2).
 
 - **Backend** — Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
 - **Vue** — Unity 6 (6000.4.6f1, URP), client gRPC C#.
-- **Tests** — JUnit 5, Mockito, AssertJ (environ 170 tests unitaires, lancés par la CI
+- **Tests** — JUnit 5, Mockito, AssertJ (environ 175 tests unitaires, lancés par la CI
   à chaque push).
 
 ### Tests
@@ -257,9 +265,10 @@ mvn verify
 - [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) — les règles Boids.
 - [`docs/02-grpc-contract.fr.md`](docs/02-grpc-contract.fr.md) — référence du protocole.
 - [`docs/03-unity-integration.fr.md`](docs/03-unity-integration.fr.md) — pont gRPC
-  thread-safe dans Unity.
+  thread-safe dans Unity, caméras et touches.
+- [`docs/04-seabed-bathymetry.fr.md`](docs/04-seabed-bathymetry.fr.md) — le vrai fond marin et ses données.
 - [`docs/tech-debt/`](docs/tech-debt/) — instantanés de dette technique.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — comment contribuer.
+- [`CONTRIBUTING.fr.md`](CONTRIBUTING.fr.md) — comment contribuer.
 
 ---
 

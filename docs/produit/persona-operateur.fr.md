@@ -6,8 +6,8 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 
 ## Le concept Gakkel en bref
 
-- Un **essaim de drones peu coûteux** fait une première détection sur la zone.
-- Quand l'essaim trouve un contact intéressant, un **drone spécialisé, plus coûteux**, part du **porte-drones** pour aller le confirmer sur place. Chaque flotte peut en avoir un ou plusieurs, choisis selon la mission.
+- Un **essaim de drones de détection** fait une première détection sur la zone de recherche.
+- Quand l'essaim trouve un contact intéressant, un **drone spécialisé** part du **porte-drones** pour aller le confirmer sur place. Chaque flotte peut en avoir un ou plusieurs, choisis selon la mission.
 - Le **porte-drones** communique avec l'essaim et transmet les informations au **centre d'opérations**, où travaille l'opérateur.
 
 ## Qui il est
@@ -19,7 +19,7 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 ## Son contexte de travail
 
 - Travaille depuis le centre d'opérations d'un navire de recherche, en mer pendant plusieurs semaines
-- Coordonne 3 à 5 flottes de drones en même temps (chaque flotte est un système : un essaim de drones peu coûteux, un porte-drones et un ou plusieurs drones spécialisés pour la mission)
+- Coordonne 3 à 5 flottes de drones en même temps (chaque flotte est un système : un essaim de drones de détection, un porte-drones et un ou plusieurs drones spécialisés pour la mission)
 - Ne parle pas directement aux drones : il reçoit les informations des porte-drones
 - Rend compte au directeur des recherches et aux enquêteurs, et travaille avec les techniciens drones et l'équipage
 - Équipes en 3×8, fatigue, connexion satellite lente
@@ -27,7 +27,7 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 ## Ce qu'il cherche à accomplir
 
 - Retrouver une épave coulée (avion ou navire) dans une zone de 50 à 100 km²
-- Couvrir toute la zone sans trou ni doublon
+- Couvrir toute la zone de recherche sans trou ni doublon
 - Valider vite chaque contact sonar (épave ou rocher ?) en décidant quand envoyer un drone spécialisé. Selon la mission, cet envoi peut être automatisé : Michel choisit à la préparation entre décision manuelle et envoi automatique, et peut reprendre la main à tout moment
 - Garder une trace complète : zones couvertes, contacts, décisions
 
@@ -39,8 +39,8 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 
 ## Ses craintes
 
-- Passer à côté de l'épave dans une zone pourtant marquée « couverte »
-- Perdre un drone coûteux
+- Passer à côté de l'épave dans une zone de recherche pourtant marquée « couverte »
+- Perdre un drone
 - Prendre une décision sur des infos incomplètes
 - Rater la fenêtre météo
 
@@ -52,9 +52,9 @@ Cette fiche décrit l'utilisateur principal de Gakkel : la personne qui prépare
 
 ## Les moments clés d'une mission
 
-1. **Préparer** : définir la zone et l'objectif, vérifier la météo et le trafic, valider le plan proposé ou construire son propre plan sans simulation, choisir si l'envoi des drones spécialisés sera manuel ou automatique.
+1. **Préparer** : définir la zone de recherche et l'objectif, vérifier la météo et le trafic, valider le plan proposé ou construire son propre plan sans simulation, choisir si l'envoi des drones spécialisés sera manuel ou automatique.
 2. **Lancer** : mettre à l'eau les flottes pendant la fenêtre météo.
-3. **Détecter** : les essaims couvrent la zone, les porte-drones remontent les contacts.
+3. **Détecter** : les essaims couvrent la zone de recherche, les porte-drones remontent les contacts.
 4. **Confirmer** : Michel choisit les contacts à vérifier et envoie un drone spécialisé, ou laisse Gakkel le faire automatiquement s'il l'a prévu.
 5. **Clore** : récupérer les drones et produire le rapport.
 

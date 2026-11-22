@@ -6,8 +6,8 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 
 ## The Gakkel concept in short
 
-- A **swarm of low-cost drones** performs a first detection over the area.
-- When the swarm finds an interesting contact, a **more expensive specialised drone** leaves the **drone carrier** to confirm it on site. Each fleet can have one or more, chosen for the mission.
+- A **swarm of detection drones** performs a first detection over the search area.
+- When the swarm finds an interesting contact, a **specialised drone** leaves the **drone carrier** to confirm it on site. Each fleet can have one or more, chosen for the mission.
 - The **drone carrier** communicates with the swarm and relays the information to the **operations centre**, where the operator works.
 
 ## Who he is
@@ -19,7 +19,7 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 ## His work context
 
 - Works from the operations centre of a research vessel, at sea for several weeks
-- Coordinates 3 to 5 drone fleets at the same time (each fleet is a system: a swarm of low-cost drones, a drone carrier and one or more specialised drones for the mission)
+- Coordinates 3 to 5 drone fleets at the same time (each fleet is a system: a swarm of detection drones, a drone carrier and one or more specialised drones for the mission)
 - Does not talk to the drones directly: he receives information from the drone carriers
 - Reports to the search director and the investigators, and works with the drone technicians and the crew
 - Round-the-clock shifts, fatigue, slow satellite connection
@@ -27,7 +27,7 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 ## What he wants to achieve
 
 - Find a sunken wreck (aircraft or ship) in an area of 50 to 100 km²
-- Cover the whole area with no gaps and no overlaps
+- Cover the whole search area with no gaps and no overlaps
 - Quickly validate each sonar contact (wreck or rock?) by deciding when to send a specialised drone. Depending on the mission, this can be automated: during preparation Michel chooses between manual decision and automatic dispatch, and can take back control at any time
 - Keep a complete record: covered areas, contacts, decisions
 
@@ -39,8 +39,8 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 
 ## His fears
 
-- Missing the wreck in an area marked as "covered"
-- Losing an expensive drone
+- Missing the wreck in a search area marked as "covered"
+- Losing a drone
 - Making a decision on incomplete information
 - Missing the weather window
 
@@ -52,9 +52,9 @@ This page describes Gakkel's main user: the person who prepares and monitors a d
 
 ## Key moments of a mission
 
-1. **Prepare**: define the area and the objective, check weather and traffic, validate the proposed plan or build his own plan without simulation, choose whether specialised drones will be sent manually or automatically.
+1. **Prepare**: define the search area and the objective, check weather and traffic, validate the proposed plan or build his own plan without simulation, choose whether specialised drones will be sent manually or automatically.
 2. **Launch**: deploy the fleets during the weather window.
-3. **Detect**: the swarms cover the area, the drone carriers report contacts.
+3. **Detect**: the swarms cover the search area, the drone carriers report contacts.
 4. **Confirm**: Michel picks the contacts to check and sends a specialised drone, or lets Gakkel do it automatically if he planned it.
 5. **Close**: recover the drones and produce the report.
 

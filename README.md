@@ -25,7 +25,7 @@ inspection, seabed mapping (bathymetry), mine countermeasures, scientific explor
 A fleet works in four steps:
 
 1. **Drop:** a **drone carrier** drops a **swarm of detection drones** in the search area.
-2. **Detect:** the swarm searches the area and finds the contacts (first detection).
+2. **Detect:** the swarm explores the search area and finds the contacts (first detection).
    The drone carrier talks to the swarm and relays the information to the operations centre.
 3. **Confirm:** the drone carrier then deploys **specialised drones** to check a contact
    on site. The operator gives the order, or lets Gakkel do it automatically.
@@ -38,13 +38,15 @@ More about the operator: [`docs/produit/persona-operateur.md`](docs/produit/pers
 
 ## What works today
 
-This is an early stage. Today the repository contains **the swarm part only**:
+Step 1 (a nice Unity scene) is done. Today the repository contains **the swarm part only**:
 
 - A **Java backend** simulates a swarm of 20 drones in 3D. The drones move as a group
-  (Reynolds' Boids rules), avoid obstacles, stay inside the area and flee a predator
+  (Reynolds' Boids rules), avoid obstacles, stay inside the search area and flee a danger
   that hunts them.
-- A **Unity viewer** connects to the backend and shows the swarm live (simple grey
-  capsules for now).
+- A **Unity viewer** connects to the backend and shows the swarm live, above a real seabed
+  (bathymetry of the Gakkel Ridge). The **detailed view** shows 3D models (drones, a shark for
+  the danger, a wreck, hydrothermal chimneys); the **simple view** (V key) shows plain shapes.
+  Three cameras: overview, follow one drone, free.
 - In the viewer, a **left-click places a target** (the "wreck"). The first drone that
   passes within 10 m of it detects it: the drone blinks and the screen shows which drone
   found it and after how many seconds.
@@ -56,7 +58,6 @@ What does **not** exist yet:
 - The drones do not search on purpose: they flock, and detection happens when one of
   them passes near the target.
 - No mission planning, no control station, no optimizer.
-- No demo video yet (it comes with Step 1).
 
 ## The heart of the swarm: Boids
 
@@ -71,7 +72,7 @@ neighbours and follows three simple rules.
 From these local rules, a group behaviour emerges. This suits a drone swarm well: no
 central brain, so losing one drone does not stop the others, and the swarm stays
 together without heavy communication. Gakkel adds a few rules on top: avoid obstacles,
-stay inside the area, flee a predator, and a little random wandering.
+stay inside the search area, flee a danger, and a little random wandering (off by default).
 
 Details, diagrams and formulas: [`docs/01-boids-rules.md`](docs/01-boids-rules.md).
 
@@ -91,7 +92,7 @@ the **control station** defines the mission, the **Java backend** runs the simul
 proposes the best fleet configuration, and **Unity** only displays: it will let you follow a
 mission live and replay it afterwards, watching the drones move. The simulation is a help,
 not a must: the operator can also create a mission alone, from start to end, choosing the
-fleet configuration himself.
+fleet configuration themselves.
 
 ---
 
@@ -128,10 +129,12 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
 
 ### 3. Expected result
 
-- Grey capsules appear and move as a group.
-- A red predator moves through the area; nearby capsules flee.
-- Left-click in the scene to place the target. When a capsule passes close to it, the
-  capsule blinks and the screen shows "Found by … in …s".
+- Drones appear above the seabed and move as a group.
+- A danger (a shark, or a red sphere in the simple view) chases them; nearby drones flee.
+- Left-click in the scene to place the target. When a drone passes close to it, the
+  drone blinks and the screen shows "Found by … in …s".
+- Keys: **V** detailed / simple view, **B** seabed rocks, **F** follow camera, **N** next
+  drone, **Tab** free camera. Full list: [Unity integration §9](docs/03-unity-integration.md#9-cameras-and-controls).
 
 If nothing appears, the most common cause is the gRPC port already being used: stop the
 previous JVM or start the backend on another port with `SWARM_PORT=50052 …`.
@@ -149,7 +152,7 @@ simulation state; Unity only displays it.
 flowchart LR
     subgraph Backend["Backend Java (swarm-server)"]
         SIM[SimulationLoop<br/>30 Hz tick]
-        WORLD[(World<br/>agents, obstacles,<br/>predator, target)]
+        WORLD[(World<br/>drones, obstacles,<br/>danger, target)]
         BCAST[SwarmObserverImpl<br/>broadcaster 20 Hz]
         CTRL[SimulationControlImpl<br/>PlaceTarget RPC]
         SIM -->|writes| WORLD
@@ -169,8 +172,8 @@ flowchart LR
     VIZ -.->|PlaceTarget unary| CTRL
 ```
 
-Deeper dive: [`docs/architecture.md`](docs/architecture.md) (NED↔Unity frame
-remapping, thread model, message catalogue).
+Deeper dive: [`docs/architecture.md`](docs/architecture.md) (coordinate frames, threads,
+message catalogue).
 
 ### Why these choices — ADRs
 
@@ -186,6 +189,10 @@ remapping, thread model, message catalogue).
   **mission-console** replaces the old fleet-dashboard project.
 - [ADR-0006](docs/adr/0006-detailed-and-simple-view.md) — **Detailed and simple view**:
   3D models for a demo, plain shapes for the operator (V key).
+- [ADR-0007](docs/adr/0007-coordinate-frames.md) — **Coordinate frames**: the backend keeps its
+  own axes, the wire is NED, Unity converts on its side.
+- [ADR-0008](docs/adr/0008-shared-world-concurrency.md) — **Share the World without locks**
+  between the simulation and the broadcast threads.
 
 ### Configuration
 
@@ -202,9 +209,9 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 |----------|----------|---------|---------|
 | `SWARM_PORT` | `swarm.port` | `50051` | gRPC listen port |
 | `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Number of drones in the swarm |
-| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | World X extent |
-| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | World Y extent |
-| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | World Z extent |
+| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | East–West size of the search area (m) |
+| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Water column, surface to seabed (m) |
+| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | North–South size of the search area (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | RNG seed (`random` draws one and logs it) |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (per rule) | Boids weights and radii |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (per threshold) | Diagnostics thresholds |
@@ -214,7 +221,7 @@ The full list, with defaults, is commented in
 
 About the seed: the same seed gives the same starting positions and the same random
 choices. The simulation still runs on the real clock (for example the respawn delay
-after the predator), so two runs can drift apart over time. A simulation clock with a
+after the danger), so two runs can drift apart over time. A simulation clock with a
 `step(dt)` engine is planned before the optimizer (Step 2).
 
 ### Repository layout
@@ -231,7 +238,7 @@ after the predator), so two runs can drift apart over time. A simulation clock w
 
 - **Backend** — Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
 - **Viewer** — Unity 6 (6000.4.6f1, URP), gRPC C# client.
-- **Tests** — JUnit 5, Mockito, AssertJ (about 170 unit tests, run by CI on every push).
+- **Tests** — JUnit 5, Mockito, AssertJ (about 175 unit tests, run by CI on every push).
 
 ### Tests
 
@@ -252,7 +259,8 @@ mvn verify
 - [`docs/01-boids-rules.md`](docs/01-boids-rules.md) — the Boids rules.
 - [`docs/02-grpc-contract.md`](docs/02-grpc-contract.md) — wire protocol reference.
 - [`docs/03-unity-integration.md`](docs/03-unity-integration.md) — thread-safe gRPC
-  bridge in Unity.
+  bridge in Unity, cameras and keys.
+- [`docs/04-seabed-bathymetry.md`](docs/04-seabed-bathymetry.md) — the real seabed and its data.
 - [`docs/tech-debt/`](docs/tech-debt/) — tech-debt snapshots.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute.
 

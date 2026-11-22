@@ -223,4 +223,4 @@ Two related editor gotchas when verifying this:
 | Right mouse button | Turn the view (overview and free camera) |
 | Mouse wheel | Zoom |
 
-The follow camera stays **behind and slightly above** the drone (third person), so its neighbours and the Boids behaviour stay visible. It starts on the drone closest to the swarm centre. Position and turns are smoothed (`followPositionSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` in the Inspector) so the image does not shake when the drone changes direction. The camera never goes below the seabed.
+The follow camera stays **behind and slightly above** the drone (third person), so its neighbours and the Boids behaviour stay visible. It starts on the drone closest to the swarm centre. Position and turns are smoothed (`followPositionSmoothTime`, `followVerticalSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` in the Inspector) so the image does not shake when the drone changes direction. The camera never goes below the seabed.

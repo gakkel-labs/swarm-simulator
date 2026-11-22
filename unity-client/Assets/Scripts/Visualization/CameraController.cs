@@ -28,6 +28,8 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private float followMaxDistance = 40f;
         [Tooltip("Time in seconds for the camera to catch up with the drone. Bigger = smoother.")]
         [SerializeField] private float followPositionSmoothTime = 0.5f;
+        [Tooltip("Time in seconds for the camera to follow the drone going up or down. Bigger = smoother.")]
+        [SerializeField] private float followVerticalSmoothTime = 1.2f;
         [Tooltip("How fast the camera turns toward the drone. Smaller = smoother.")]
         [SerializeField] private float followRotationSharpness = 4f;
         [Tooltip("How fast the camera swings behind the drone when it turns. Smaller = smoother.")]
@@ -47,6 +49,8 @@ namespace Gakkel.Swarm.Unity
         private const float DefaultOverviewPitch = 30f;
         private const float MinHeadingSqrMagnitude = 1e-4f;
         private const int ShortDroneIdLength = 8;
+        // The server sends positions 20 times per second: never guess further ahead than two updates.
+        private const float MaxExtrapolationSeconds = 0.1f;
 
         private float _defaultDistance;
         private float _defaultFollowDistance;
@@ -56,6 +60,10 @@ namespace Gakkel.Swarm.Unity
         private string _followedDroneId;
         private Vector3 _followHeading = Vector3.forward;
         private Vector3 _followSmoothingVelocity;
+        private Vector3 _followAnchor;
+        private float _followAnchorVerticalSpeed;
+        private Vector3 _lastReceivedDronePosition;
+        private float _secondsSinceDronePositionReceived;
 
         private Vector3 _freePosition;
         private float _freeYaw;
@@ -178,18 +186,45 @@ namespace Gakkel.Swarm.Unity
             float deltaTime = Time.deltaTime;
             UpdateFollowHeading(droneVelocity, deltaTime);
 
-            var wantedPosition = dronePosition - _followHeading * followDistance + Vector3.up * followHeight;
+            UpdateFollowAnchor(dronePosition, droneVelocity, deltaTime);
+
+            var wantedPosition = _followAnchor - _followHeading * followDistance + Vector3.up * followHeight;
             float seabedLimit = visualizer.SeabedHeightAt(wantedPosition) + followMinHeightAboveSeabed;
             wantedPosition.y = Mathf.Max(wantedPosition.y, seabedLimit);
             transform.position = Vector3.SmoothDamp(transform.position, wantedPosition,
                                                     ref _followSmoothingVelocity, followPositionSmoothTime);
 
-            var lookTarget = dronePosition + _followHeading * followLookAhead;
+            var lookTarget = _followAnchor + _followHeading * followLookAhead;
             var lookDirection = lookTarget - transform.position;
             if (lookDirection.sqrMagnitude < MinHeadingSqrMagnitude) return;
             var wantedRotation = Quaternion.LookRotation(lookDirection, Vector3.up);
             transform.rotation = Quaternion.Slerp(transform.rotation, wantedRotation,
                                                   SmoothingFactor(followRotationSharpness, deltaTime));
+        }
+
+        // The anchor is the point the camera follows and looks at. Two fixes against jerks:
+        // 1. Positions arrive only 20 times per second, so between two updates we move the anchor
+        //    along the drone velocity (a guess called "dead reckoning") instead of jumping.
+        // 2. The height is smoothed much more than the rest, so the camera does not bob up and
+        //    down each time a drone climbs or dives a little (Boids drones do it all the time).
+        private void UpdateFollowAnchor(Vector3 dronePosition, Vector3 droneVelocity, float deltaTime)
+        {
+            if (dronePosition != _lastReceivedDronePosition)
+            {
+                _lastReceivedDronePosition          = dronePosition;
+                _secondsSinceDronePositionReceived = 0f;
+            }
+            else
+            {
+                _secondsSinceDronePositionReceived += deltaTime;
+            }
+
+            float extrapolationSeconds = Mathf.Min(_secondsSinceDronePositionReceived, MaxExtrapolationSeconds);
+            var estimatedPosition = dronePosition + droneVelocity * extrapolationSeconds;
+
+            float smoothedHeight = Mathf.SmoothDamp(_followAnchor.y, estimatedPosition.y,
+                                                    ref _followAnchorVerticalSpeed, followVerticalSmoothTime);
+            _followAnchor = new Vector3(estimatedPosition.x, smoothedHeight, estimatedPosition.z);
         }
 
         // The camera stays behind the drone's horizontal heading. The heading turns slowly so the
@@ -246,6 +281,13 @@ namespace Gakkel.Swarm.Unity
         private void StartFollowing(string droneId, Vector3 droneVelocity)
         {
             _followedDroneId = droneId;
+            if (visualizer.TryGetDroneMotion(droneId, out var dronePosition, out _))
+            {
+                _followAnchor                       = dronePosition;
+                _lastReceivedDronePosition          = dronePosition;
+                _secondsSinceDronePositionReceived = 0f;
+                _followAnchorVerticalSpeed          = 0f;
+            }
             var horizontalVelocity = new Vector3(droneVelocity.x, 0f, droneVelocity.z);
             if (horizontalVelocity.sqrMagnitude >= MinHeadingSqrMagnitude)
                 _followHeading = horizontalVelocity.normalized;

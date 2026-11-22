@@ -223,4 +223,4 @@ Deux pièges d'éditeur associés lors de la vérification :
 | Clic droit de la souris | Tourner la vue (vue d'ensemble et caméra libre) |
 | Molette | Zoom |
 
-La caméra de suivi reste **derrière le drone et un peu au-dessus** (troisième personne) : ses voisins et le comportement Boids restent visibles. Elle démarre sur le drone le plus proche du centre de l'essaim. La position et les virages sont lissés (`followPositionSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` dans l'Inspector) pour que l'image ne tremble pas quand le drone change de direction. La caméra ne passe jamais sous le fond marin.
+La caméra de suivi reste **derrière le drone et un peu au-dessus** (troisième personne) : ses voisins et le comportement Boids restent visibles. Elle démarre sur le drone le plus proche du centre de l'essaim. La position et les virages sont lissés (`followPositionSmoothTime`, `followVerticalSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` dans l'Inspector) pour que l'image ne tremble pas quand le drone change de direction. La caméra ne passe jamais sous le fond marin.

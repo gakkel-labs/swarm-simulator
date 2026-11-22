@@ -1,5 +1,7 @@
 # ADR-0002: No Spring Boot for the MVP backend
 
+[Français](0002-no-spring-boot-for-mvp.fr.md)
+
 ## Status
 Accepted — 2026-01-15 (retroactive, formalized 2026-05-25)
 

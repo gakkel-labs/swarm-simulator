@@ -1,5 +1,7 @@
 # ADR-NNNN: <Short imperative title>
 
+[Français](NNNN-short-title.fr.md)
+
 ## Status
 Proposed | Accepted | Deprecated | Superseded by ADR-XXXX
 Date: YYYY-MM-DD

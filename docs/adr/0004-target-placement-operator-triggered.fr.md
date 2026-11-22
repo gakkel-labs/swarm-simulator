@@ -1,5 +1,7 @@
 # ADR-0004 : Le placement de cible est déclenché par l'opérateur mais architecturalement extensible
 
+[English](0004-target-placement-operator-triggered.md)
+
 ## Status
 Accepted — 2026-05-19
 

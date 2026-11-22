@@ -45,7 +45,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Detection drone** | A drone of the swarm. It explores the search area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
 | **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). Later, other roles: **take samples** or **deploy an instrument** (and recover it). | 🔜 (type reserved) |
 | **Drone pool** | All the drones available at the base, with their state: **ready**, **in maintenance** or **spare**. A drone can fail during a mission (or during a simulation); the backend can then propose **reserve drones** to take with the fleet. | 🔜 |
-| **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend can test many configurations and propose the best one. But this is a help, not a must: the operator can also choose the configuration himself. | 🔜 |
+| **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend can test many configurations and propose the best one. But this is a help, not a must: the operator can also choose the configuration themselves. | 🔜 |
 
 ## 3. How a fleet works: Drop, Detect, Confirm, Intervene
 
@@ -94,6 +94,7 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 | **Backend** | The Java program that runs the simulation. It is the only one that decides what happens. | ✅ |
 | **Viewer** (Unity) | The 3D display. It will let you follow a mission live and replay it afterwards, watching the drones move. It only shows what the backend sends; it decides nothing. | ✅ |
 | **Control station** | The operator's web application, where the mission is defined (repository `mission-console`). The operator can create a mission there alone, from start to end, without using the simulation. | 🔜 |
+| **Detailed view / simple view** | The two looks of the viewer. The detailed view shows 3D models and a real seabed, to present the project; the simple view shows plain shapes, to read the swarm behaviour. The V key switches ([ADR-0006](../adr/0006-detailed-and-simple-view.md)). | ✅ |
 | **Replay** | Play again a mission that is finished, in the viewer, to see how the drones moved and what happened. | 🔜 |
 | **Simulation** | A computer run that imitates the mission, to test it before going to sea. It helps the operator; it is not a required step. | ✅ |
 | **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `SPECIALIST` (specialised drone, type only reserved), `CARRIER` (drone carrier). | ✅ |
@@ -103,4 +104,4 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 | **Seed** | A number that sets the random choices. The same seed gives the same starting positions. | ✅ |
 | **Simulation clock** | A time that belongs to the simulation, not to the computer. It will make runs repeatable and faster than real time. | 🔜 |
 | **Optimizer** | The part of the backend that runs many simulations and picks the best fleet configuration using the score. | 🔜 |
-| **NED** | The direction system used by the backend: North, East, Down (depth). | ✅ |
+| **NED** | The direction system used on the wire between the backend and the viewer: North, East, Down (depth). Inside, the backend uses East, Up, North ([ADR-0007](../adr/0007-coordinate-frames.md)). | ✅ |

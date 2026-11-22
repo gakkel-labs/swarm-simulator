@@ -1,5 +1,7 @@
 # Unity integration — thread-safe gRPC bridge
 
+[Français](03-unity-integration.fr.md)
+
 > How the swarm server's 20 Hz WorldState stream reaches Unity GameObjects without crashes or data races.
 > Companion reading: [`02-grpc-contract.md`](02-grpc-contract.md).
 
@@ -75,7 +77,11 @@ public void update(Vector3D newPosition, Vector3D newVelocity) {
 
 A `volatile` reference write in Java is **atomic** and immediately visible to other threads. `Vector3D` is immutable (all fields final), so a reader can never see a half-constructed object.
 
-> Internal `SimulationLoop` fields (`tickCount`, `lastCentroid`, …) are **not** volatile — they are confined to the sim-loop thread by design and must not be exposed to the broadcaster without added synchronisation. See the comment at `SimulationLoop.java:44`.
+> Internal `SimulationLoop` fields (`tickCount`, …) are **not** volatile — they are confined to the sim-loop thread by design and must not be exposed to the broadcaster without added synchronisation.
+
+The drone and obstacle lists of `World` are `CopyOnWriteArrayList`s, so the broadcaster can walk
+them while the simulation removes or adds a drone. The full strategy and its limits:
+[ADR-0008](adr/0008-shared-world-concurrency.md).
 
 ---
 
@@ -130,8 +136,22 @@ Called by the dispatcher on the main thread. Freely modifies GameObjects:
 ```csharp
 private void OnWorldStateReceived(WorldState ws)
 {
-    visualizer?.Apply(ws);   // moves capsules, updates trails — all safe here
+    visualizer?.Apply(ws);                      // moves the drones, the danger, the obstacles
+    targetRenderer?.Apply(ws.SearchStatus);     // shows the target and the detection
 }
+```
+
+### 4.4 Reconnection
+
+If the server stops, gRPC raises `StatusCode.Unavailable` (or `Internal`). Instead of giving up,
+`WorldStateReceiver` logs a warning, waits `retryDelaySeconds` (3 s by default, set in the
+Inspector) and opens the stream again. Any other error is logged and stops the loop.
+
+```
+stream open ──► WorldState frames
+     │ server stops
+     ▼
+Unavailable ──► warning ──► wait 3 s ──► open the stream again
 ```
 
 ---
@@ -186,8 +206,8 @@ There is no explicit size cap on the queue. If the server spams at an unreasonab
 ## 7. Setup checklist
 
 1. Add `MainThreadDispatcher` as a **persistent GameObject** in the first scene loaded (`DontDestroyOnLoad` is set automatically in `Awake`).
-2. Add `WorldStateReceiver` to any active GameObject and wire the `SwarmVisualizer` reference in the Inspector.
-3. Start the Java server (`./mvnw -pl swarm-server exec:java`) before entering Play mode.
+2. Add `WorldStateReceiver` to any active GameObject and wire the `SwarmVisualizer` and `TargetRenderer` references in the Inspector.
+3. Start the Java server before entering Play mode: `mvn -pl swarm-server -am package`, then `mvn -pl swarm-server exec:java -Dexec.mainClass="fr.gakkel.swarmsimulator.swarmserver.server.SwarmServer"`.
 4. The `[gRPC]` debug log appears in the Console (Editor only — `#if UNITY_EDITOR` guard) confirming the stream is live.
 
 ---
@@ -222,5 +242,8 @@ Two related editor gotchas when verifying this:
 | **R** | Reset the zoom (and the angle in the overview) |
 | Right mouse button | Turn the view (overview and free camera) |
 | Mouse wheel | Zoom |
+| Left click | Place the target (the wreck) where the ray hits the scene (`TargetPlacer`) |
+| **V** | Switch the whole scene between the **detailed view** and the **simple view** ([ADR-0006](adr/0006-detailed-and-simple-view.md)) |
+| **B** | Show or hide the rocks on the seabed (always hidden in the simple view) |
 
 The follow camera stays **behind and slightly above** the drone (third person), so its neighbours and the Boids behaviour stay visible. It starts on the drone closest to the swarm centre. Position and turns are smoothed (`followPositionSmoothTime`, `followVerticalSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` in the Inspector) so the image does not shake when the drone changes direction. The camera never goes below the seabed.

@@ -1,19 +1,21 @@
 # Contrat gRPC — SwarmObserver v1
 
-> Documentation de référence du protocole wire entre le serveur d'essaim et ses clients de visualisation (Unity, futur agent Raspberry Pi, outils CLI).
+[English](02-grpc-contract.md)
+
+> Documentation de référence du protocole réseau entre le serveur d'essaim et ses clients (la vue 3D Unity aujourd'hui, des outils en ligne de commande comme `grpcurl`).
 > Source de vérité : [`contracts/src/main/proto/swarm_observer.proto`](../contracts/src/main/proto/swarm_observer.proto).
 
 ---
 
 ## 1. Vue d'ensemble
 
-Le simulateur expose un seul service public, `SwarmObserver`, en gRPC. Le service suit un pattern **broadcast / observer** :
+Le serveur expose trois services gRPC. Le principal, `SwarmObserver`, suit un modèle **broadcast / observer** :
 
 - Un client ouvre **une** souscription longue durée via `SubscribeWorldState`.
 - Le serveur pousse un snapshot `WorldState` à **20 Hz** tant que le stream reste ouvert.
 - Le client n'envoie jamais de seconde requête sur le même stream — il consomme, ou annule.
 
-Pas d'authentification, pas d'upload client→serveur, pas de messaging bidirectionnel. Le MVP tourne en local et fait confiance à tout ce qui arrive sur `localhost:50051`.
+Les deux autres services sont de petits appels unaires : `SimulationControl.PlaceTarget` (l'opérateur place la cible, §4.4) et `PingService.SendPing` (vérifier que le serveur répond). Pas d'authentification : le serveur tourne en local et fait confiance à tout ce qui arrive sur `localhost:50051`.
 
 **Pourquoi server-streaming et pas du polling unaire ?**
 Une visualisation à 20 Hz en RPC unaires, c'est 20 round-trips par seconde par client (≈ 60 ms d'overhead TCP+HTTP/2 par seconde). Un seul RPC server-streaming ouvre un seul stream HTTP/2 et le réutilise pour toutes les frames — latence plus faible, CPU plus faible, pas de scheduler côté client.
@@ -86,9 +88,9 @@ enum AgentType {
 }
 ```
 
-Rôle d'un drone dans le scénario SAR. Le membre `UNSPECIFIED = 0` est la valeur par défaut imposée par proto3 — la recevoir indique soit un bug serveur, soit une asymétrie de compatibilité (un rôle futur que le client ne connaît pas). Les clients doivent afficher les valeurs inconnues avec un fallback plutôt que de planter.
+Rôle d'un drone dans la flotte (voir le [glossaire](produit/glossaire.fr.md)). Le membre `UNSPECIFIED = 0` est la valeur par défaut imposée par proto3 — la recevoir indique soit un bug serveur, soit une asymétrie de compatibilité (un rôle futur que le client ne connaît pas). Les clients doivent afficher les valeurs inconnues avec un fallback plutôt que de planter.
 
-Les trois rôles mappent 1:1 sur l'enum domaine `fr.gakkel.swarmsimulator.swarmserver.domain.AgentType`. En v0.1 tous les agents sont `EXPLORER` ; la différenciation est prévue pour v0.4.
+Les trois rôles correspondent 1 pour 1 à l'enum du domaine `fr.gakkel.swarmsimulator.swarmserver.domain.AgentType` : `EXPLORER` = drone de détection, `SPECIALIST` = drone spécialisé, `CARRIER` = porte-drones. Aujourd'hui tous les drones sont `EXPLORER` ; les deux autres types sont réservés et n'ont pas encore de comportement.
 
 ### 3.3 `AgentState`
 
@@ -108,7 +110,7 @@ Snapshot d'un agent à l'instant du broadcast.
 - `position_xyz` — centre de l'agent, mètres, NED.
 - `velocity_mps` — vitesse instantanée, m/s, NED. La magnitude est bornée par `BoidsConfig.maxSpeed` (défaut 5.0 m/s).
 
-Pas de champ d'orientation — les agents sont des masses ponctuelles (boids) en v0.1. Le cap visuel est dérivé côté client à partir de `velocity_mps`.
+Pas de champ d'orientation — les drones sont des masses ponctuelles (boids) aujourd'hui. Le cap visuel est dérivé côté client à partir de `velocity_mps`.
 
 ### 3.4 `Obstacle`
 
@@ -133,11 +135,11 @@ message PredatorState {
 }
 ```
 
-Snapshot du prédateur autonome à l'instant de la broadcast.
+Photo du **danger** à l'instant de la diffusion. `Predator` est l'ancien nom de code du danger (voir le [glossaire](produit/glossaire.fr.md)) ; le message garde son nom en `v1` pour ne pas casser le contrat.
 
-- `id` — UUID du prédateur, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état. Sa vitesse et sa distance de capture se règlent avec `SWARM_PREDATOR_SPEED` (défaut 3 m/s) et `SWARM_PREDATOR_EAT_RADIUS` (défaut 1,5 m).
-- `position_xyz` — centre du prédateur, mètres, NED. Même repère que `AgentState.position_xyz`.
-- `velocity_mps` — vitesse instantanée, m/s, NED. Magnitude bornée par `Predator.SPEED` (3.0 m/s — intentionnellement plus lent que les boids pour créer de la tension dramatique).
+- `id` — UUID du danger, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état.
+- `position_xyz` — centre du danger, mètres, NED. Même repère que `AgentState.position_xyz`.
+- `velocity_mps` — vitesse instantanée, m/s, NED. Sa norme est la vitesse du danger, réglée par `SWARM_PREDATOR_SPEED` (3,0 m/s par défaut, plus lent que les drones pour qu'ils puissent s'échapper). La distance de capture se règle par `SWARM_PREDATOR_EAT_RADIUS` (1,5 m par défaut).
 
 Pas de champ d'orientation — le cap visuel est déduit côté client depuis `velocity_mps`.
 
@@ -161,7 +163,7 @@ Snapshot complet du monde simulé à l'instant `timestamp_unix_ms`.
 - `timestamp_unix_ms` — horloge wall-clock du serveur au moment où la frame est construite (`System.currentTimeMillis()`). Cf. §5.3.
 - `agents` — tous les agents du monde. L'ordre **n'est pas** garanti ; les clients doivent indexer par `id`.
 - `obstacles` — tous les obstacles du monde. Une liste vide est légale.
-- `predators` — tous les prédateurs du monde. Contient exactement **1 entrée** en v0.1. Une liste vide est légale (scénarios sans prédateur). Les clients doivent gérer une liste vide — détruire le GameObject prédateur si la liste devient vide.
+- `predators` — tous les dangers du monde. Contient exactement **1 entrée** aujourd'hui. Une liste vide est légale (pas de danger). Les clients doivent gérer une liste vide — cacher le GameObject du danger si la liste devient vide.
 - `search_status` — présent uniquement quand une cible a été placée via `PlaceTarget`. Absent jusqu'à ce moment (valeur par défaut proto3).
 - `sensor_radius_m` — rayon de détection partagé par tous les agents, en mètres. Les clients l'utilisent pour dimensionner l'overlay de zone de détection.
 - `cohesion_spread_m` — dispersion moyenne des positions (écart-type par rapport au centroïde) lissée sur les 30 derniers ticks (~1 s). Zéro jusqu'au premier tick. Utilisé par le HUD Unity et exporté dans `metrics/cohesion-*.csv`.
@@ -185,6 +187,30 @@ Envoyée **une seule fois** par le client à l'ouverture du stream. Le seul cham
 ```
 
 Le serveur ne valide pas, ne déduplique pas, et n'impose pas l'unicité de `client_id` — c'est purement un outil de diagnostic opérateur.
+
+### 3.8 `SearchStatus` et `TargetFoundEvent`
+
+```proto
+message SearchStatus {
+  bool             target_placed   = 1;
+  Vec3             target_position = 2; // NED; valid only when target_placed = true
+  float            elapsed_sim_s   = 3; // seconds since placement; 0 when not placed
+  TargetFoundEvent found_event     = 4; // absent until a drone detects the target
+}
+
+message TargetFoundEvent {
+  string agent_id      = 1;
+  float  elapsed_sim_s = 2;
+}
+```
+
+L'état de la recherche, porté par `WorldState.search_status`.
+
+- `target_position` — là où l'opérateur a placé la cible, mètres, NED.
+- `elapsed_sim_s` — secondes depuis le placement de la cible. Aujourd'hui, suit l'horloge du serveur.
+- `found_event` — rempli par le premier drone qui passe à moins de `sensor_radius_m` (10 m) de
+  la cible. Il ne change plus ensuite : seule la première détection compte. Un nouveau
+  `PlaceTarget` remplace la cible et relance la recherche.
 
 ---
 
@@ -229,7 +255,24 @@ Les clients doivent traiter tout statut terminal comme **fin de session** et ré
 
 ### 4.3 Backpressure
 
-L'implémentation actuelle ne fait **pas** de flow-control. Si un client lent n'arrive pas à drainer les frames à 20 Hz, le buffer sortant gRPC se remplit, `onNext` finit par throw, et le subscriber est retiré. Pas de retry. C'est acceptable pour v0.1 (un seul client Unity sur `localhost`) ; une politique token-bucket ou basée sur `setOnReadyHandler` est sur la roadmap si la livraison multi-clients / WAN devient un besoin.
+Le diffuseur respecte le contrôle de flux de gRPC : avant chaque frame, il vérifie `isReady()` pour chaque client. Un client lent qui n'est pas prêt saute cette frame au lieu d'accumuler des frames dans la mémoire du serveur. C'est sans risque, car chaque frame contient tout le monde (§3.6). Si `onNext` lève quand même une exception, le client est retiré et l'erreur est écrite dans les logs.
+
+### 4.4 Autres RPC — `PlaceTarget` et `SendPing`
+
+```proto
+service SimulationControl {
+  rpc PlaceTarget(PlaceTargetRequest) returns (PlaceTargetResponse);
+}
+message PlaceTargetRequest { Vec3 position = 1; } // NED, meters
+message PlaceTargetResponse {}
+```
+
+- **`PlaceTarget`** (unaire, package `gakkel.swarm.v1`) : la vue 3D l'envoie quand l'opérateur
+  fait un clic gauche dans la scène (`TargetPlacer.cs`). Le serveur convertit la position depuis
+  le NED (`CoordinateConversions.nedToServer()`) et remplace la cible. Une requête sans
+  `position` reçoit `INVALID_ARGUMENT`, comme une position hors de la zone de recherche (voir `search_area_size_m`). Voir l'[ADR-0004](adr/0004-target-placement-operator-triggered.fr.md).
+- **`SendPing`** (unaire, service `PingService`, package `gakkel`, fichier `ping.proto`) : vérifie
+  que le serveur répond. Il renvoie une réponse au message. Il n'est pas versionné avec `v1`.
 
 ---
 
@@ -241,13 +284,15 @@ Toutes les valeurs `Vec3` sont exprimées dans le repère **NED** (North / East 
 
 | Axe   | Direction     | Étendue (monde par défaut) |
 | ----- | ------------- | -------------------------- |
-| `x`   | Nord          | `[0, 100]` m               |
+| `x`   | Nord          | `[0, 50]` m                |
 | `y`   | Est           | `[0, 100]` m               |
-| `z`   | Bas           | `[0, 50]` m                |
+| `z`   | Bas           | `[0, 100]` m               |
 
-**Pourquoi NED :** convention standard aérospatiale / marine, alignée avec le projet `gakkel-drone-embedded`, et compatible avec des données de navigation AUV réelles (compas, capteur de profondeur) en v0.3+.
+Le backend travaille dans un autre repère (Est, Haut, Nord) et convertit dans `CoordinateConversions`. Pourquoi, et le tableau complet : [ADR-0007](adr/0007-coordinate-frames.fr.md).
 
-**Note client Unity :** Unity utilise un repère main gauche Y-up. La conversion se fait côté client à la désérialisation, pas sur le wire :
+**Pourquoi NED :** c'est la convention marine standard (la profondeur est un nombre positif, comme la donne un capteur de profondeur), et elle laisse la porte ouverte à de vraies données de navigation (compas, capteur de profondeur, positions sur la carte).
+
+**Note pour la vue 3D Unity :** Unity utilise un repère main gauche Y vers le haut. La conversion se fait côté client, dans `CoordinateUtils.NedToUnity()`, pas sur le réseau :
 
 ```
 unity.x =  proto.y     // Est  → Unity X
@@ -281,7 +326,7 @@ L'identité d'un agent est un UUID encodé en string (RFC 4122). Trade-off vs `b
 - **+** Lisible humainement dans les logs et la sortie de `grpcurl` / gRPC reflection.
 - **−** 36 octets vs 16 — ≈ 1,7 Kio/s d'overhead à 20 Hz × 20 agents. Négligeable pour le MVP.
 
-Si cet overhead devient gênant en v0.4+ (par ex. 200 agents), le champ peut migrer vers `bytes id_bin = 5` à côté de la string existante pour une release, puis la string peut être dépréciée.
+Si ce surcoût devient gênant plus tard (par ex. 200 drones), le champ peut migrer vers `bytes id_bin = 5` à côté de la string existante pour une release, puis la string peut être dépréciée.
 
 ### 5.5 Nommage et versioning
 
@@ -323,10 +368,11 @@ Le contrat est volontairement minimal pour que les itérations futures s'insère
 
 | Besoin futur                            | Extension probable                                                              |
 | --------------------------------------- | ------------------------------------------------------------------------------- |
-| Menaces (scénario SAR v0.1)             | ✅ **Fait** — `repeated PredatorState predators = 4` sur `WorldState`. Un prédateur autonome chasse les agents ; Unity le rend comme une sphère rouge (`PredatorRenderer.cs`). |
-| Drones différenciés (v0.4)              | L'enum `AgentType` couvre déjà `SPECIALIST` / `CARRIER`                         |
-| Canal de commande Pi-agent (v0.3)       | **Nouveau** service (`SwarmController`), RPC séparé — garder l'observer en lecture seule |
+| Danger                                  | ✅ **Fait** — `repeated PredatorState predators = 4` sur `WorldState`. Le danger chasse les drones ; Unity le dessine en requin (vue détaillée) ou en sphère rouge (vue simple), voir `PredatorRenderer.cs`. |
+| Porte-drones et drones spécialisés      | L'enum `AgentType` couvre déjà `CARRIER` / `SPECIALIST`                         |
+| Commandes vers la flotte (étape 6)      | **Nouveau** service, RPC séparé — garder l'observer en lecture seule            |
+| Configurations de flotte et scores (étapes 2–3) | Nouveaux messages ou nouveau service ; l'observer ne change pas        |
+| Rejeu (étape 3)                         | Les mêmes frames `WorldState`, lues depuis un fichier au lieu de la boucle en direct |
 | Télémétrie par agent (batterie, santé)  | Nouveaux champs `optional` sur `AgentState` (proto3 `optional` est wire-compatible) |
-| Multi-Pi (v0.6)                         | Scaling côté serveur d'abord ; protocole inchangé                               |
 
 En cas de doute : **ajouter des champs, jamais les réaffecter**. Bumper le package en `v2` uniquement pour de vrais changements breaking.

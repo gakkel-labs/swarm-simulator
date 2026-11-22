@@ -1,5 +1,7 @@
 # Intégration Unity — pont gRPC thread-safe
 
+[English](03-unity-integration.md)
+
 > Comment le flux WorldState à 20 Hz du serveur parvient aux GameObjects Unity sans crash ni data race.
 > Lecture complémentaire : [`02-grpc-contract.fr.md`](02-grpc-contract.fr.md).
 
@@ -75,7 +77,11 @@ public void update(Vector3D newPosition, Vector3D newVelocity) {
 
 Une écriture de référence `volatile` en Java est **atomique** et immédiatement visible par les autres threads. `Vector3D` est immuable (tous les champs finaux), donc un lecteur ne peut jamais observer un objet à moitié construit.
 
-> Les champs internes de `SimulationLoop` (`tickCount`, `lastCentroid`, …) ne sont **pas** volatiles — ils sont confinés au thread sim-loop par conception et ne doivent pas être exposés au broadcaster sans synchronisation. Voir le commentaire dans `SimulationLoop.java:44`.
+> Les champs internes de `SimulationLoop` (`tickCount`, …) ne sont **pas** volatiles — ils sont confinés au thread sim-loop par conception et ne doivent pas être exposés au broadcaster sans synchronisation.
+
+Les listes de drones et d'obstacles du `World` sont des `CopyOnWriteArrayList` : le diffuseur peut
+les parcourir pendant que la simulation retire ou ajoute un drone. La stratégie complète et ses
+limites : [ADR-0008](adr/0008-shared-world-concurrency.fr.md).
 
 ---
 
@@ -130,8 +136,22 @@ Appelée par le dispatcher sur le main thread. Modifie librement les GameObjects
 ```csharp
 private void OnWorldStateReceived(WorldState ws)
 {
-    visualizer?.Apply(ws);   // déplace les capsules, met à jour les trails — tout est sûr ici
+    visualizer?.Apply(ws);                      // déplace les drones, le danger, les obstacles
+    targetRenderer?.Apply(ws.SearchStatus);     // montre la cible et la détection
 }
+```
+
+### 4.4 Reconnexion
+
+Si le serveur s'arrête, gRPC lève `StatusCode.Unavailable` (ou `Internal`). Au lieu d'abandonner,
+`WorldStateReceiver` écrit un avertissement, attend `retryDelaySeconds` (3 s par défaut, réglable
+dans l'Inspector) et rouvre le stream. Toute autre erreur est écrite dans la Console et arrête la boucle.
+
+```
+stream ouvert ──► frames WorldState
+      │ le serveur s'arrête
+      ▼
+Unavailable ──► avertissement ──► attente 3 s ──► rouvre le stream
 ```
 
 ---
@@ -186,8 +206,8 @@ La queue n'a pas de taille maximale explicite. Si le serveur spam à un rythme d
 ## 7. Checklist de setup
 
 1. Ajouter `MainThreadDispatcher` comme **GameObject persistant** dans la première scène chargée (`DontDestroyOnLoad` est configuré automatiquement dans `Awake`).
-2. Ajouter `WorldStateReceiver` à n'importe quel GameObject actif et câbler la référence `SwarmVisualizer` dans l'Inspector.
-3. Démarrer le serveur Java (`./mvnw -pl swarm-server exec:java`) avant d'entrer en Play mode.
+2. Ajouter `WorldStateReceiver` à n'importe quel GameObject actif et câbler les références `SwarmVisualizer` et `TargetRenderer` dans l'Inspector.
+3. Démarrer le serveur Java avant d'entrer en Play mode : `mvn -pl swarm-server -am package`, puis `mvn -pl swarm-server exec:java -Dexec.mainClass="fr.gakkel.swarmsimulator.swarmserver.server.SwarmServer"`.
 4. Le log de debug `[gRPC]` apparaît dans la Console (éditeur uniquement — garde `#if UNITY_EDITOR`) confirmant que le stream est actif.
 
 ---
@@ -222,5 +242,8 @@ Deux pièges d'éditeur associés lors de la vérification :
 | **R** | Remettre le zoom (et l'angle en vue d'ensemble) à zéro |
 | Clic droit de la souris | Tourner la vue (vue d'ensemble et caméra libre) |
 | Molette | Zoom |
+| Clic gauche | Placer la cible (l'épave) là où le rayon touche la scène (`TargetPlacer`) |
+| **V** | Basculer toute la scène entre la **vue détaillée** et la **vue simple** ([ADR-0006](adr/0006-detailed-and-simple-view.fr.md)) |
+| **B** | Afficher ou cacher les rochers du fond (toujours cachés en vue simple) |
 
 La caméra de suivi reste **derrière le drone et un peu au-dessus** (troisième personne) : ses voisins et le comportement Boids restent visibles. Elle démarre sur le drone le plus proche du centre de l'essaim. La position et les virages sont lissés (`followPositionSmoothTime`, `followVerticalSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` dans l'Inspector) pour que l'image ne tremble pas quand le drone change de direction. La caméra ne passe jamais sous le fond marin.

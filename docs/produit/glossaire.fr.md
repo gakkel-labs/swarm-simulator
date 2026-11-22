@@ -94,6 +94,7 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 | **Backend** | Le programme Java qui fait tourner la simulation. C'est le seul qui décide de ce qui se passe. | ✅ |
 | **Vue 3D** (Unity) | L'affichage en 3D. Elle permettra de suivre une mission en temps réel et de la rejouer ensuite, en voyant les déplacements des drones. Elle montre seulement ce que le backend envoie ; elle ne décide rien. | ✅ |
 | **Poste de contrôle** | L'application web de l'opérateur, où la mission est définie (dépôt `mission-console`). L'opérateur peut y créer une mission seul, de bout en bout, sans passer par la simulation. | 🔜 |
+| **Vue détaillée / vue simple** | Les deux aspects de la vue 3D. La vue détaillée montre des modèles 3D et un vrai fond marin, pour présenter le projet ; la vue simple montre des formes simples, pour lire le comportement de l'essaim. La touche V bascule de l'une à l'autre ([ADR-0006](../adr/0006-detailed-and-simple-view.fr.md)). | ✅ |
 | **Rejouer** (replay) | Revoir une mission terminée dans la vue 3D, pour voir comment les drones se sont déplacés et ce qui s'est passé. | 🔜 |
 | **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. C'est une aide pour l'opérateur, pas une étape obligatoire. | ✅ |
 | **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `SPECIALIST` (drone spécialisé, type seulement réservé), `CARRIER` (porte-drones). | ✅ |
@@ -103,4 +104,4 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 | **Seed** (graine) | Un nombre qui fixe les tirages aléatoires. La même seed donne les mêmes positions de départ. | ✅ |
 | **Horloge de simulation** | Un temps propre à la simulation, pas celui de l'ordinateur. Elle rendra les essais répétables et plus rapides que le temps réel. | 🔜 |
 | **Optimiseur** | La partie du backend qui lance beaucoup de simulations et choisit la meilleure configuration de flotte grâce au score. | 🔜 |
-| **NED** | Le repère utilisé par le backend : Nord, Est, Bas (profondeur). | ✅ |
+| **NED** | Le repère utilisé sur le réseau entre le backend et la vue 3D : Nord, Est, Bas (profondeur). À l'intérieur, le backend utilise Est, Haut, Nord ([ADR-0007](../adr/0007-coordinate-frames.fr.md)). | ✅ |

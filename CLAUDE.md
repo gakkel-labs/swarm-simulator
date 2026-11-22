@@ -78,8 +78,8 @@ Variables utiles : `SWARM_PORT`, `SWARM_SEED`, `SWARM_AGENT_COUNT`.
   et une ligne « **Metric.** Which indicator this should move. » (l'indicateur que l'issue doit faire bouger)
 
 ## Feuille de route
-6 étapes (milestones « Step 1 » à « Step 6 » sur GitHub). Étape 1 : une belle scène Unity
-(drone 3D, fond marin) pour montrer le projet. Les idées pour plus tard sont dans l'issue #120.
+6 étapes (milestones « Step 1 » à « Step 6 » sur GitHub). Étape 1 (une belle scène Unity :
+drone 3D, fond marin) est terminée. Jalon « Consolidation » (#149) avant l'étape 2. Les idées pour plus tard sont dans l'issue #120.
 Budget : environ 6 h par semaine.
 
 ## Workflow Claude Code

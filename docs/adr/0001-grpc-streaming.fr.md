@@ -1,5 +1,7 @@
 # ADR-0001: Use gRPC server-streaming to push WorldState at 20 Hz
 
+[English](0001-grpc-streaming.md)
+
 ## Status
 Accepted — 2026-01-15 (rétroactif, formalisé 2026-05-25)
 
@@ -43,7 +45,7 @@ Forces en jeu :
 − Côté Unity, gRPC.Core est deprecated ; on utilise `grpc-dotnet` + `YetAnotherHttpHandler`
   pour HTTP/2 — un peu de plomberie spécifique à l'environnement Unity.
 − Threading Unity non-trivial : le stream arrive sur un thread .NET, il faut un dispatcher
-  vers le main thread (cf. [notes-threading-grpc-unity.md](../notes-threading-grpc-unity.md)).
+  vers le main thread (cf. [03-unity-integration.fr.md](../03-unity-integration.fr.md)).
 
 ## Alternatives considered
 - **REST + polling JSON** : rejeté. À 20 Hz, 50 polls/s avec overhead HTTP/1.1 et parsing JSON,

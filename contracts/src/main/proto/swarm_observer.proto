@@ -67,6 +67,10 @@ message WorldState {
   SearchStatus             search_status     = 5;
   float                    sensor_radius_m   = 6; // detection radius shared by all agents, meters
   float                    cohesion_spread_m = 7; // mean position spread (std dev) over last 30 ticks, metres
+  // Size of the search area, metres, NED axes: x = extent to the North, y = to the East,
+  // z = down to the seabed. The area spans from (0, 0, 0) at the surface to this corner.
+  // All zero from an older server: clients should then keep their own default size.
+  Vec3                     search_area_size_m = 8;
 }
 
 // Sent once by the client to open the stream.

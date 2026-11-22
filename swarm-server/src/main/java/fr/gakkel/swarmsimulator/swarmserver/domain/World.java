@@ -71,8 +71,8 @@ public final class World {
         if (radius < 0) throw new IllegalArgumentException("radius must be >= 0");
         double radiusSq = radius * radius;
         return agents.stream()
-                .filter(a -> !a.equals(agent))
-                .filter(a -> squaredDistance(agent.position(), a.position()) <= radiusSq)
+                .filter(other -> !other.equals(agent))
+                .filter(other -> agent.position().distanceSquaredTo(other.position()) <= radiusSq)
                 .toList();
     }
 
@@ -87,12 +87,5 @@ public final class World {
                 Math.clamp(position.x(), 0, width),
                 Math.clamp(position.y(), -height, 0),
                 Math.clamp(position.z(), 0, depth));
-    }
-
-    private static double squaredDistance(Vector3D a, Vector3D b) {
-        double dx = a.x() - b.x();
-        double dy = a.y() - b.y();
-        double dz = a.z() - b.z();
-        return dx * dx + dy * dy + dz * dz;
     }
 }

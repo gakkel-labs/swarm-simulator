@@ -97,4 +97,17 @@ class AgentTest {
         assertThrows(NullPointerException.class, () -> agent.update(ORIGIN, null));
     }
 
+
+    @Test
+    void update_motionGivesPositionAndVelocityOfTheSameStep() {
+        // Another thread (the broadcaster) must never read a position from one step and a
+        // velocity from another: both are kept in one Motion value.
+        var agent = Agent.create(AgentType.EXPLORER, ORIGIN);
+
+        agent.update(SOME_POS, SOME_VEL);
+        Motion motion = agent.motion();
+
+        assertEquals(SOME_POS, motion.position());
+        assertEquals(SOME_VEL, motion.velocity());
+    }
 }

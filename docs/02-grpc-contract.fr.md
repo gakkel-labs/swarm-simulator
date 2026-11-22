@@ -135,7 +135,7 @@ message PredatorState {
 
 Snapshot du prédateur autonome à l'instant de la broadcast.
 
-- `id` — chaîne fixe `"predator-0"` en v0.1 (prédateur unique). Plusieurs prédateurs utiliseraient des IDs distincts — les clients doivent indexer par `id` pour un rendu avec état.
+- `id` — UUID du prédateur, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état. Sa vitesse et sa distance de capture se règlent avec `SWARM_PREDATOR_SPEED` (défaut 3 m/s) et `SWARM_PREDATOR_EAT_RADIUS` (défaut 1,5 m).
 - `position_xyz` — centre du prédateur, mètres, NED. Même repère que `AgentState.position_xyz`.
 - `velocity_mps` — vitesse instantanée, m/s, NED. Magnitude bornée par `Predator.SPEED` (3.0 m/s — intentionnellement plus lent que les boids pour créer de la tension dramatique).
 
@@ -152,6 +152,7 @@ message WorldState {
   SearchStatus             search_status     = 5;
   float                    sensor_radius_m   = 6;
   float                    cohesion_spread_m = 7;
+  Vec3                     search_area_size_m = 8;
 }
 ```
 
@@ -164,6 +165,7 @@ Snapshot complet du monde simulé à l'instant `timestamp_unix_ms`.
 - `search_status` — présent uniquement quand une cible a été placée via `PlaceTarget`. Absent jusqu'à ce moment (valeur par défaut proto3).
 - `sensor_radius_m` — rayon de détection partagé par tous les agents, en mètres. Les clients l'utilisent pour dimensionner l'overlay de zone de détection.
 - `cohesion_spread_m` — dispersion moyenne des positions (écart-type par rapport au centroïde) lissée sur les 30 derniers ticks (~1 s). Zéro jusqu'au premier tick. Utilisé par le HUD Unity et exporté dans `metrics/cohesion-*.csv`.
+- `search_area_size_m` — taille de la zone de recherche en mètres, axes NED : `x` = étendue vers le nord, `y` = vers l'est, `z` = vers le bas jusqu'au fond. La zone va de `(0, 0, 0)` à la surface jusqu'à ce coin. Tout à zéro avec un ancien serveur : le client garde alors sa taille par défaut. Un `PlaceTarget` hors de cette boîte est refusé avec `INVALID_ARGUMENT`.
 
 Chaque frame est **auto-suffisante** — pas de diff, pas de delta. Un client qui se connecte en cours de simulation reçoit un état complet dès sa première frame.
 

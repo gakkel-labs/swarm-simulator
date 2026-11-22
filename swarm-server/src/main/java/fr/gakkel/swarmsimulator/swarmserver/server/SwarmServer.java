@@ -23,7 +23,7 @@ public class SwarmServer {
         }));
 
         bootstrap.start();
-        LOG.info("SwarmServer on :{} — sim {}Hz — stream {}Hz",
+        LOG.info("SwarmServer on :{} - sim {}Hz - stream {}Hz",
                 settings.port(), SimulationLoop.TICK_RATE_HZ, SwarmObserverImpl.STREAM_RATE_HZ);
         bootstrap.awaitTermination();
     }

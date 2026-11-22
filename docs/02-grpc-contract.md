@@ -135,7 +135,7 @@ message PredatorState {
 
 Snapshot of the autonomous predator at the broadcast instant.
 
-- `id` — fixed string `"predator-0"` in v0.1 (single predator). Multiple predators would use distinct IDs — clients should key by `id` for stateful rendering.
+- `id` — UUID of the predator, stable for the whole run. Clients should key by `id` for stateful rendering. Its speed and catch distance are set with `SWARM_PREDATOR_SPEED` (default 3 m/s) and `SWARM_PREDATOR_EAT_RADIUS` (default 1.5 m).
 - `position_xyz` — predator center, meters, NED. Same coordinate frame as `AgentState.position_xyz`.
 - `velocity_mps` — instantaneous velocity, m/s, NED. Magnitude bounded by `Predator.SPEED` (3.0 m/s — intentionally slower than boids for dramatic tension).
 
@@ -152,6 +152,7 @@ message WorldState {
   SearchStatus             search_status     = 5;
   float                    sensor_radius_m   = 6;
   float                    cohesion_spread_m = 7;
+  Vec3                     search_area_size_m = 8;
 }
 ```
 
@@ -164,6 +165,7 @@ Full snapshot of the simulated world at instant `timestamp_unix_ms`.
 - `search_status` — present only when a target has been placed via `PlaceTarget`. Absent until then (proto3 default).
 - `sensor_radius_m` — detection radius shared by all agents in metres. Clients use this to size the detection-zone overlay.
 - `cohesion_spread_m` — mean position spread (standard deviation from centroid) smoothed over the last 30 ticks (~1 s). Zero until the first tick completes. Used by the Unity HUD and exported to `metrics/cohesion-*.csv`.
+- `search_area_size_m` — size of the search area in metres, NED axes: `x` = extent to the North, `y` = to the East, `z` = down to the seabed. The area spans from `(0, 0, 0)` at the surface to this corner. All zero from an older server: clients then keep their own default size. A `PlaceTarget` outside this box is refused with `INVALID_ARGUMENT`.
 
 Each frame is **self-contained** — no diffing, no deltas. A client that connects mid-simulation receives a complete picture on its very first frame.
 

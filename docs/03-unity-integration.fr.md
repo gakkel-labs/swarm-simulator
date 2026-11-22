@@ -209,3 +209,18 @@ Le Canvas Scaler du HUD était en **Constant Pixel Size** : l'UI gardait une tai
 Deux pièges d'éditeur associés lors de la vérification :
 - **Tester la vue Game à une résolution fixe `1920×1080`, pas en *Free Aspect*.** Le Free Aspect recalcule l'UI en direct quand on redimensionne la fenêtre, ce qui donne l'illusion d'éléments qui « disparaissent » — un vrai build se comporte comme une résolution fixe, pas comme le Free Aspect.
 - **Les modifications de composants faites en mode Play sont annulées à la sortie.** Régler le Canvas Scaler en **mode édition**, puis sauvegarder la scène (`Ctrl+S`).
+
+## 9. Caméras et commandes
+
+`CameraController` (sur la Main Camera) propose trois caméras. Le HUD indique celle qui est active.
+
+| Touche | Action |
+|--------|--------|
+| **F** | Basculer entre la **vue d'ensemble** (tourne autour du centre de l'essaim) et la **caméra de suivi** |
+| **N** / **Maj+N** | Caméra de suivi : drone suivant / précédent |
+| **Tab** | Caméra libre (**W A S D** pour se déplacer) ; Tab à nouveau revient à la vue d'ensemble |
+| **R** | Remettre le zoom (et l'angle en vue d'ensemble) à zéro |
+| Clic droit de la souris | Tourner la vue (vue d'ensemble et caméra libre) |
+| Molette | Zoom |
+
+La caméra de suivi reste **derrière le drone et un peu au-dessus** (troisième personne) : ses voisins et le comportement Boids restent visibles. Elle démarre sur le drone le plus proche du centre de l'essaim. La position et les virages sont lissés (`followPositionSmoothTime`, `followRotationSharpness`, `followHeadingSharpness` dans l'Inspector) pour que l'image ne tremble pas quand le drone change de direction. La caméra ne passe jamais sous le fond marin.

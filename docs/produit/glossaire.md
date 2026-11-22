@@ -19,6 +19,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | Word | Definition | In the code |
 |------|------------|:-----------:|
 | **Mission** | A job given to drone fleets, with an objective, a search area and a time window. Example: find the wreck of an aircraft in a given search area. | 🔜 |
+| **Campaign** | A sequence of missions that the operator prepares together. A campaign holds several missions; each mission keeps its own objective, search area and time window. Example: search a large region in several missions, one search area after another. Planned for later. | 🔜 |
 | **Reference mission** | The mission used to build and test Gakkel first: the **civil search for a sunken wreck** (aircraft or ship). | — |
 | **Other missions** | Missions Gakkel must also handle later: **inspection**, **seabed mapping (bathymetry)**, **mine countermeasures**, **scientific exploration** (take samples, deploy or recover instruments, measure the water). | — |
 | **Objective** | What the mission must achieve. Example: "find the wreck", "map this area". | 🔜 |

@@ -19,6 +19,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | Mot | Définition | Dans le code |
 |-----|------------|:------------:|
 | **Mission** | Un travail confié à des flottes de drones, avec un objectif, une zone de recherche et une fenêtre de temps. Exemple : retrouver l'épave d'un avion dans une zone de recherche donnée. | 🔜 |
+| **Campagne** | Une suite de missions préparées ensemble par l'opérateur. Une campagne contient plusieurs missions ; chaque mission garde son objectif, sa zone de recherche et sa fenêtre de temps. Exemple : fouiller une grande région en plusieurs missions, une zone de recherche après l'autre. Concept prévu pour plus tard. | 🔜 |
 | **Mission de référence** | La mission qui sert à construire et tester Gakkel en premier : la **recherche civile d'une épave** (avion ou navire). | — |
 | **Autres missions** | Les missions que Gakkel devra aussi gérer plus tard : **inspection**, **cartographie des fonds (bathymétrie)**, **guerre des mines**, **exploration scientifique** (prélever des échantillons, poser ou récupérer des instruments, mesurer l'eau). | — |
 | **Objectif** | Ce que la mission doit atteindre. Exemple : « trouver l'épave », « cartographier cette zone ». | 🔜 |

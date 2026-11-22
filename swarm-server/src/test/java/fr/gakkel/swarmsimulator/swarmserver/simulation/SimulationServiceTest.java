@@ -58,4 +58,16 @@ class SimulationServiceTest {
         assertFalse(world.target().isFound());
         assertEquals(secondPosition, world.target().position());
     }
+
+    @Test
+    void placeTarget_outsideSearchArea_throwsAndKeepsPreviousTarget() {
+        // A target outside the search area can never be found by a drone.
+        Vector3D insidePosition = new Vector3D(50, -30, 25);
+        simulationService.placeTarget(insidePosition, TriggerSource.OPERATOR_CLICK);
+        Vector3D belowSeabed = new Vector3D(50, -150, 25);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> simulationService.placeTarget(belowSeabed, TriggerSource.OPERATOR_CLICK));
+        assertEquals(insidePosition, world.target().position());
+    }
 }

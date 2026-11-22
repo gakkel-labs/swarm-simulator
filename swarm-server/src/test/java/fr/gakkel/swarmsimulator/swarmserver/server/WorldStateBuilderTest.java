@@ -12,6 +12,9 @@ import io.gakkel.swarm.contracts.v1.WorldState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -121,7 +124,7 @@ class WorldStateBuilderTest {
 
         assertThat(state.getPredatorsCount()).isEqualTo(1);
         var predatorState = state.getPredators(0);
-        assertThat(predatorState.getId()).isEqualTo("predator-0");
+        assertThat(predatorState.getId()).isEqualTo(world.predator().id().toString());
         assertThat(predatorState.getPositionXyz().getX()).isEqualTo(5.0f);
         assertThat(predatorState.getPositionXyz().getY()).isEqualTo(10.0f);
         assertThat(predatorState.getPositionXyz().getZ()).isEqualTo(20.0f);
@@ -176,5 +179,26 @@ class WorldStateBuilderTest {
         WorldState state = builderWithCohesion.build();
 
         assertThat(state.getCohesionSpreadM()).isEqualTo(12.5f);
+    }
+
+    @Test
+    void build_usesTheInjectedClockForTheTimestamp() {
+        Clock fixedClock = Clock.fixed(Instant.ofEpochMilli(1_234_567L), ZoneOffset.UTC);
+        WorldStateBuilder clockedBuilder = new WorldStateBuilder(world, () -> 0.0, fixedClock);
+
+        WorldState state = clockedBuilder.build();
+
+        assertThat(state.getTimestampUnixMs()).isEqualTo(1_234_567L);
+    }
+
+    @Test
+    void build_sendsTheSearchAreaSizeInNed() {
+        // server world width (East) 100, height (Down) 100, depth (North) 50
+        // -> NED size: North = 50, East = 100, Down = 100
+        WorldState state = builder.build();
+
+        assertThat(state.getSearchAreaSizeM().getX()).isEqualTo(50.0f);
+        assertThat(state.getSearchAreaSizeM().getY()).isEqualTo(100.0f);
+        assertThat(state.getSearchAreaSizeM().getZ()).isEqualTo(100.0f);
     }
 }

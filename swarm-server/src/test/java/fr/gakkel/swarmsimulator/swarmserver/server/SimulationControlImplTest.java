@@ -77,4 +77,21 @@ class SimulationControlImplTest {
         assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
                 .isEqualTo(Status.INVALID_ARGUMENT.getCode());
     }
+
+    @Test
+    void placeTarget_outsideSearchArea_returnsInvalidArgument() {
+        PlaceTargetRequest request = PlaceTargetRequest.newBuilder()
+                .setPosition(Vec3.newBuilder().setX(10).setY(20).setZ(500).build())
+                .build();
+        doThrow(new IllegalArgumentException("outside the search area"))
+                .when(mockSimulationService).placeTarget(any(), any());
+        ArgumentCaptor<Throwable> errorCaptor = ArgumentCaptor.forClass(Throwable.class);
+
+        simulationControl.placeTarget(request, mockResponseObserver);
+
+        verify(mockResponseObserver).onError(errorCaptor.capture());
+        verify(mockResponseObserver, never()).onNext(any());
+        assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
+                .isEqualTo(Status.INVALID_ARGUMENT.getCode());
+    }
 }

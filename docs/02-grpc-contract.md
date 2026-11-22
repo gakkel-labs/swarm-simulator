@@ -137,9 +137,9 @@ message PredatorState {
 
 Snapshot of the **danger** at the broadcast instant. `Predator` is the old code name of the danger (see the [glossary](produit/glossaire.md)); the message keeps its name in `v1` so the contract does not break.
 
-- `id` — fixed string `"predator-0"` today (one danger). Several dangers would use distinct IDs — clients should key by `id` for stateful rendering.
+- `id` — UUID of the danger, stable for the whole run. Clients should key by `id` for stateful rendering.
 - `position_xyz` — danger center, meters, NED. Same coordinate frame as `AgentState.position_xyz`.
-- `velocity_mps` — instantaneous velocity, m/s, NED. Magnitude bounded by `Predator.SPEED` (3.0 m/s — slower than the drones, so they can escape).
+- `velocity_mps` — instantaneous velocity, m/s, NED. Its magnitude is the danger speed, set with `SWARM_PREDATOR_SPEED` (default 3.0 m/s, slower than the drones so they can escape). The catch distance is set with `SWARM_PREDATOR_EAT_RADIUS` (default 1.5 m).
 
 No orientation field — visual heading is derived client-side from `velocity_mps`.
 
@@ -154,6 +154,7 @@ message WorldState {
   SearchStatus             search_status     = 5;
   float                    sensor_radius_m   = 6;
   float                    cohesion_spread_m = 7;
+  Vec3                     search_area_size_m = 8;
 }
 ```
 
@@ -166,6 +167,7 @@ Full snapshot of the simulated world at instant `timestamp_unix_ms`.
 - `search_status` — present only when a target has been placed via `PlaceTarget`. Absent until then (proto3 default).
 - `sensor_radius_m` — detection radius shared by all agents in metres. Clients use this to size the detection-zone overlay.
 - `cohesion_spread_m` — mean position spread (standard deviation from centroid) smoothed over the last 30 ticks (~1 s). Zero until the first tick completes. Used by the Unity HUD and exported to `metrics/cohesion-*.csv`.
+- `search_area_size_m` — size of the search area in metres, NED axes: `x` = extent to the North, `y` = to the East, `z` = down to the seabed. The area spans from `(0, 0, 0)` at the surface to this corner. All zero from an older server: clients then keep their own default size. A `PlaceTarget` outside this box is refused with `INVALID_ARGUMENT`.
 
 Each frame is **self-contained** — no diffing, no deltas. A client that connects mid-simulation receives a complete picture on its very first frame.
 
@@ -253,7 +255,7 @@ Clients should treat any terminal status as **end of session** and re-issue `Sub
 
 ### 4.3 Backpressure
 
-The current implementation does **not** flow-control. If a slow client cannot drain frames at 20 Hz, the gRPC outbound buffer fills, `onNext` eventually throws, and the subscriber is dropped. There is no retry. This is acceptable today (single Unity viewer on `localhost`); a token-bucket or `setOnReadyHandler`-based drop policy is on the roadmap if multi-client / WAN delivery becomes a requirement.
+The broadcaster respects gRPC flow control: before each frame it checks `isReady()` for every client. A slow client that is not ready skips that frame instead of piling frames up in server memory. This is safe because each frame holds the whole world (§3.6). If `onNext` still throws, the client is removed and logged.
 
 ### 4.4 Other RPCs — `PlaceTarget` and `SendPing`
 
@@ -268,7 +270,7 @@ message PlaceTargetResponse {}
 - **`PlaceTarget`** (unary, package `gakkel.swarm.v1`): the viewer sends it when the operator
   left-clicks in the scene (`TargetPlacer.cs`). The server converts the position from NED
   (`CoordinateConversions.nedToServer()`) and replaces the target. A request without `position`
-  gets `INVALID_ARGUMENT`. See [ADR-0004](adr/0004-target-placement-operator-triggered.md).
+  gets `INVALID_ARGUMENT`, and so does a position outside the search area (see `search_area_size_m`). See [ADR-0004](adr/0004-target-placement-operator-triggered.md).
 - **`SendPing`** (unary, service `PingService`, package `gakkel`, file `ping.proto`): a health
   check. It sends back a reply to the message. It is not versioned with `v1`.
 

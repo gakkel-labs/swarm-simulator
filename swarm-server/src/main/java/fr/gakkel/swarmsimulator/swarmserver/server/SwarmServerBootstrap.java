@@ -38,10 +38,18 @@ public final class SwarmServerBootstrap {
     }
 
     public static SwarmServerBootstrap create(Settings settings) {
+        return create(settings, createCsvExporter());
+    }
+
+    /**
+     * Same as {@link #create(Settings)} with a chosen cohesion CSV exporter; {@code null} writes
+     * no CSV file (useful in tests).
+     */
+    public static SwarmServerBootstrap create(Settings settings, CohesionCsvExporter csvExporter) {
         SimulationLoop.Wiring wiring = SimulationLoop.wire(
                 settings.agentCount(), settings.worldWidth(), settings.worldHeight(), settings.worldDepth(),
-                settings.boids(), settings.diagnostics(), settings.seed(),
-                singleDaemonThreadExecutor("sim-loop"), createCsvExporter());
+                settings.boids(), settings.diagnostics(), settings.predator(), settings.seed(),
+                singleDaemonThreadExecutor("sim-loop"), csvExporter);
         World world = wiring.world();
         SimulationLoop simulation = wiring.loop();
 
@@ -61,12 +69,18 @@ public final class SwarmServerBootstrap {
     public void start() throws IOException {
         grpcServer.start();
         simulation.start();
+        observer.start();
     }
 
     public void stop() throws InterruptedException {
         observer.stop();
         grpcServer.shutdown();
         simulation.stop();
+    }
+
+    /** The port the server listens on (the real one when the settings asked for port 0). */
+    public int port() {
+        return grpcServer.getPort();
     }
 
     public void awaitTermination() throws InterruptedException {
@@ -77,7 +91,7 @@ public final class SwarmServerBootstrap {
         try {
             return new CohesionCsvExporter(Paths.get("metrics"));
         } catch (IOException e) {
-            LOG.warn("Could not create cohesion CSV exporter — metrics will not be written: {}", e.getMessage());
+            LOG.warn("Could not create cohesion CSV exporter - metrics will not be written: {}", e.getMessage());
             return null;
         }
     }

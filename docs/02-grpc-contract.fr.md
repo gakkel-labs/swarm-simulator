@@ -137,9 +137,9 @@ message PredatorState {
 
 Photo du **danger** à l'instant de la diffusion. `Predator` est l'ancien nom de code du danger (voir le [glossaire](produit/glossaire.fr.md)) ; le message garde son nom en `v1` pour ne pas casser le contrat.
 
-- `id` — chaîne fixe `"predator-0"` aujourd'hui (un seul danger). Plusieurs dangers utiliseraient des IDs distincts — les clients doivent indexer par `id` pour un rendu avec état.
+- `id` — UUID du danger, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état.
 - `position_xyz` — centre du danger, mètres, NED. Même repère que `AgentState.position_xyz`.
-- `velocity_mps` — vitesse instantanée, m/s, NED. Magnitude bornée par `Predator.SPEED` (3.0 m/s — plus lent que les drones, pour qu'ils puissent s'échapper).
+- `velocity_mps` — vitesse instantanée, m/s, NED. Sa norme est la vitesse du danger, réglée par `SWARM_PREDATOR_SPEED` (3,0 m/s par défaut, plus lent que les drones pour qu'ils puissent s'échapper). La distance de capture se règle par `SWARM_PREDATOR_EAT_RADIUS` (1,5 m par défaut).
 
 Pas de champ d'orientation — le cap visuel est déduit côté client depuis `velocity_mps`.
 
@@ -154,6 +154,7 @@ message WorldState {
   SearchStatus             search_status     = 5;
   float                    sensor_radius_m   = 6;
   float                    cohesion_spread_m = 7;
+  Vec3                     search_area_size_m = 8;
 }
 ```
 
@@ -166,6 +167,7 @@ Snapshot complet du monde simulé à l'instant `timestamp_unix_ms`.
 - `search_status` — présent uniquement quand une cible a été placée via `PlaceTarget`. Absent jusqu'à ce moment (valeur par défaut proto3).
 - `sensor_radius_m` — rayon de détection partagé par tous les agents, en mètres. Les clients l'utilisent pour dimensionner l'overlay de zone de détection.
 - `cohesion_spread_m` — dispersion moyenne des positions (écart-type par rapport au centroïde) lissée sur les 30 derniers ticks (~1 s). Zéro jusqu'au premier tick. Utilisé par le HUD Unity et exporté dans `metrics/cohesion-*.csv`.
+- `search_area_size_m` — taille de la zone de recherche en mètres, axes NED : `x` = étendue vers le nord, `y` = vers l'est, `z` = vers le bas jusqu'au fond. La zone va de `(0, 0, 0)` à la surface jusqu'à ce coin. Tout à zéro avec un ancien serveur : le client garde alors sa taille par défaut. Un `PlaceTarget` hors de cette boîte est refusé avec `INVALID_ARGUMENT`.
 
 Chaque frame est **auto-suffisante** — pas de diff, pas de delta. Un client qui se connecte en cours de simulation reçoit un état complet dès sa première frame.
 
@@ -253,7 +255,7 @@ Les clients doivent traiter tout statut terminal comme **fin de session** et ré
 
 ### 4.3 Backpressure
 
-L'implémentation actuelle ne fait **pas** de flow-control. Si un client lent n'arrive pas à drainer les frames à 20 Hz, le buffer sortant gRPC se remplit, `onNext` finit par throw, et le subscriber est retiré. Pas de retry. C'est acceptable aujourd'hui (une seule vue 3D Unity sur `localhost`) ; une politique token-bucket ou basée sur `setOnReadyHandler` est sur la roadmap si la livraison multi-clients / WAN devient un besoin.
+Le diffuseur respecte le contrôle de flux de gRPC : avant chaque frame, il vérifie `isReady()` pour chaque client. Un client lent qui n'est pas prêt saute cette frame au lieu d'accumuler des frames dans la mémoire du serveur. C'est sans risque, car chaque frame contient tout le monde (§3.6). Si `onNext` lève quand même une exception, le client est retiré et l'erreur est écrite dans les logs.
 
 ### 4.4 Autres RPC — `PlaceTarget` et `SendPing`
 
@@ -268,7 +270,7 @@ message PlaceTargetResponse {}
 - **`PlaceTarget`** (unaire, package `gakkel.swarm.v1`) : la vue 3D l'envoie quand l'opérateur
   fait un clic gauche dans la scène (`TargetPlacer.cs`). Le serveur convertit la position depuis
   le NED (`CoordinateConversions.nedToServer()`) et remplace la cible. Une requête sans
-  `position` reçoit `INVALID_ARGUMENT`. Voir l'[ADR-0004](adr/0004-target-placement-operator-triggered.fr.md).
+  `position` reçoit `INVALID_ARGUMENT`, comme une position hors de la zone de recherche (voir `search_area_size_m`). Voir l'[ADR-0004](adr/0004-target-placement-operator-triggered.fr.md).
 - **`SendPing`** (unaire, service `PingService`, package `gakkel`, fichier `ping.proto`) : vérifie
   que le serveur répond. Il renvoie une réponse au message. Il n'est pas versionné avec `v1`.
 

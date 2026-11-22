@@ -7,14 +7,13 @@ public final class Agent {
 
     private final UUID id;
     private final AgentType type;
-    private volatile Vector3D position;
-    private volatile Vector3D velocity;
+    // One volatile value instead of two: see Motion.
+    private volatile Motion motion;
 
     public Agent(UUID id, AgentType type, Vector3D position, Vector3D velocity) {
         this.id = Objects.requireNonNull(id, "id");
         this.type = Objects.requireNonNull(type, "type");
-        this.position = Objects.requireNonNull(position, "position");
-        this.velocity = Objects.requireNonNull(velocity, "velocity");
+        this.motion = new Motion(position, velocity);
     }
 
     public static Agent create(AgentType type, Vector3D position) {
@@ -29,18 +28,21 @@ public final class Agent {
         return type;
     }
 
+    public Motion motion() {
+        return motion;
+    }
+
     public Vector3D position() {
-        return position;
+        return motion.position();
     }
 
     public Vector3D velocity() {
-        return velocity;
+        return motion.velocity();
     }
 
-    // called each simulation step — mutates in-place to avoid allocation at 20 Hz
+    // called each simulation step: one write, so readers see both values of the same step
     public void update(Vector3D newPosition, Vector3D newVelocity) {
-        this.position = Objects.requireNonNull(newPosition, "newPosition");
-        this.velocity = Objects.requireNonNull(newVelocity, "newVelocity");
+        this.motion = new Motion(newPosition, newVelocity);
     }
 
     @Override
@@ -57,6 +59,7 @@ public final class Agent {
 
     @Override
     public String toString() {
-        return "Agent[id=" + id + ", type=" + type + ", position=" + position + ", velocity=" + velocity + "]";
+        return "Agent[id=" + id + ", type=" + type + ", position=" + motion.position()
+                + ", velocity=" + motion.velocity() + "]";
     }
 }

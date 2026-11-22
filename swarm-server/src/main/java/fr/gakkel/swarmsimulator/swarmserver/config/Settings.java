@@ -1,6 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
@@ -36,7 +37,8 @@ public record Settings(
         double worldDepth,
         long seed,
         BoidsConfig boids,
-        DiagnosticsConfig diagnostics) {
+        DiagnosticsConfig diagnostics,
+        PredatorConfig predator) {
 
     private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
@@ -73,11 +75,13 @@ public record Settings(
 
         BoidsConfig boids = resolveBoids(env, props);
         DiagnosticsConfig diagnostics = resolveDiagnostics(env, props);
+        PredatorConfig predator = resolvePredator(env, props);
 
-        LOG.info("Settings — port={} | agents={} | world={}x{}x{} | seed={}",
+        LOG.info("Settings - port={} | agents={} | world={}x{}x{} | seed={}",
                 port, agentCount, worldWidth, worldHeight, worldDepth, seed);
 
-        return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed, boids, diagnostics);
+        return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed,
+                boids, diagnostics, predator);
     }
 
     private static BoidsConfig resolveBoids(Map<String, String> env, Properties props) {
@@ -108,6 +112,20 @@ public record Settings(
         return b.build();
     }
 
+    private static PredatorConfig resolvePredator(Map<String, String> env, Properties props) {
+        PredatorConfig defaults = PredatorConfig.defaults();
+        double speed = doubleValue(env, props, "SWARM_PREDATOR_SPEED", "swarm.predator.speed",
+                defaults.speed());
+        double eatRadius = doubleValue(env, props, "SWARM_PREDATOR_EAT_RADIUS",
+                "swarm.predator.eat-radius", defaults.eatRadius());
+        try {
+            return new PredatorConfig(speed, eatRadius);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("SWARM_PREDATOR_SPEED and SWARM_PREDATOR_EAT_RADIUS "
+                    + "must be positive: " + exception.getMessage(), exception);
+        }
+    }
+
     /**
      * Resolves the master RNG seed. Accepts a number for reproducible runs, {@code random}/{@code none}
      * for a freshly drawn seed (logged so the run can be replayed), or falls back to
@@ -122,7 +140,7 @@ public record Settings(
         String value = raw.get();
         if (value.equalsIgnoreCase("random") || value.equalsIgnoreCase("none")) {
             long drawn = new Random().nextLong();
-            LOG.info("Seed: {} (random — set SWARM_SEED={} to replay this run)", drawn, drawn);
+            LOG.info("Seed: {} (random - set SWARM_SEED={} to replay this run)", drawn, drawn);
             return drawn;
         }
         try {
@@ -142,7 +160,7 @@ public record Settings(
                 props.load(in);
             }
         } catch (IOException e) {
-            LOG.warn("Could not read {} — falling back to env vars and defaults: {}", PROPERTIES_RESOURCE, e.getMessage());
+            LOG.warn("Could not read {} - falling back to env vars and defaults: {}", PROPERTIES_RESOURCE, e.getMessage());
         }
         return props;
     }

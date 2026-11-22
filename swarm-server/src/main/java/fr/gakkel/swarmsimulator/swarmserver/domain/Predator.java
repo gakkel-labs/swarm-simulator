@@ -2,36 +2,46 @@ package fr.gakkel.swarmsimulator.swarmserver.domain;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public final class Predator {
 
-    static final double SPEED      = 3.0;
-    static final double EAT_RADIUS = 1.5;
-
-    private volatile Vector3D position;
-    private volatile Vector3D velocity;
+    private final UUID id;
+    private final PredatorConfig config;
+    // One volatile value instead of two: see Motion.
+    private volatile Motion motion;
 
     public Predator(Vector3D position, Vector3D velocity) {
-        this.position = Objects.requireNonNull(position, "position");
-        this.velocity = Objects.requireNonNull(velocity, "velocity");
+        this(UUID.randomUUID(), position, velocity, PredatorConfig.defaults());
     }
 
-    public Vector3D position() { return position; }
-    public Vector3D velocity() { return velocity; }
+    public Predator(UUID id, Vector3D position, Vector3D velocity, PredatorConfig config) {
+        this.id = Objects.requireNonNull(id, "id");
+        this.config = Objects.requireNonNull(config, "config");
+        this.motion = new Motion(position, velocity);
+    }
+
+    public UUID id() { return id; }
+    public Motion motion() { return motion; }
+    public Vector3D position() { return motion.position(); }
+    public Vector3D velocity() { return motion.velocity(); }
 
     public void update(World world, double dt) {
         List<Agent> agents = world.agents();
         if (agents.isEmpty()) return;
 
-        Agent nearest = findNearest(agents);
-        Vector3D direction = nearest.position().subtract(position).normalize();
-        velocity = direction.scale(SPEED);
-        position = world.clamp(position.add(velocity.scale(dt)));
+        Vector3D currentPosition = motion.position();
+        Agent nearest = findNearest(agents, currentPosition);
+        Vector3D direction = nearest.position().subtract(currentPosition).normalize();
+        Vector3D newVelocity = direction.scale(config.speed());
+        Vector3D newPosition = world.clamp(currentPosition.add(newVelocity.scale(dt)));
+        motion = new Motion(newPosition, newVelocity);
     }
 
     public Agent tryEat(World world) {
+        Vector3D currentPosition = motion.position();
         for (Agent agent : world.agents()) {
-            if (position.distanceTo(agent.position()) < EAT_RADIUS) {
+            if (currentPosition.distanceTo(agent.position()) < config.eatRadius()) {
                 world.removeAgent(agent);
                 return agent;
             }
@@ -39,13 +49,13 @@ public final class Predator {
         return null;
     }
 
-    private Agent findNearest(List<Agent> agents) {
+    private static Agent findNearest(List<Agent> agents, Vector3D fromPosition) {
         Agent nearest = null;
-        double minDist = Double.MAX_VALUE;
+        double minDistanceSquared = Double.MAX_VALUE;
         for (Agent agent : agents) {
-            double dist = position.distanceTo(agent.position());
-            if (dist < minDist) {
-                minDist = dist;
+            double distanceSquared = fromPosition.distanceSquaredTo(agent.position());
+            if (distanceSquared < minDistanceSquared) {
+                minDistanceSquared = distanceSquared;
                 nearest = agent;
             }
         }

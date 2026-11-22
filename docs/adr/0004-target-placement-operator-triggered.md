@@ -1,5 +1,7 @@
 # ADR-0004: Target placement is operator-triggered but architecturally pluggable
 
+[Français](0004-target-placement-operator-triggered.fr.md)
+
 ## Status
 Accepted — 2026-05-19
 

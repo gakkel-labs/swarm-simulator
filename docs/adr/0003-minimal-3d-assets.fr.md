@@ -1,5 +1,7 @@
 # ADR-0003: Minimal 3D assets — grey capsules, primitive shapes, no art pipeline
 
+[English](0003-minimal-3d-assets.md)
+
 ## Status
 Accepted — 2026-01-15 (rétroactif, formalisé 2026-05-25)
 

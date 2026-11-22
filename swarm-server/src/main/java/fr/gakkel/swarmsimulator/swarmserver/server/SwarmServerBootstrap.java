@@ -61,6 +61,7 @@ public final class SwarmServerBootstrap {
     public void start() throws IOException {
         grpcServer.start();
         simulation.start();
+        observer.start();
     }
 
     public void stop() throws InterruptedException {

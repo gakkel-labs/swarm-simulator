@@ -3,7 +3,9 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.SubscribeRequest;
 import io.gakkel.swarm.contracts.v1.WorldState;
+import io.grpc.Status;
 import io.grpc.stub.ServerCallStreamObserver;
+import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,9 +14,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,6 +45,7 @@ class SwarmObserverImplTest {
     @Test
     void subscribeWorldState_newClient_receivesWorldStateOnBroadcast() {
         when(mockObserver.isCancelled()).thenReturn(false);
+        when(mockObserver.isReady()).thenReturn(true);
         SubscribeRequest request = SubscribeRequest.newBuilder().setClientId("grpcurl").build();
 
         impl.subscribeWorldState(request, mockObserver);
@@ -83,5 +91,52 @@ class SwarmObserverImplTest {
         failingImpl.subscribeWorldState(SubscribeRequest.newBuilder().setClientId("unity").build(), mockObserver);
 
         assertDoesNotThrow(failingImpl::broadcast);
+    }
+
+    @Test
+    void constructor_doesNotStartTheBroadcaster() {
+        verifyNoInteractions(mockExecutor);
+    }
+
+    @Test
+    void start_schedulesTheBroadcastAtTheStreamRate() {
+        impl.start();
+
+        verify(mockExecutor).scheduleAtFixedRate(any(Runnable.class), eq(0L),
+                eq(1000L / SwarmObserverImpl.STREAM_RATE_HZ), eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void broadcast_whenClientIsNotReady_skipsTheFrameAndKeepsTheClient() {
+        // A slow client is not ready: sending anyway would pile frames up in server memory.
+        when(mockObserver.isCancelled()).thenReturn(false);
+        when(mockObserver.isReady()).thenReturn(false, true);
+        impl.subscribeWorldState(SubscribeRequest.newBuilder().setClientId("slow").build(), mockObserver);
+
+        impl.broadcast();
+        impl.broadcast();
+
+        verify(mockObserver, times(1)).onNext(any(WorldState.class));
+    }
+
+    @Test
+    void subscribeWorldState_withAPlainStreamObserver_failsWithInternalError() {
+        @SuppressWarnings("unchecked")
+        StreamObserver<WorldState> plainObserver = mock(StreamObserver.class);
+        ArgumentCaptor<Throwable> errorCaptor = ArgumentCaptor.forClass(Throwable.class);
+
+        impl.subscribeWorldState(SubscribeRequest.newBuilder().setClientId("odd").build(), plainObserver);
+
+        verify(plainObserver).onError(errorCaptor.capture());
+        assertThat(Status.fromThrowable(errorCaptor.getValue()).getCode()).isEqualTo(Status.Code.INTERNAL);
+    }
+
+    @Test
+    void stop_closesTheStreamOfEachClient() {
+        impl.subscribeWorldState(SubscribeRequest.newBuilder().setClientId("unity").build(), mockObserver);
+
+        impl.stop();
+
+        verify(mockObserver).onCompleted();
     }
 }

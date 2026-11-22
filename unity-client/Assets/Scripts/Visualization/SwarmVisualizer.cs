@@ -63,9 +63,10 @@ namespace Gakkel.Swarm.Unity
         private readonly Vector3[] _velocityLinePositions = new Vector3[VelocityArrowPointCount];
 
         private Material _isolatedMaterial;
-        private Material _mothershipMaterial;
+        private Material _droneCarrierMaterial;
         private Material _floorMaterial;
         private SeabedTerrain _seabed;
+        private GameObject _flatFloor;
         private UnderwaterAtmosphere _atmosphere;
         private float _appliedSeabedExaggeration;
         private Material _trailMaterial;
@@ -77,6 +78,7 @@ namespace Gakkel.Swarm.Unity
         private Gradient _isolatedTrailGradient;
 
         private bool _obstaclesSpawned;
+        private MaterialPropertyBlock _blinkPropertyBlock;
         private Vector3 _centroid;
         private string _blinkAgentId;
         private float _blinkAgentStartTime;
@@ -96,8 +98,15 @@ namespace Gakkel.Swarm.Unity
         private const float CentroidCrossArmWidth = 0.2f;
         private const float TrailHeadAlpha = 0.8f;
         private const float TrailTailAlpha = 0f;
-        private static readonly Vector3 FloorCentre = new(50f, -100f, 25f);
-        private static readonly Vector2 FloorHalfSize = new(50f, 25f); // swarm footprint: 100 x 50 m (X x Z)
+        // Size of the search area in Unity axes: x = East, y = depth down to the seabed, z = North.
+        // The server sends it in each WorldState; this default is only used with an older server.
+        private static readonly Vector3 DefaultSearchAreaSize = new(100f, 100f, 50f);
+        private Vector3 _searchAreaSize = DefaultSearchAreaSize;
+
+        // The search area goes from (0, 0, 0) at the surface to (East, -depth, North) in Unity.
+        // The seabed lies under its centre, at the depth of the area.
+        private Vector3 FloorCentre => new(_searchAreaSize.x / 2f, -_searchAreaSize.y, _searchAreaSize.z / 2f);
+        private Vector2 FloorHalfSize => new(_searchAreaSize.x / 2f, _searchAreaSize.z / 2f);
 
         private void Awake()
         {
@@ -105,10 +114,10 @@ namespace Gakkel.Swarm.Unity
             var particleShader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
 
             _isolatedMaterial      = new Material(shader) { color = Color.gray };
-            _mothershipMaterial    = new Material(shader) { color = Color.gray };
+            _droneCarrierMaterial  = new Material(shader) { color = Color.gray };
             _floorMaterial         = new Material(shader) { color = new Color(0.2f, 0.25f, 0.3f) };
             _trailMaterial         = new Material(particleShader);
-            _isolatedDetectionMaterial = MakeTransparentMaterial(shader, new Color(0.5f, 0.5f, 0.5f, DetectionZoneAlpha));
+            _isolatedDetectionMaterial = RenderingUtils.MakeTransparentMaterial(shader, new Color(0.5f, 0.5f, 0.5f, DetectionZoneAlpha));
 
             _groupMaterials          = new Material[GroupColors.Length];
             _groupCentroidMaterials  = new Material[GroupColors.Length];
@@ -119,39 +128,22 @@ namespace Gakkel.Swarm.Unity
                 _groupMaterials[i]         = new Material(shader) { color = GroupColors[i] };
                 _groupCentroidMaterials[i] = new Material(particleShader) { color = GroupColors[i] };
                 var groupColor = GroupColors[i];
-                _groupDetectionMaterials[i] = MakeTransparentMaterial(shader, new Color(groupColor.r, groupColor.g, groupColor.b, DetectionZoneAlpha));
+                _groupDetectionMaterials[i] = RenderingUtils.MakeTransparentMaterial(shader, new Color(groupColor.r, groupColor.g, groupColor.b, DetectionZoneAlpha));
                 _groupTrailGradients[i]    = MakeTrailGradient(GroupColors[i]);
             }
             _isolatedTrailGradient = MakeTrailGradient(Color.gray);
 
-            SpawnMothership();
+            _blinkPropertyBlock = new MaterialPropertyBlock();
+
+            SpawnDroneCarrier();
+            // Default size first, so the scene looks right even before the server answers. The first
+            // WorldState gives the real size, and the seabed is placed again if it is different.
             SpawnSeabed();
             _atmosphere = UnderwaterAtmosphere.Create(this);
 
             // The Inspector value "Show Rov Model" sets the starting view.
             DetailedView.Changed += OnDetailedViewChanged;
             DetailedView.Set(showRovModel);
-        }
-
-        // URP/Lit needs explicit setup to render transparent: surface type, blend modes, ZWrite off,
-        // keyword toggle, transparent render queue. _BaseColor is the URP-native property (color falls
-        // back to it via name aliasing but we set both for safety).
-        private static Material MakeTransparentMaterial(Shader litShader, Color color)
-        {
-            var material = new Material(litShader);
-            material.SetOverrideTag("RenderType", "Transparent");
-            material.SetFloat("_Surface", 1f);
-            material.SetFloat("_Blend", 0f);
-            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetFloat("_ZWrite", 0f);
-            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.DisableKeyword("_ALPHATEST_ON");
-            material.DisableKeyword("_ALPHAMODULATE_ON");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-            material.SetColor("_BaseColor", color);
-            material.color = color;
-            return material;
         }
 
 #if UNITY_EDITOR
@@ -183,6 +175,7 @@ namespace Gakkel.Swarm.Unity
 
         public void Apply(WorldState worldState)
         {
+            PlaceSeabedForSearchArea(worldState.SearchAreaSizeM);
             if (worldState.SensorRadiusM > 0f) _sensorRadiusMetres = worldState.SensorRadiusM;
             CohesionSpreadM = worldState.CohesionSpreadM;
             SyncAgents(worldState.Agents);
@@ -211,7 +204,7 @@ namespace Gakkel.Swarm.Unity
             if (worldState.SearchStatus != null)
             {
                 if (worldState.SearchStatus.FoundEvent == null)
-                    _blinkAgentId = null;
+                    StopFinderBlink();
                 else if (_blinkAgentId == null)
                 {
                     _blinkAgentId        = worldState.SearchStatus.FoundEvent.AgentId;
@@ -248,6 +241,15 @@ namespace Gakkel.Swarm.Unity
             useSeabedRocks = shouldShow;
             if (_seabed != null) _seabed.SetRocksVisible(shouldShow && DetailedView.IsOn);
         }
+
+        /// <summary>
+        /// Moves a point inside the search area (from the surface down to the seabed depth, within the
+        /// East and North edges). The server refuses a target outside it.
+        /// </summary>
+        public Vector3 ClampToSearchArea(Vector3 worldPosition) => new(
+            Mathf.Clamp(worldPosition.x, 0f, _searchAreaSize.x),
+            Mathf.Clamp(worldPosition.y, -_searchAreaSize.y, 0f),
+            Mathf.Clamp(worldPosition.z, 0f, _searchAreaSize.z));
 
         /// <summary>World height of the seabed (or of the flat floor) at a world X/Z.</summary>
         public float SeabedHeightAt(Vector3 worldPosition)
@@ -321,10 +323,11 @@ namespace Gakkel.Swarm.Unity
                 bool inGroup = groupSizes[groupId] > 1;
                 Color baseColor = inGroup ? GroupColors[groupId % GroupColors.Length] : Color.gray;
 
+                agentRenderer.sharedMaterial = inGroup ? _groupMaterials[groupId % _groupMaterials.Length] : _isolatedMaterial;
                 if (agent.Id == _blinkAgentId)
-                    agentRenderer.material.color = TargetRenderer.ComputeBlinkColor(baseColor, _blinkAgentStartTime);
-                else
-                    agentRenderer.material = inGroup ? _groupMaterials[groupId % _groupMaterials.Length] : _isolatedMaterial;
+                    ShowFinderBlink(agent.Id, agentRenderer, baseColor);
+                else if (agentRenderer.HasPropertyBlock())
+                    agentRenderer.SetPropertyBlock(null); // only when needed: a block breaks SRP batching
 
                 if (_agentTrails.TryGetValue(agent.Id, out var trail))
                     trail.colorGradient = inGroup ? _groupTrailGradients[groupId % _groupTrailGradients.Length] : _isolatedTrailGradient;
@@ -336,6 +339,31 @@ namespace Gakkel.Swarm.Unity
                         : _isolatedDetectionMaterial;
                 }
             }
+        }
+
+        // The drone that found the target blinks for a few seconds. The capsule (simple view) blinks
+        // white; the ROV model (detailed view) keeps its own colours, so it blinks by hiding.
+        // A property block changes the colour of this renderer only, without copying the material.
+        private void ShowFinderBlink(string droneId, Renderer capsuleRenderer, Color baseColor)
+        {
+            bool flashing = TargetRenderer.IsInBlinkFlash(_blinkAgentStartTime);
+            if (IsShowingRovModel && _agentRovs.TryGetValue(droneId, out var rov))
+            {
+                rov.SetActive(!flashing);
+                return;
+            }
+            _blinkPropertyBlock.SetColor("_BaseColor", flashing ? Color.white : baseColor);
+            capsuleRenderer.SetPropertyBlock(_blinkPropertyBlock);
+        }
+
+        // A new target was placed: the old finder drone stops blinking (and its ROV must be visible).
+        private void StopFinderBlink()
+        {
+            if (_blinkAgentId == null) return;
+            if (_agentRovs.TryGetValue(_blinkAgentId, out var rov)) rov.SetActive(IsShowingRovModel);
+            if (_agentRenderers.TryGetValue(_blinkAgentId, out var capsuleRenderer))
+                capsuleRenderer.SetPropertyBlock(null);
+            _blinkAgentId = null;
         }
 
         private void UpdateGroupCentroids(Dictionary<string, Vector3> positions, Dictionary<string, int> groupIds, Dictionary<int, int> groupSizes)
@@ -439,7 +467,7 @@ namespace Gakkel.Swarm.Unity
 
                 if (!_agents.TryGetValue(agent.Id, out var agentObject))
                 {
-                    var displayId = agent.Id.Length >= 8 ? agent.Id[..8] : agent.Id;
+                    var displayId = DroneIdText.Short(agent.Id);
                     agentObject = CreateAgentVisual(displayId, out var agentRenderer, out var capsule, out var rov, out var trail, out var velocityLine);
                     var detectionSphere = CreateDetectionSphere(displayId, out var detectionRenderer);
 
@@ -500,7 +528,7 @@ namespace Gakkel.Swarm.Unity
         private GameObject CreateAgentVisual(string displayId, out Renderer agentRenderer, out GameObject capsule,
                                              out GameObject rov, out TrailRenderer trail, out LineRenderer velocityLine)
         {
-            var agentObject = new GameObject($"Agent_{displayId}");
+            var agentObject = new GameObject($"Drone_{displayId}");
             bool rovVisible = IsShowingRovModel;
 
             capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -583,14 +611,35 @@ namespace Gakkel.Swarm.Unity
             }
         }
 
-        private void SpawnMothership()
+        // The drone carrier (glossary) floats at the surface, at the corner (0, 0, 0) of the search area.
+        private void SpawnDroneCarrier()
         {
-            var mothershipObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Destroy(mothershipObject.GetComponent<Collider>());
-            mothershipObject.name = "Mothership";
-            mothershipObject.GetComponent<Renderer>().material = _mothershipMaterial;
-            mothershipObject.transform.localScale = new Vector3(2f, 1f, 2f);
-            mothershipObject.transform.position = Vector3.zero;
+            var droneCarrierObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(droneCarrierObject.GetComponent<Collider>());
+            droneCarrierObject.name = "DroneCarrier";
+            droneCarrierObject.GetComponent<Renderer>().sharedMaterial = _droneCarrierMaterial;
+            droneCarrierObject.transform.localScale = new Vector3(2f, 1f, 2f);
+            droneCarrierObject.transform.position = Vector3.zero;
+        }
+
+        // Called with the first WorldState: the seabed is placed from the search area size sent by
+        // the server, so changing SWARM_WORLD_* keeps the swarm above the seabed with no Unity change.
+        // Checked on every WorldState: a new mission (or a restarted server) can change the size.
+        private void PlaceSeabedForSearchArea(Vec3 searchAreaSizeNed)
+        {
+            // NED size: X = North, Y = East, Z = Down. All zero means an older server: keep the default.
+            if (searchAreaSizeNed == null || searchAreaSizeNed.X <= 0f || searchAreaSizeNed.Y <= 0f
+                || searchAreaSizeNed.Z <= 0f)
+                return;
+            var receivedSize = new Vector3(searchAreaSizeNed.Y, searchAreaSizeNed.Z, searchAreaSizeNed.X);
+            if ((receivedSize - _searchAreaSize).sqrMagnitude < 0.01f) return;
+
+            _searchAreaSize = receivedSize;
+            if (_seabed != null) Destroy(_seabed.gameObject); // its rocks are children: gone too
+            if (_flatFloor != null) Destroy(_flatFloor);
+            _seabed = null;
+            _flatFloor = null;
+            SpawnSeabed();
         }
 
         // Falls back to the flat floor if the bathymetry is turned off or its heightmap is missing.
@@ -599,7 +648,7 @@ namespace Gakkel.Swarm.Unity
             if (useBathymetrySeabed)
             {
                 _seabed = SeabedTerrain.Spawn(FloorCentre, FloorHalfSize, seabedVerticalExaggeration,
-                    seabedFocusOffset, useSeabedTextures, useSeabedRocks && showRovModel);
+                    seabedFocusOffset, useSeabedTextures, useSeabedRocks && DetailedView.IsOn);
                 _appliedSeabedExaggeration = seabedVerticalExaggeration;
             }
             if (_seabed == null) SpawnFloor();
@@ -607,14 +656,15 @@ namespace Gakkel.Swarm.Unity
 
         private void SpawnFloor()
         {
-            // World is 100×50 server units (X×Z); Plane default is 10×10, so scale (10,1,5).
-            // Sea floor is at server Y=0 → NED.Down=100 → Unity Y=-100 (100m below surface).
-            // Water surface is at Unity Y=0 (NED.Down=0, server Y=100).
+            // A Unity Plane is 10 x 10 m, so it is scaled to the East x North size of the search area.
+            // The floor lies at the depth of the area (server Y = -height, NED Down = height,
+            // Unity Y = -height); the water surface is at Unity Y = 0.
             var floorObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            _flatFloor = floorObject;
             Destroy(floorObject.GetComponent<Collider>());
             floorObject.name = "SeaFloor";
             floorObject.GetComponent<Renderer>().material = _floorMaterial;
-            floorObject.transform.localScale = new Vector3(10f, 1f, 5f);
+            floorObject.transform.localScale = new Vector3(_searchAreaSize.x / 10f, 1f, _searchAreaSize.z / 10f);
             floorObject.transform.position = FloorCentre;
         }
 
@@ -630,7 +680,7 @@ namespace Gakkel.Swarm.Unity
         {
             DetailedView.Changed -= OnDetailedViewChanged;
             Destroy(_isolatedMaterial);
-            Destroy(_mothershipMaterial);
+            Destroy(_droneCarrierMaterial);
             Destroy(_floorMaterial);
             Destroy(_trailMaterial);
             Destroy(_isolatedDetectionMaterial);

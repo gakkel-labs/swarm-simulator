@@ -91,7 +91,7 @@ namespace Gakkel.Swarm.Unity
 
             string searchStatusLine = BuildSearchStatusLine();
             string viewLine = BuildViewLine();
-            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}\nSpread: {_displayedSpread:F1}m{searchStatusLine}{viewLine}{BuildRocksLine()}{BuildCameraLine()}";
+            hudText.text = $"Drones: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}\nSpread: {_displayedSpread:F1}m{searchStatusLine}{viewLine}{BuildRocksLine()}{BuildCameraLine()}";
         }
 
         private string BuildViewLine()
@@ -110,16 +110,14 @@ namespace Gakkel.Swarm.Unity
             return visualizer.IsShowingSeabedRocks ? "\nRocks: on (B)" : "\nRocks: off (B)";
         }
 
-                private string BuildSearchStatusLine()
+        private string BuildSearchStatusLine()
         {
             if (targetRenderer == null || !targetRenderer.IsPlaced) return string.Empty;
 
             if (targetRenderer.IsFound)
             {
-                string displayAgentId = targetRenderer.FoundByAgentId.Length >= 8
-                    ? targetRenderer.FoundByAgentId[..8]
-                    : targetRenderer.FoundByAgentId;
-                return $"\nFound by {displayAgentId} in {targetRenderer.FoundAtElapsedSeconds:F1}s";
+                string displayDroneId = DroneIdText.Short(targetRenderer.FoundByAgentId);
+                return $"\nFound by {displayDroneId} in {targetRenderer.FoundAtElapsedSeconds:F1}s";
             }
 
             return $"\nSearching... {targetRenderer.ElapsedSimSeconds:F1}s";

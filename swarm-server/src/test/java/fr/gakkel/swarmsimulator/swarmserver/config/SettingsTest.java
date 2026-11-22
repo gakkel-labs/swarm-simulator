@@ -1,6 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import org.junit.jupiter.api.Test;
 
@@ -117,5 +118,18 @@ class SettingsTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> load(Map.of("SWARM_SEED", "later"), new Properties()));
         assertEquals("SWARM_SEED='later' must be an integer, 'random', or 'none'", ex.getMessage());
+    }
+
+    @Test
+    void predator_speedAndEatRadiusAreConfigurable() {
+        Settings settings = load(Map.of("SWARM_PREDATOR_SPEED", "4.5"),
+                props("swarm.predator.eat-radius", "2.5"));
+
+        assertEquals(new PredatorConfig(4.5, 2.5), settings.predator());
+    }
+
+    @Test
+    void predator_defaultsMatchTheHistoricalValues() {
+        assertEquals(PredatorConfig.defaults(), load(Map.of(), new Properties()).predator());
     }
 }

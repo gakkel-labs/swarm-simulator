@@ -1,6 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
@@ -36,7 +37,8 @@ public record Settings(
         double worldDepth,
         long seed,
         BoidsConfig boids,
-        DiagnosticsConfig diagnostics) {
+        DiagnosticsConfig diagnostics,
+        PredatorConfig predator) {
 
     private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
@@ -73,11 +75,12 @@ public record Settings(
 
         BoidsConfig boids = resolveBoids(env, props);
         DiagnosticsConfig diagnostics = resolveDiagnostics(env, props);
+        PredatorConfig predator = resolvePredator(env, props);
 
         LOG.info("Settings — port={} | agents={} | world={}x{}x{} | seed={}",
                 port, agentCount, worldWidth, worldHeight, worldDepth, seed);
 
-        return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed, boids, diagnostics);
+        return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed, boids, diagnostics, predator);
     }
 
     private static BoidsConfig resolveBoids(Map<String, String> env, Properties props) {
@@ -106,6 +109,14 @@ public record Settings(
         applyDouble(env, props, "SWARM_DIAG_STABILITY_TOLERANCE",         "swarm.diag.stability-tolerance",         b::stabilityTolerance);
         applyInt(env, props,    "SWARM_DIAG_STABILITY_SAMPLES",           "swarm.diag.stability-samples",           b::stabilitySamples);
         return b.build();
+    }
+
+    private static PredatorConfig resolvePredator(Map<String, String> env, Properties props) {
+        PredatorConfig defaults = PredatorConfig.defaults();
+        double speed = doubleValue(env, props, "SWARM_PREDATOR_SPEED", "swarm.predator.speed", defaults.speed());
+        double eatRadius = doubleValue(env, props, "SWARM_PREDATOR_EAT_RADIUS", "swarm.predator.eat-radius",
+                defaults.eatRadius());
+        return new PredatorConfig(speed, eatRadius);
     }
 
     /**

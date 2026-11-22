@@ -40,7 +40,7 @@ public final class SwarmServerBootstrap {
     public static SwarmServerBootstrap create(Settings settings) {
         SimulationLoop.Wiring wiring = SimulationLoop.wire(
                 settings.agentCount(), settings.worldWidth(), settings.worldHeight(), settings.worldDepth(),
-                settings.boids(), settings.diagnostics(), settings.seed(),
+                settings.boids(), settings.diagnostics(), settings.predator(), settings.seed(),
                 singleDaemonThreadExecutor("sim-loop"), createCsvExporter());
         World world = wiring.world();
         SimulationLoop simulation = wiring.loop();

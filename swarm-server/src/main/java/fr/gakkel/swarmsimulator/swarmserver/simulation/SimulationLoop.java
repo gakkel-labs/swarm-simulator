@@ -6,6 +6,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -19,7 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -287,9 +287,10 @@ public class SimulationLoop {
      * {@code createWorld} primitive or the per-stream RNGs directly.
      */
     public static Wiring wire(int agentCount, double width, double height, double depth,
-                              BoidsConfig boids, DiagnosticsConfig diagnostics, long masterSeed,
-                              ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
-        World world = createWorld(agentCount, width, height, depth, new Random(masterSeed));
+                              BoidsConfig boids, DiagnosticsConfig diagnostics, PredatorConfig predator,
+                              long masterSeed, ScheduledExecutorService executor,
+                              CohesionCsvExporter csvExporter) {
+        World world = createWorld(agentCount, width, height, depth, predator, new Random(masterSeed));
         SimulationLoop loop = new SimulationLoop(world, boids, diagnostics, executor, csvExporter,
                 new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
         return new Wiring(world, loop);
@@ -312,6 +313,11 @@ public class SimulationLoop {
     // At the default 100x100x50 the scale is 1.0, reproducing the original literal positions
     // (50,-50,25)/(25,-70,25)/(75,-30,25), radii (8/5/6) and predator (5,-5,5) exactly.
     static World createWorld(int agentCount, double width, double height, double depth, Random rng) {
+        return createWorld(agentCount, width, height, depth, PredatorConfig.defaults(), rng);
+    }
+
+    static World createWorld(int agentCount, double width, double height, double depth,
+                             PredatorConfig predatorConfig, Random rng) {
         World world = new World(width, height, depth);
         for (int i = 0; i < agentCount; i++) {
             Vector3D pos = new Vector3D(
@@ -329,28 +335,8 @@ public class SimulationLoop {
         world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0 * radiusScale));
         world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
         world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
-        world.setPredator(new Predator(new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth), Vector3D.ZERO));
+        Vector3D predatorStart = new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth);
+        world.setPredator(new Predator(UUID.randomUUID(), predatorStart, Vector3D.ZERO, predatorConfig));
         return world;
-    }
-
-    public static void main(String[] args) throws Exception {
-        BoidsConfig config = BoidsConfig.builder().build();
-        DiagnosticsConfig diagnostics = DiagnosticsConfig.builder().build();
-        World world = createDefaultWorld();
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "sim-loop");
-            t.setDaemon(true);
-            return t;
-        });
-        SimulationLoop loop = new SimulationLoop(world, config, diagnostics, executor);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try { loop.stop(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        }));
-
-        loop.start();
-        //noinspection ResultOfMethodCallIgnored
-        System.in.read();
-        loop.stop();
     }
 }

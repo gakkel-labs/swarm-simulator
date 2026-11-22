@@ -15,6 +15,8 @@ namespace Gakkel.Swarm.Unity
         [SerializeField] private Toggle detectionZoneToggle;
         [SerializeField] private TextMeshProUGUI hudText;
 
+        private CameraController _cameraController;
+
         private float _fpsAccumulator;
         private int _fpsFrameCount;
         private float _currentFps;
@@ -35,6 +37,8 @@ namespace Gakkel.Swarm.Unity
             if (detectionZoneToggle != null)
                 detectionZoneToggle.onValueChanged.AddListener(visualizer.SetShowDetectionZones);
             CreateAtmosphereToggle();
+            // Found at start so the scene needs no new link in the Inspector.
+            _cameraController = FindAnyObjectByType<CameraController>();
         }
 
         // The underwater look check box is made by copying the top check box of the scene and
@@ -87,12 +91,17 @@ namespace Gakkel.Swarm.Unity
 
             string searchStatusLine = BuildSearchStatusLine();
             string viewLine = BuildViewLine();
-            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}\nSpread: {_displayedSpread:F1}m{searchStatusLine}{viewLine}{BuildRocksLine()}";
+            hudText.text = $"Agents: {visualizer.AgentCount}\nObstacles: {visualizer.ObstacleCount}\nFPS: {_currentFps:F0}\nSpread: {_displayedSpread:F1}m{searchStatusLine}{viewLine}{BuildRocksLine()}{BuildCameraLine()}";
         }
 
         private string BuildViewLine()
         {
             return DetailedView.IsOn ? "\nView: detailed (V)" : "\nView: simple (V)";
+        }
+
+        private string BuildCameraLine()
+        {
+            return _cameraController != null ? $"\nCamera: {_cameraController.ModeLabel}" : string.Empty;
         }
 
         private string BuildRocksLine()

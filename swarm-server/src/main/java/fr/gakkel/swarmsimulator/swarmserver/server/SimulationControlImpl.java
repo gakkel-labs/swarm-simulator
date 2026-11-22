@@ -36,7 +36,14 @@ public class SimulationControlImpl extends SimulationControlGrpc.SimulationContr
         Vec3 nedPosition = request.getPosition();
         Vector3D serverPosition = CoordinateConversions.nedToServer(nedPosition);
 
-        simulationService.placeTarget(serverPosition, TriggerSource.OPERATOR_CLICK);
+        try {
+            simulationService.placeTarget(serverPosition, TriggerSource.OPERATOR_CLICK);
+        } catch (IllegalArgumentException exception) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription(exception.getMessage())
+                    .asRuntimeException());
+            return;
+        }
         LOG.info("PlaceTarget RPC — NED({}, {}, {})", nedPosition.getX(), nedPosition.getY(), nedPosition.getZ());
 
         responseObserver.onNext(PlaceTargetResponse.getDefaultInstance());

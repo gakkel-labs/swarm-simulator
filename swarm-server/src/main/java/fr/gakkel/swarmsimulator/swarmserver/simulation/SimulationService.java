@@ -22,6 +22,10 @@ public class SimulationService {
     public void placeTarget(Vector3D position, TriggerSource source) {
         Objects.requireNonNull(position, "position");
         Objects.requireNonNull(source, "source");
+        if (!world.isInBounds(position)) {
+            // A drone never leaves the search area, so it could never find this target.
+            throw new IllegalArgumentException("target " + position + " is outside the search area");
+        }
         world.setTarget(new Target(position));
         LOG.info("Target placed at {} (source={})", position, source);
     }

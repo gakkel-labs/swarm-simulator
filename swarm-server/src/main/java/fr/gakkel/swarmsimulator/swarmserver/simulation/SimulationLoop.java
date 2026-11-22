@@ -17,6 +17,7 @@ import org.slf4j.MDC;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
@@ -81,7 +82,7 @@ public class SimulationLoop {
     }
 
     public void start() {
-        LOG.info("Simulation demarree — {}Hz | {} agents | maxSpeed={} | perceptionRadius={}",
+        LOG.info("Simulation started - {}Hz | {} drones | maxSpeed={} | perceptionRadius={}",
                 TICK_RATE_HZ, world.agentCount(), config.maxSpeed(), config.perceptionRadius());
         long periodMs = 1000L / TICK_RATE_HZ;
         executor.scheduleAtFixedRate(this::tickSafely, 0, periodMs, TimeUnit.MILLISECONDS);
@@ -90,7 +91,7 @@ public class SimulationLoop {
     public void stop() throws InterruptedException {
         executor.shutdown();
         if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
-            LOG.warn("sim-loop did not terminate within 1s — forcing shutdown");
+            LOG.warn("sim-loop did not terminate within 1s - forcing shutdown");
             executor.shutdownNow();
         }
         if (csvExporter != null) csvExporter.close();
@@ -142,7 +143,7 @@ public class SimulationLoop {
                 predator.update(world, DT);
                 Agent eaten = predator.tryEat(world);
                 if (eaten != null) {
-                    LOG.info("agent {} eaten — respawn in {}ms", eaten.id(), BOID_RESPAWN_DELAY_MS);
+                    LOG.info("drone {} eaten - respawn in {}ms", eaten.id(), BOID_RESPAWN_DELAY_MS);
                     scheduleRespawn(eaten, predator);
                 }
             }
@@ -171,9 +172,9 @@ public class SimulationLoop {
             if (agent.position().distanceTo(target.position()) <= SimulationConstants.SENSOR_RADIUS_M) {
                 target.markFound(agent.id().toString());
                 LOG.atInfo()
-                   .setMessage("Target found by agent {} in {}s")
+                   .setMessage("Target found by drone {} in {}s")
                    .addArgument(agent.id())
-                   .addArgument(() -> String.format("%.1f", target.foundAtElapsedS()))
+                   .addArgument(() -> String.format(Locale.ROOT, "%.1f", target.foundAtElapsedS()))
                    .log();
                 break;
             }
@@ -189,7 +190,7 @@ public class SimulationLoop {
                     rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
             agent.update(pos, vel);
             world.addAgent(agent);
-            LOG.info("agent {} respawned", agent.id());
+            LOG.info("drone {} respawned", agent.id());
         }, BOID_RESPAWN_DELAY_MS, TimeUnit.MILLISECONDS);
     }
 

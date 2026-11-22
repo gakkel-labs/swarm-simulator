@@ -78,7 +78,7 @@ public final class SwarmServerBootstrap {
         try {
             return new CohesionCsvExporter(Paths.get("metrics"));
         } catch (IOException e) {
-            LOG.warn("Could not create cohesion CSV exporter — metrics will not be written: {}", e.getMessage());
+            LOG.warn("Could not create cohesion CSV exporter - metrics will not be written: {}", e.getMessage());
             return null;
         }
     }

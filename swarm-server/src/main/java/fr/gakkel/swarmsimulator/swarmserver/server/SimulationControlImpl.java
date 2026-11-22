@@ -44,7 +44,7 @@ public class SimulationControlImpl extends SimulationControlGrpc.SimulationContr
                     .asRuntimeException());
             return;
         }
-        LOG.info("PlaceTarget RPC — NED({}, {}, {})", nedPosition.getX(), nedPosition.getY(), nedPosition.getZ());
+        LOG.info("PlaceTarget RPC - NED({}, {}, {})", nedPosition.getX(), nedPosition.getY(), nedPosition.getZ());
 
         responseObserver.onNext(PlaceTargetResponse.getDefaultInstance());
         responseObserver.onCompleted();

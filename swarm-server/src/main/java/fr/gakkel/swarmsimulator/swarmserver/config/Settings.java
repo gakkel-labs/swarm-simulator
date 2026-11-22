@@ -77,7 +77,7 @@ public record Settings(
         DiagnosticsConfig diagnostics = resolveDiagnostics(env, props);
         PredatorConfig predator = resolvePredator(env, props);
 
-        LOG.info("Settings — port={} | agents={} | world={}x{}x{} | seed={}",
+        LOG.info("Settings - port={} | agents={} | world={}x{}x{} | seed={}",
                 port, agentCount, worldWidth, worldHeight, worldDepth, seed);
 
         return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed, boids, diagnostics, predator);
@@ -133,7 +133,7 @@ public record Settings(
         String value = raw.get();
         if (value.equalsIgnoreCase("random") || value.equalsIgnoreCase("none")) {
             long drawn = new Random().nextLong();
-            LOG.info("Seed: {} (random — set SWARM_SEED={} to replay this run)", drawn, drawn);
+            LOG.info("Seed: {} (random - set SWARM_SEED={} to replay this run)", drawn, drawn);
             return drawn;
         }
         try {
@@ -153,7 +153,7 @@ public record Settings(
                 props.load(in);
             }
         } catch (IOException e) {
-            LOG.warn("Could not read {} — falling back to env vars and defaults: {}", PROPERTIES_RESOURCE, e.getMessage());
+            LOG.warn("Could not read {} - falling back to env vars and defaults: {}", PROPERTIES_RESOURCE, e.getMessage());
         }
         return props;
     }

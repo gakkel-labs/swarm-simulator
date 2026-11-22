@@ -58,11 +58,11 @@ public class FlockingDiagnostician {
         double standardDeviationRounded = Math.round(positionStandardDeviation * 10) / 10.0;
 
         if (lastCentroid == null) {
-            LOG.info("t={}s | premier releve | σ={} u", elapsedSeconds, standardDeviationRounded);
+            LOG.info("t={}s | first sample | sigma={} u", elapsedSeconds, standardDeviationRounded);
         } else {
             double drift = centroid.distanceTo(lastCentroid) / intervalSeconds;
             double driftRounded = Math.round(drift * 100) / 100.0;
-            LOG.info("t={}s | drift={} u/s | σ={} u", elapsedSeconds, driftRounded, standardDeviationRounded);
+            LOG.info("t={}s | drift={} u/s | sigma={} u", elapsedSeconds, driftRounded, standardDeviationRounded);
             checkAlerts(elapsedSeconds, world, drift, driftRounded, positionStandardDeviation, standardDeviationRounded);
             checkFlocking(elapsedSeconds, world, positionStandardDeviation, standardDeviationRounded);
         }
@@ -78,14 +78,14 @@ public class FlockingDiagnostician {
     private void checkAlerts(int elapsedSeconds, World world, double drift, double driftRounded,
                              double positionStandardDeviation, double standardDeviationRounded) {
         if (drift < boidsConfig.maxSpeed() * diagnosticsConfig.immobileThresholdFraction()) {
-            LOG.warn("t={}s | ALERTE essaim immobile (drift={} u/s)", elapsedSeconds, driftRounded);
+            LOG.warn("t={}s | ALERT swarm not moving (drift={} u/s)", elapsedSeconds, driftRounded);
         }
 
         if (!flockingConfirmed) {
             double standardDeviationLimit = Math.min(world.width(), Math.min(world.height(), world.depth()))
                     * diagnosticsConfig.dispersalLimitFraction();
             if (positionStandardDeviation > standardDeviationLimit) {
-                LOG.warn("t={}s | ALERTE essaim disperse (σ={} u > {} u)",
+                LOG.warn("t={}s | ALERT swarm scattered (sigma={} u > {} u)",
                         elapsedSeconds, standardDeviationRounded, (int) standardDeviationLimit);
             }
         }
@@ -93,7 +93,7 @@ public class FlockingDiagnostician {
         if (positionStandardDeviation > previousPositionStandardDeviation) {
             consecutiveStandardDeviationIncreases++;
             if (consecutiveStandardDeviationIncreases >= diagnosticsConfig.stabilitySamples()) {
-                LOG.warn("t={}s | ALERTE divergence ({} relevés en hausse)",
+                LOG.warn("t={}s | ALERT divergence ({} rising samples)",
                         elapsedSeconds, consecutiveStandardDeviationIncreases);
             }
         } else {
@@ -104,7 +104,7 @@ public class FlockingDiagnostician {
                 .filter(agent -> agent.velocity().magnitude() < boidsConfig.maxSpeed() * diagnosticsConfig.frozenThresholdFraction())
                 .count();
         if (frozenCount > 0) {
-            LOG.warn("t={}s | ALERTE {} agent(s) figé(s)", elapsedSeconds, frozenCount);
+            LOG.warn("t={}s | ALERT {} drone(s) frozen", elapsedSeconds, frozenCount);
         }
     }
 
@@ -116,7 +116,7 @@ public class FlockingDiagnostician {
             if (positionStandardDeviation > criticalLimit) {
                 flockingConfirmed = false;
                 recentSigmas.clear();
-                LOG.warn("t={}s | flocking lost — σ={} u depasse seuil critique ({} u)",
+                LOG.warn("t={}s | flocking lost - sigma={} u above the critical limit ({} u)",
                         elapsedSeconds, standardDeviationRounded, (int) criticalLimit);
             }
             return;
@@ -129,7 +129,7 @@ public class FlockingDiagnostician {
             double min = recentSigmas.stream().mapToDouble(Double::doubleValue).min().orElse(0);
             if (max > 0 && (max - min) / max < diagnosticsConfig.stabilityTolerance()) {
                 flockingConfirmed = true;
-                LOG.info("t={}s | flocking confirmed — σ stable à {} u", elapsedSeconds, standardDeviationRounded);
+                LOG.info("t={}s | flocking confirmed - sigma stable at {} u", elapsedSeconds, standardDeviationRounded);
             }
         }
     }
@@ -139,7 +139,7 @@ public class FlockingDiagnostician {
         double gap = SimulationLoop.minObstacleGap(agents, obstacles);
         double gapRounded = Math.round(gap * 10) / 10.0;
         if (penetrations > 0) {
-            LOG.warn("t={}s | ALERTE {} agent(s) dans obstacle (gap min={} u)",
+            LOG.warn("t={}s | ALERT {} drone(s) inside an obstacle (min gap={} u)",
                     elapsedSeconds, penetrations, gapRounded);
         } else {
             LOG.info("t={}s | min obstacle gap={} u", elapsedSeconds, gapRounded);

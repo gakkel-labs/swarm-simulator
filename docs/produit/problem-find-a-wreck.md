@@ -38,6 +38,8 @@ The operator is never sure that the wreck is inside the search area, so showing 
 
 Before the mission, the backend computes it on a **common set of scenarios**: the wreck at position A, at position B, at position C… (spread across the search area), plus scenarios with no wreck. Every fleet configuration is simulated on exactly the same scenarios, so the comparison is fair and the result can be reproduced. The success probability is the share of successful scenarios: "the mission succeeds in 87 scenarios out of 100". It is a prediction.
 
+The **share of no-wreck scenarios** is set by the operator in the mission (20% by default): it says how much they doubt the wreck is inside the search area.
+
 With real missions, the metric becomes the **share of real missions that succeed**.
 
 ## 6. Guardrails
@@ -52,7 +54,7 @@ A configuration that breaks a **hard** guardrail is removed. A **soft** guardrai
 
 ## 7. Secondary indicators
 
-- **Estimated time**: the expected duration; the shorter it is, the more margin it leaves before the limit time.
+- **Estimated time**: the expected duration, that is the time under which 9 successful scenarios out of 10 end (the mean is given next to it). The shorter it is, the more margin it leaves before the limit time.
 - **Resources used**: drone carrier hours, drones used, running hours, energy. They help to estimate the cost of a mission.
 - **Fleet wear**: running hours, battery cycles, hits against the seabed. It tells when the fleet will be available again.
 

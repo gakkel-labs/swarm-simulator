@@ -52,7 +52,7 @@ Variables utiles : `SWARM_PORT`, `SWARM_SEED`, `SWARM_AGENT_COUNT`.
 - Java 21 : records, sealed classes, pattern matching bienvenus
 - Style : Google Java Style Guide (4 espaces, 100 colonnes), noms de variables explicites
 - Pas de Spring Boot pour l'instant (`main()` + `ScheduledExecutorService` + `ServerBuilder`, voir ADR 0002).
-  Spring Boot est prévu à l'étape 4 : ne pas l'ajouter avant.
+  Spring Boot est prévu à l'étape 3 (web) : ne pas l'ajouter avant.
 - **TDD** : écrire d'abord un test qui échoue, puis le code minimal qui le fait passer, puis refactorer
   (JUnit 5 + Mockito, schéma AAA).
 - **DDD, au fil de l'eau** : les nouvelles classes portent les noms du glossaire (`Mission`, `Fleet`,

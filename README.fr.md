@@ -84,8 +84,8 @@ Détails, schémas et formules : [`docs/01-boids-rules.fr.md`](docs/01-boids-rul
 Les prochaines étapes sont suivies dans les jalons (milestones) GitHub :
 [Step 1 — Belle scène Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/5),
 [Step 2 — Trouver la meilleure configuration de flotte](https://github.com/gakkel-labs/swarm-simulator/milestone/6),
-[Step 3 — Rejouer la meilleure configuration dans Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/7),
-[Step 4 — Saisir la mission sur le web](https://github.com/gakkel-labs/swarm-simulator/milestone/8),
+[Step 3 — Saisir la mission sur le web](https://github.com/gakkel-labs/swarm-simulator/milestone/8),
+[Step 4 — Rejouer la meilleure configuration dans Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/7),
 [Step 5 — Modifier les recommandations et relancer](https://github.com/gakkel-labs/swarm-simulator/milestone/9),
 [Step 6 — Suivre la mission](https://github.com/gakkel-labs/swarm-simulator/milestone/10).
 

@@ -6,6 +6,8 @@
 
 L'opérateur prépare une mission de recherche d'une épave coulée. Il ne sait pas quelle configuration de flotte choisir (nombre de drones de détection, drones spécialisés, schéma de recherche), ni si l'épave se trouve vraiment dans la zone de recherche. Gakkel l'aide à choisir la configuration qui a le plus de chances de réussir, sans mettre en danger les drones les plus importants.
 
+Cette fiche parle d'une seule mission. Plus tard, l'opérateur pourra regrouper plusieurs missions dans une **campagne** (une suite de missions, voir le [glossaire](glossaire.fr.md)).
+
 ## 2. Causes supposées
 
 Ce sont des hypothèses, à vérifier avec de vrais opérateurs.

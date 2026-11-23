@@ -38,6 +38,8 @@ L'opérateur n'est jamais sûr que l'épave est dans la zone de recherche : dém
 
 Avant la mission, le backend la calcule sur un **jeu de scénarios commun** : l'épave en position A, en position B, en position C… (réparties dans la zone de recherche), plus des scénarios sans épave. Chaque configuration de flotte est simulée sur exactement les mêmes scénarios, ce qui rend la comparaison juste et le résultat reproductible. La probabilité de réussite est la part des scénarios réussis : « la mission réussit dans 87 scénarios sur 100 ». C'est une prévision.
 
+La **part de scénarios sans épave** est réglée par l'opérateur dans la mission (20 % par défaut) : elle dit à quel point il doute que l'épave soit dans la zone de recherche.
+
 Avec des missions réelles, la métrique devient la **part des missions réelles réussies**.
 
 ## 6. Les garde-fous
@@ -52,7 +54,7 @@ Une configuration qui viole un garde-fou **strict** est éliminée. Un garde-fou
 
 ## 7. Indicateurs secondaires
 
-- **Temps estimé** : la durée prévue ; plus il est court, plus il laisse de marge avant le temps limite.
+- **Temps estimé** : la durée prévue, c'est-à-dire le temps sous lequel 9 scénarios réussis sur 10 se terminent (la moyenne est donnée à côté). Plus il est court, plus il laisse de marge avant le temps limite.
 - **Ressources engagées** : heures du porte-drones, drones engagés, heures de fonctionnement, énergie. Elles permettent d'estimer le coût d'une mission.
 - **Usure de la flotte** : heures de fonctionnement, cycles de batterie, chocs contre le fond. Elle dit quand la flotte sera de nouveau disponible.
 

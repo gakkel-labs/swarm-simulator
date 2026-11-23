@@ -63,7 +63,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | Word | Definition | In the code |
 |------|------------|:-----------:|
 | **Search area** | The part of the sea to search, often 50 to 100 km². | ✅ (*world*) |
-| **Search pattern** | The way the drones move to cover the search area (for example parallel lines, spiral, or free flocking). Today the swarm only flocks; real search patterns are planned. | 🔜 |
+| **Search pattern** | The way the drones move to cover the search area. It is a setting of the fleet configuration. Patterns planned for step 2: **lawnmower** (parallel lines), **Boids** (free flocking), **lawnmower + Boids**, **ant colony** (drones avoid places already searched) and **ant colony + Boids**. Today the swarm only flocks (Boids). | 🔜 |
 | **Coverage** | The part of the search area already searched. The goal is no gaps and no overlaps. | 🔜 |
 | **Target** | In the simulation, the object to find (the "wreck"). Today the operator places it with a click in the viewer. | ✅ |
 | **Contact** | Something a drone has detected and that could be the target. A contact must be checked. Status: *to review*, *confirmed*, *dismissed*. | 🔜 |
@@ -71,7 +71,12 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Sensor radius** | The distance at which a drone can detect the target (10 m today). | ✅ |
 | **Sonar** | The underwater sensor that "sees" with sound. Simulated later. | 🔜 |
 | **Acoustic link** | The underwater radio-like link (with sound) between the swarm and the drone carrier. It is slow and can be cut. | 🔜 |
-| **Score** | A number that says how good a fleet configuration is for a mission (for example: time to find the target, coverage reached). Used by the backend to compare configurations. | 🔜 |
+| **Score** | The **success probability** of a fleet configuration: the share of successful scenarios in the common set of scenarios. Example: "succeeds in 460 scenarios out of 500" = 92%. Used by the backend to compare configurations ([problem sheet](problem-find-a-wreck.md)). | 🔜 |
+| **Common set of scenarios** | The list of scenarios every fleet configuration is simulated on: the wreck at position A, B, C… (spread across the search area), plus scenarios with no wreck. Each scenario has its seed. All configurations run on the same scenarios, so the comparison is fair. | 🔜 |
+| **Share of no-wreck scenarios** | The share of the scenario set where the wreck is not in the search area. The operator sets it in the mission, depending on their doubt (20% by default). | 🔜 |
+| **Limit time** | The time when the mission must be over (drone energy, weather). Going over it is a failure. | 🔜 |
+| **Estimated time** | The expected duration of a mission: the time under which 9 successful scenarios out of 10 end. Going over it makes the mission late, not failed. | 🔜 |
+| **Coverage threshold** | The coverage to reach to show that the wreck is not in the search area. Chosen by the operator (95% by default). | 🔜 |
 
 ## 5. Swarm behaviour (Boids)
 

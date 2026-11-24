@@ -52,6 +52,16 @@ framework. This ADR adds a database, but not a framework.
 - Domain tests use an in-memory fake of the port. Adapter tests use a real PostgreSQL started
   by **Testcontainers**.
 
+**How we test the storage.**
+- **Unit tests (most of them)**: they use an in-memory fake of `SimulationResultRepository`,
+  written by us with a `List` or a `Map`. No database at all: they are fast and run everywhere.
+- **Integration tests (a few)**: they test the PostgreSQL adapter with **Testcontainers**. The
+  test starts a real PostgreSQL + PostGIS in a Docker container, runs the Flyway scripts, then
+  stops it. So Docker is needed on the developer machine (and in CI) to run these tests.
+- **No H2 for tests.** H2 is an in-memory database that imitates other databases. It has no
+  PostGIS, and its PostgreSQL mode does not accept all PostgreSQL SQL. A test could pass on H2
+  and fail on the real database. We test against the same database as in production.
+
 **No secrets in the repository.**
 - The database user and password come from environment variables, never from the code.
 - A `.env` file holds them on each machine and is never committed (it is in `.gitignore`).
@@ -95,6 +105,8 @@ framework. This ADR adds a database, but not a framework.
   storage twice. With the port in place, starting with PostgreSQL costs little more.
 - **One database for the web, one for the backend**: rejected. Two truths to keep in sync,
   and the web has nothing to store that the backend does not own.
+- **H2 only for the tests**: rejected (see "How we test the storage"): no PostGIS, and not
+  exactly the same SQL as PostgreSQL.
 - **SQLite or H2 (embedded database)**: simpler to install, but weak for geographic data
   and for several users at the same time. Not the industry standard for this kind of system.
 - **A cloud database**: rejected, it does not work without internet, and it is not free.

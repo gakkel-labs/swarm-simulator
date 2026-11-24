@@ -54,6 +54,18 @@ reconsidérer un framework. Cette ADR ajoute une base de données, mais pas de f
 - Les tests du domaine utilisent un faux en mémoire du port. Les tests de l'adaptateur
   utilisent un vrai PostgreSQL lancé par **Testcontainers**.
 
+**Comment on teste le stockage.**
+- **Tests unitaires (la grande majorité)** : ils utilisent un faux en mémoire de
+  `SimulationResultRepository`, écrit par nous avec une `List` ou une `Map`. Aucune base : ils
+  sont rapides et tournent partout.
+- **Tests d'intégration (peu nombreux)** : ils testent l'adaptateur PostgreSQL avec
+  **Testcontainers**. Le test lance un vrai PostgreSQL + PostGIS dans un conteneur Docker, passe
+  les scripts Flyway, puis l'arrête. Docker est donc nécessaire sur le poste du développeur (et
+  dans la CI) pour lancer ces tests.
+- **Pas de H2 pour les tests.** H2 est une base en mémoire qui imite d'autres bases. Elle n'a pas
+  PostGIS, et son mode PostgreSQL n'accepte pas tout le SQL de PostgreSQL. Un test pourrait
+  passer sur H2 et échouer sur la vraie base. On teste avec la même base qu'en production.
+
 **Aucun secret dans le dépôt.**
 - L'utilisateur et le mot de passe de la base viennent de variables d'environnement, jamais du code.
 - Un fichier `.env` les contient sur chaque machine et n'est jamais commité (il est dans
@@ -98,6 +110,8 @@ reconsidérer un framework. Cette ADR ajoute une base de données, mais pas de f
   écrirait le stockage deux fois. Avec le port en place, partir sur PostgreSQL coûte peu de plus.
 - **Une base pour le web, une pour le backend** : rejetée. Deux vérités à synchroniser, et le
   web n'a rien à stocker que le backend ne possède pas déjà.
+- **H2 seulement pour les tests** : rejeté (voir « Comment on teste le stockage ») : pas de
+  PostGIS, et pas exactement le même SQL que PostgreSQL.
 - **SQLite ou H2 (base embarquée)** : plus simple à installer, mais faible pour les données
   géographiques et pour plusieurs utilisateurs en même temps. Pas le standard de l'industrie
   pour ce genre de système.

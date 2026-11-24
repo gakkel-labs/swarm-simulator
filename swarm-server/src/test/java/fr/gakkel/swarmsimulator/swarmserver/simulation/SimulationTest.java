@@ -13,6 +13,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -103,6 +107,32 @@ class SimulationTest {
 
             // No tolerance: the same seed must give the very same numbers, bit for bit.
             assertEquals(finalDrones(firstRun), finalDrones(secondRun));
+        }
+
+        /**
+         * Golden master: the fingerprint of the drones after 30 s with seed 42, recorded before
+         * the search pattern interface (#81). If it changes, Boids no longer moves the drones
+         * exactly as before: find why before updating it.
+         */
+        private static final String SEED_42_FINGERPRINT = "f5ac8aa7842997388b58c95427271df7d07f97ed677c5f03ee1ab7374f31a989";
+
+        @Test
+        void seed42_givesTheSameDronesAsBeforeTheSearchPatternInterface() {
+            Simulation simulation = createSeededSimulation(42L);
+
+            runSteps(simulation, THIRTY_SECONDS_OF_STEPS);
+
+            assertEquals(SEED_42_FINGERPRINT, sha256(String.join("\n", finalDrones(simulation))));
+        }
+
+        private static String sha256(String text) {
+            try {
+                byte[] digest = MessageDigest.getInstance("SHA-256")
+                        .digest(text.getBytes(StandardCharsets.UTF_8));
+                return HexFormat.of().formatHex(digest);
+            } catch (NoSuchAlgorithmException exception) {
+                throw new IllegalStateException("every Java runtime has SHA-256", exception);
+            }
         }
 
         @Test

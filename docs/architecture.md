@@ -82,6 +82,39 @@ fr.gakkel.swarmsimulator.swarmserver
 `Predator` is the code name of the **danger** (see the [glossary](produit/glossaire.md));
 it will be renamed.
 
+### Backend — dependency rule
+
+The domain is plain Java at the center. The simulation engine only uses the domain.
+The adapters, which talk to the outside world, stay around them: `server` (gRPC and the
+generated contract) and `config` (JSON files, environment variables). Arrows always point
+inward.
+
+```mermaid
+flowchart TB
+    SERVER[server<br/>gRPC, contract] --> SIMULATION[simulation<br/>engine]
+    CONFIG[config<br/>JSON, env vars] --> SIMULATION
+    SERVER --> DOMAIN[domain<br/>plain Java]
+    SERVER -->|wiring at start| CONFIG
+    CONFIG --> DOMAIN
+    SIMULATION --> DOMAIN
+```
+
+An ArchUnit test checks this rule in every `mvn verify` (so in CI):
+[`ArchitectureTest`](../swarm-server/src/test/java/fr/gakkel/swarmsimulator/swarmserver/ArchitectureTest.java).
+Its rules are grouped by theme (domain, engine, adapters):
+
+- `domain` depends on no other package of the server;
+- `simulation` depends neither on `server` nor on `config`;
+- `domain` and `simulation` use neither gRPC, Protobuf, Spring, nor threads
+  (`Thread`, any `Executor`, `Executors`, `CompletableFuture`);
+- only `server` uses the classes generated from the contract;
+- `config` does not depend on `server` (`server` uses `config` only to wire the server at start);
+- there is no cycle between packages.
+
+Known exception: `SimulationLoop` (the live clock that paces the simulation for Unity) uses a
+scheduler.
+It will move out of the engine in issue #186.
+
 ### Unity — scripts
 
 ```

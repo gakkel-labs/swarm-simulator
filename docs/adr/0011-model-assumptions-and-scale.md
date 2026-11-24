@@ -51,6 +51,10 @@ specification**: its technical values. It is a value object (a Java `record`, no
 changes). Every part of the engine reads only what it needs from it. When the drone carrier and
 the specialised drones come (#35), they get their own specification without changing the engine.
 
+Specifications live in a **drone catalog**, a configuration file, not in the code. A fleet
+configuration picks models from the catalog with a count for each, so a swarm can mix models
+(for example drones with different sensors), depending on what is available (#176).
+
 Detection drone, `batch` values (order of magnitude of small search drones rated for deep water):
 
 | Group | Value | Step 2 |

@@ -53,6 +53,11 @@ qui ne change jamais). Chaque partie du moteur n'y lit que ce dont elle a besoin
 porte-drones et les drones spécialisés arriveront (#35), ils auront leur propre fiche, sans
 changer le moteur.
 
+Les fiches sont rangées dans un **catalogue de drones**, un fichier de configuration, pas dans le
+code. Une configuration de flotte choisit des modèles dans le catalogue, avec un nombre pour
+chacun : un essaim peut mélanger plusieurs modèles (par exemple des drones avec des capteurs
+différents), selon ce qui est disponible (#176).
+
 Drone de détection, valeurs `batch` (ordre de grandeur des petits drones de recherche prévus pour
 les grands fonds) :
 

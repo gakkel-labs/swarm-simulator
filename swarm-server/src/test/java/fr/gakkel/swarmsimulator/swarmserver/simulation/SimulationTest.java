@@ -17,10 +17,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -91,12 +91,13 @@ class SimulationTest {
         private static final int THIRTY_SECONDS_OF_STEPS = 30 * 30;
 
         /**
-         * Golden master: the fingerprint of the drones after 30 s with seed 42, recorded before
-         * the search pattern interface (#81). If it changes, Boids no longer moves the drones
-         * exactly as before: find why before updating it.
+         * Golden master: each drone (id, position, velocity) after 30 s with seed 42, recorded
+         * before the search pattern interface (#81). If a line changes, Boids no longer moves the
+         * drones exactly as before: find why before updating the file. Checked on Windows and on
+         * the CI (Linux), both with JDK 21.
          */
-        private static final String SEED_42_FINGERPRINT =
-                "f5ac8aa7842997388b58c95427271df7d07f97ed677c5f03ee1ab7374f31a989";
+        private static final String SEED_42_GOLDEN_MASTER =
+                "/golden-master/seed-42-drones-after-30-s.txt";
 
         private static Simulation createSeededSimulation(long seed) {
             FleetConfiguration fleet =
@@ -125,21 +126,21 @@ class SimulationTest {
         }
 
         @Test
-        void create_seed42_givesTheRecordedDroneFingerprint() {
+        void create_seed42_givesTheRecordedDrones() {
             Simulation simulation = createSeededSimulation(42L);
 
             runSteps(simulation, THIRTY_SECONDS_OF_STEPS);
 
-            assertEquals(SEED_42_FINGERPRINT, sha256(String.join("\n", finalDrones(simulation))));
+            // A list, not a hash: a failure shows which drone moved differently.
+            assertEquals(readLines(SEED_42_GOLDEN_MASTER), finalDrones(simulation));
         }
 
-        private static String sha256(String text) {
-            try {
-                byte[] digest = MessageDigest.getInstance("SHA-256")
-                        .digest(text.getBytes(StandardCharsets.UTF_8));
-                return HexFormat.of().formatHex(digest);
-            } catch (NoSuchAlgorithmException exception) {
-                throw new IllegalStateException("every Java runtime has SHA-256", exception);
+        private static List<String> readLines(String resource) {
+            try (InputStream input = SimulationTest.class.getResourceAsStream(resource)) {
+                if (input == null) throw new IllegalStateException("missing resource " + resource);
+                return new String(input.readAllBytes(), StandardCharsets.UTF_8).lines().toList();
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
             }
         }
 
@@ -206,11 +207,24 @@ class SimulationTest {
         }
 
         @Test
+        void step_searchPatternReturnsNaN_throwsAndMovesNoDrone() {
+            World world = new World(100, 100, 50);
+            Agent drone = createAgent(new Vector3D(50, -50, 25));
+            world.addAgent(drone);
+            SearchPattern broken = (anyDrone, anyWorld) -> new Vector3D(Double.NaN, 0, 0);
+            Simulation simulation =
+                    new Simulation(world, broken, CONFIG.maxSpeed(), new Random(1L));
+
+            assertThrows(IllegalStateException.class, () -> simulation.step(1.0));
+            assertEquals(new Vector3D(50, -50, 25), drone.position());
+        }
+
+        @Test
         void constructor_maxSpeedNotPositive_throwsIllegalArgumentException() {
             World world = new World(100, 100, 50);
             SearchPattern standStill = (anyDrone, anyWorld) -> Vector3D.ZERO;
 
-            for (double maxSpeed : new double[] {0.0, -1.0, Double.NaN}) {
+            for (double maxSpeed : new double[] {0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY}) {
                 assertThrows(IllegalArgumentException.class,
                         () -> new Simulation(world, standStill, maxSpeed, new Random(1L)),
                         "maxSpeed " + maxSpeed);

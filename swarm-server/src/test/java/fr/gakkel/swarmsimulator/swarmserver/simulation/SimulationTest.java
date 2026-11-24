@@ -48,7 +48,7 @@ class SimulationTest {
 
         @Test
         void step_advancesTheSimulationClockByTheStepDuration() {
-            Simulation simulation = createSimulation(SimulationLoop.createWorld(10, new Random(0L)));
+            Simulation simulation = createSimulation(WorldFactory.createWorld(10, new Random(0L)));
 
             simulation.step(0.1);
             simulation.step(0.2);
@@ -65,7 +65,7 @@ class SimulationTest {
 
         @Test
         void oneMinuteOfSimulation_runsFasterThanRealTime() {
-            Simulation simulation = createSimulation(SimulationLoop.createWorld(20, new Random(0L)));
+            Simulation simulation = createSimulation(WorldFactory.createWorld(20, new Random(0L)));
             long startNanos = System.nanoTime();
 
             runSteps(simulation, 60 * 30);
@@ -118,7 +118,7 @@ class SimulationTest {
 
         @Test
         void orderInWhichDronesWereAdded_doesNotChangeTheResult() {
-            List<Agent> drones = SimulationLoop.createWorld(20, new Random(7L)).agents();
+            List<Agent> drones = WorldFactory.createWorld(20, new Random(7L)).agents();
             World worldInOrder = new World(100, 100, 50);
             World worldReversed = new World(100, 100, 50);
             for (Agent drone : drones) worldInOrder.addAgent(copyOf(drone));
@@ -142,7 +142,7 @@ class SimulationTest {
 
         @Test
         void drones_stayInTheSearchAreaAfterManySteps() {
-            World world = SimulationLoop.createWorld(10, new Random(0L));
+            World world = WorldFactory.createWorld(10, new Random(0L));
             Simulation simulation = createSimulation(world);
 
             runSteps(simulation, 300);
@@ -154,7 +154,7 @@ class SimulationTest {
 
         @Test
         void drones_neverExceedMaxSpeed() {
-            World world = SimulationLoop.createWorld(10, new Random(0L));
+            World world = WorldFactory.createWorld(10, new Random(0L));
             Simulation simulation = createSimulation(world);
 
             runSteps(simulation, 300);
@@ -167,7 +167,7 @@ class SimulationTest {
 
         @Test
         void drones_neverInsideObstaclesAfterManySteps() {
-            World world = SimulationLoop.createWorld(20, new Random(42L));
+            World world = WorldFactory.createWorld(20, new Random(42L));
             Simulation simulation = createSimulation(world);
 
             runSteps(simulation, 600);

@@ -67,7 +67,7 @@ public final class Simulation {
      */
     public static Simulation create(int agentCount, double width, double height, double depth,
                                     BoidsConfig boids, PredatorConfig predator, long masterSeed) {
-        World world = SimulationLoop.createWorld(agentCount, width, height, depth, predator,
+        World world = WorldFactory.createWorld(agentCount, width, height, depth, predator,
                 new Random(masterSeed));
         return new Simulation(world, boids,
                 new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));

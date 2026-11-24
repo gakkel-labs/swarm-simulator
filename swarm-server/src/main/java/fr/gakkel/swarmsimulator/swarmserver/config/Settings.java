@@ -43,7 +43,7 @@ public record Settings(
     private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
     // Port is server-only; world/agent/seed defaults live in SimulationConstants (single source of
-    // truth, also used by SimulationLoop.createDefaultWorld) and are referenced below.
+    // truth, also used by WorldFactory.createDefaultWorld) and are referenced below.
     public static final int DEFAULT_PORT = 50051;
 
     private static final String PROPERTIES_RESOURCE = "application.properties";

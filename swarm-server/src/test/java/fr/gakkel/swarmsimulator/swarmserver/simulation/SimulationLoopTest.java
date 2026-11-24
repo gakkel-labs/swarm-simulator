@@ -30,33 +30,9 @@ class SimulationLoopTest {
 
     @BeforeEach
     void setUp() {
-        world = SimulationLoop.createWorld(10, new Random(0L));
+        world = WorldFactory.createWorld(10, new Random(0L));
         loop = new SimulationLoop(new Simulation(world, CONFIG, new Random(1L), new Random(2L)), CONFIG,
                 DIAGNOSTICS, mock(ScheduledExecutorService.class), null);
-    }
-
-    @Test
-    void createDefaultWorld_creates20Agents() {
-        assertEquals(20, SimulationLoop.createDefaultWorld().agentCount());
-    }
-
-    @Test
-    void createDefaultWorld_agentsStartInBounds() {
-        World defaultWorld = SimulationLoop.createDefaultWorld();
-        for (Agent agent : defaultWorld.agents()) {
-            assertTrue(defaultWorld.isInBounds(agent.position()), "agent out of bounds: " + agent.position());
-        }
-    }
-
-    @Test
-    void createWorld_scalesObstacleRadiiWithSmallestDimensionRatio() {
-        // default dimensions => scale 1.0 => original radii (8/5/6) unchanged
-        World defaultWorld = SimulationLoop.createWorld(5, 100, 100, 50, new Random(0L));
-        assertEquals(8.0, defaultWorld.obstacles().get(0).radius(), 1e-9);
-
-        // half the depth (the smallest extent) => radii halved so spheres still fit the box
-        World smallWorld = SimulationLoop.createWorld(5, 100, 100, 25, new Random(0L));
-        assertEquals(4.0, smallWorld.obstacles().get(0).radius(), 1e-9);
     }
 
     @Test
@@ -68,16 +44,6 @@ class SimulationLoopTest {
         for (int tick = 0; tick < SimulationLoop.TICK_RATE_HZ; tick++) liveLoop.tick();
 
         assertEquals(1.0, simulation.clock().elapsedSeconds(), 1e-9);
-    }
-
-    @Test
-    void seededId_sameSeed_givesTheSameVersionFourId() {
-        UUID firstId = SimulationLoop.seededId(new Random(5L));
-        UUID secondId = SimulationLoop.seededId(new Random(5L));
-
-        assertEquals(firstId, secondId);
-        assertEquals(4, firstId.version());
-        assertEquals(2, firstId.variant());
     }
 
     @Nested
@@ -207,11 +173,6 @@ class SimulationLoopTest {
 
             assertEquals(1, count);
         }
-    }
-
-    @Test
-    void createDefaultWorld_hasPredator() {
-        assertNotNull(SimulationLoop.createDefaultWorld().predator());
     }
 
     private static Agent createAgent(Vector3D position) {

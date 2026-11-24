@@ -60,9 +60,11 @@ public final class Simulation {
                       Random respawnRandom) {
         this.world = Objects.requireNonNull(world, "world");
         this.searchPattern = Objects.requireNonNull(searchPattern, "searchPattern");
-        // "!(x > 0)" also rejects NaN, which fails every comparison.
-        if (!(maxSpeed > 0)) {
-            throw new IllegalArgumentException("maxSpeed must be positive, got " + maxSpeed);
+        // "!(x > 0)" also rejects NaN, which fails every comparison; an infinite speed would
+        // switch the speed limit off.
+        if (!(maxSpeed > 0) || Double.isInfinite(maxSpeed)) {
+            throw new IllegalArgumentException(
+                    "maxSpeed must be positive and finite, got " + maxSpeed);
         }
         this.maxSpeed = maxSpeed;
         this.respawnRandom = Objects.requireNonNull(respawnRandom, "respawnRandom");
@@ -116,11 +118,17 @@ public final class Simulation {
     }
 
     // Steer forces are all computed from the positions at time t before any drone moves,
-    // so the order of the drones does not change the forces.
+    // so the order of the drones does not change the forces. A bad force is refused before
+    // any drone moves: NaN would pass the speed limit and reach the display.
     private void moveDrones(List<Agent> agents, double stepSeconds) {
         List<Vector3D> steers = new ArrayList<>(agents.size());
         for (Agent agent : agents) {
-            steers.add(searchPattern.steer(agent, world));
+            Vector3D steer = searchPattern.steer(agent, world);
+            if (!isFinite(steer)) {
+                throw new IllegalStateException("search pattern gave the force " + steer
+                        + " to drone " + agent.id());
+            }
+            steers.add(steer);
         }
         for (int index = 0; index < agents.size(); index++) {
             Agent agent = agents.get(index);
@@ -199,6 +207,11 @@ public final class Simulation {
             }
         }
         return new Vector3D(world.width() / 2, -world.height() / 2, world.depth() / 2);
+    }
+
+    private static boolean isFinite(Vector3D vector) {
+        return vector != null && Double.isFinite(vector.x()) && Double.isFinite(vector.y())
+                && Double.isFinite(vector.z());
     }
 
     static Vector3D clampSpeed(Vector3D velocity, double maxSpeed) {

@@ -160,9 +160,10 @@ public class SimulationLoop {
     public record Wiring(World world, Simulation simulation, SimulationLoop loop) {}
 
     /**
-     * Builds the world and the simulation loop from a single master seed: initial placement, predator
-     * respawn and the wander force all derive from {@code masterSeed}, so the entire run is
-     * reproducible. This is the public assembly entry point — callers never touch
+     * Builds the world and the simulation loop from a fleet configuration and a single master
+     * seed: {@code fleet} gives the number of drones and the search pattern; initial placement,
+     * respawn and the random part of the search pattern all derive from {@code masterSeed}, so
+     * the entire run is reproducible. This is the public assembly entry point — callers never touch
      * {@link WorldFactory} or the per-stream RNGs directly.
      */
     public static Wiring wire(FleetConfiguration fleet, double width, double height, double depth,

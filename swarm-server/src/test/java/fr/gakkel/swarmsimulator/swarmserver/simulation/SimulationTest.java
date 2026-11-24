@@ -5,6 +5,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -71,6 +73,67 @@ class SimulationTest {
             double realSeconds = (System.nanoTime() - startNanos) / 1e9;
             assertEquals(60.0, simulation.clock().elapsedSeconds(), 1e-9);
             assertTrue(realSeconds < 10.0, "60 s of simulation took " + realSeconds + " s");
+        }
+    }
+
+    @Nested
+    class Reproducibility {
+
+        private static final int THIRTY_SECONDS_OF_STEPS = 30 * 30;
+
+        private static Simulation createSeededSimulation(long seed) {
+            return Simulation.create(20, 100, 100, 50, CONFIG, PredatorConfig.defaults(), seed);
+        }
+
+        /** What a run leaves: each drone id with its position, in id order. */
+        private static List<String> finalDrones(Simulation simulation) {
+            return simulation.world().agents().stream()
+                    .sorted((first, second) -> first.id().compareTo(second.id()))
+                    .map(agent -> agent.id() + " " + agent.position() + " " + agent.velocity())
+                    .toList();
+        }
+
+        @Test
+        void sameSeedTwice_givesStrictlyEqualDronesAfterThirtySeconds() {
+            Simulation firstRun = createSeededSimulation(42L);
+            Simulation secondRun = createSeededSimulation(42L);
+
+            runSteps(firstRun, THIRTY_SECONDS_OF_STEPS);
+            runSteps(secondRun, THIRTY_SECONDS_OF_STEPS);
+
+            // No tolerance: the same seed must give the very same numbers, bit for bit.
+            assertEquals(finalDrones(firstRun), finalDrones(secondRun));
+        }
+
+        @Test
+        void differentSeeds_giveDifferentDrones() {
+            Simulation firstRun = createSeededSimulation(42L);
+            Simulation secondRun = createSeededSimulation(43L);
+
+            runSteps(firstRun, THIRTY_SECONDS_OF_STEPS);
+            runSteps(secondRun, THIRTY_SECONDS_OF_STEPS);
+
+            assertNotEquals(finalDrones(firstRun), finalDrones(secondRun));
+        }
+
+        @Test
+        void orderInWhichDronesWereAdded_doesNotChangeTheResult() {
+            List<Agent> drones = SimulationLoop.createWorld(20, new Random(7L)).agents();
+            World worldInOrder = new World(100, 100, 50);
+            World worldReversed = new World(100, 100, 50);
+            for (Agent drone : drones) worldInOrder.addAgent(copyOf(drone));
+            for (Agent drone : drones.reversed()) worldReversed.addAgent(copyOf(drone));
+            Simulation inOrder = createSimulation(worldInOrder);
+            Simulation reversed = createSimulation(worldReversed);
+
+            runSteps(inOrder, 300);
+            runSteps(reversed, 300);
+
+            assertEquals(finalDrones(inOrder), finalDrones(reversed));
+        }
+
+        private static Agent copyOf(Agent drone) {
+            return new Agent(drone.id(), drone.type(), drone.position(), drone.velocity());
         }
     }
 

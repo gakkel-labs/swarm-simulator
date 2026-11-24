@@ -33,10 +33,18 @@ public final class World {
     public double height() { return height; }
     public double depth() { return depth; }
 
+    /**
+     * Adds a drone, keeping the list sorted by id. Every loop over the drones (Boids forces,
+     * danger, target detection) then runs in the same order on every run: with floating-point
+     * numbers, adding the same values in another order can change the last digits of the result.
+     * Only the simulation thread adds or removes drones.
+     */
     public void addAgent(Agent agent) {
         Objects.requireNonNull(agent, "agent");
-        // addIfAbsent checks and adds in one atomic step (no check-then-act race between threads)
-        if (!agents.addIfAbsent(agent)) throw new IllegalArgumentException("agent already in world");
+        if (agents.contains(agent)) throw new IllegalArgumentException("agent already in world");
+        int index = 0;
+        while (index < agents.size() && agents.get(index).id().compareTo(agent.id()) < 0) index++;
+        agents.add(index, agent);
     }
 
     public boolean removeAgent(Agent agent) {

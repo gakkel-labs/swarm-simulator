@@ -216,9 +216,25 @@ pour chaque obstacle : si p est dedans, remettre p sur la surface et retirer la 
 si p dépasse une paroi : mettre à 0 la vitesse vers cette paroi, puis ramener p dans le monde
 ```
 
-Tous les vecteurs d'un tick sont calculés **d'abord**, à partir de la même copie de la liste des
-drones, et c'est seulement ensuite que les drones bougent. L'ordre des drones ne change pas le
-résultat.
+Tous les vecteurs d'un pas sont calculés **d'abord**, à partir de la même copie de la liste des
+drones, et c'est seulement ensuite que les drones bougent. Aucun drone ne voit donc un voisin qui
+a déjà bougé.
+
+L'ordre compte quand même un peu : la force d'errance tire ses nombres au hasard drone après
+drone, et avec des nombres à virgule flottante, additionner les mêmes valeurs dans un autre ordre
+peut changer les derniers chiffres. C'est pour cela que le monde garde ses drones **triés par id**.
+
+**Règles de déterminisme** (même graine, même résultat, au bit près) :
+
+- Une simulation = une graine. Tout le hasard qu'elle utilise vient de générateurs construits
+  à partir de cette graine, y compris les ids des drones.
+- Un générateur aléatoire n'est jamais partagé entre deux simulations ni entre deux threads.
+- Toujours le même ordre : drones par id, pas de boucle sur une `HashMap` ou un `HashSet`, pas de
+  somme en parallèle.
+- Le temps vient de l'horloge de simulation (`SimulationClock`), jamais de l'horloge de l'ordinateur.
+
+Le test `SimulationTest.Reproducibility` vérifie ces règles : la même graine lancée deux fois
+donne des positions et des vitesses strictement égales après 30 s, danger compris.
 
 ---
 

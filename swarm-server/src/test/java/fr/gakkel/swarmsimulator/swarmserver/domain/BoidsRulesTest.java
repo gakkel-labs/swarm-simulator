@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +20,7 @@ class BoidsRulesTest {
 
     @BeforeEach
     void setUp() {
-        rules = new BoidsRules(DEFAULT_CONFIG);
+        rules = new BoidsRules(DEFAULT_CONFIG, new Random(0L));
         agent = Agent.create(AgentType.EXPLORER, new Vector3D(0, 0, 0));
     }
 
@@ -160,7 +161,7 @@ class BoidsRulesTest {
         @Test
         void onlySeparationActive_equalsWeightedSeparation() {
             var config = BoidsConfig.builder().separationWeight(2.0).alignmentWeight(0.0).cohesionWeight(0.0).boundaryRepulsionWeight(0.0).build();
-            var separationOnlyRules = new BoidsRules(config);
+            var separationOnlyRules = new BoidsRules(config, new Random(0L));
             var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
 
             var steer = separationOnlyRules.steer(agent, List.of(neighbor));
@@ -181,7 +182,7 @@ class BoidsRulesTest {
             var config = BoidsConfig.builder()
                     .separationWeight(1.8).alignmentWeight(1.5).cohesionWeight(1.5)
                     .boundaryRepulsionWeight(0.0).build();
-            var fixedRules = new BoidsRules(config);
+            var fixedRules = new BoidsRules(config, new Random(0L));
             var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
             neighbor.update(neighbor.position(), new Vector3D(0, 1, 0));
 
@@ -360,7 +361,7 @@ class BoidsRulesTest {
         @Test
         void whenAgentOutsideFleeRadius_returnsZero() {
             var config = BoidsConfig.builder().threatFleeRadius(15.0).build();
-            var localRules = new BoidsRules(config);
+            var localRules = new BoidsRules(config, new Random(0L));
             var agent    = Agent.create(AgentType.EXPLORER, new Vector3D(20, 0, 0));
             var predator = new Predator(Vector3D.ZERO, Vector3D.ZERO);
 

@@ -12,10 +12,7 @@ public final class BoidsRules {
     private final BoidsConfig config;
     private final Random rng;
 
-    public BoidsRules(BoidsConfig config) {
-        this(config, new Random());
-    }
-
+    /** {@code rng} drives the wander force: give it a generator built from the simulation's seed. */
     public BoidsRules(BoidsConfig config, Random rng) {
         this.config = Objects.requireNonNull(config, "config");
         this.rng    = Objects.requireNonNull(rng, "rng");

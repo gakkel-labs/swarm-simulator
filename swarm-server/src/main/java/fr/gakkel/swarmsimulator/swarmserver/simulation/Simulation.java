@@ -5,6 +5,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationClock;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
@@ -34,6 +35,10 @@ public final class Simulation {
     private static final double INITIAL_SPEED_XY = 2.0;
     private static final double INITIAL_SPEED_Z = 1.0;
 
+    // Distinct salts so the random streams derived from the one master seed don't share state.
+    private static final long RESPAWN_SEED_SALT = 0x9E3779B97F4A7C15L;
+    private static final long WANDER_SEED_SALT  = 0xC2B2AE3D27D4EB4FL;
+
     /** A drone eaten by the predator, waiting to come back into the search area. */
     private record PendingRespawn(Agent agent, double dueAtSeconds) {}
 
@@ -53,6 +58,19 @@ public final class Simulation {
         this.config = Objects.requireNonNull(config, "config");
         this.rules = new BoidsRules(config, Objects.requireNonNull(wanderRandom, "wanderRandom"));
         this.respawnRandom = Objects.requireNonNull(respawnRandom, "respawnRandom");
+    }
+
+    /**
+     * Builds a world and its simulation from one master seed. Everything random in the run comes
+     * from that seed: drone ids and start positions, respawn places and the wander force. The
+     * generators belong to this simulation only: never share them with another simulation or thread.
+     */
+    public static Simulation create(int agentCount, double width, double height, double depth,
+                                    BoidsConfig boids, PredatorConfig predator, long masterSeed) {
+        World world = SimulationLoop.createWorld(agentCount, width, height, depth, predator,
+                new Random(masterSeed));
+        return new Simulation(world, boids,
+                new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
     }
 
     public World world() {

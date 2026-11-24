@@ -31,7 +31,8 @@ class SimulationLoopTest {
     @BeforeEach
     void setUp() {
         world = SimulationLoop.createWorld(10, new Random(0L));
-        loop = new SimulationLoop(world, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
+        loop = new SimulationLoop(new Simulation(world, CONFIG, new Random(1L), new Random(2L)), CONFIG,
+                DIAGNOSTICS, mock(ScheduledExecutorService.class), null);
     }
 
     @Test
@@ -67,6 +68,16 @@ class SimulationLoopTest {
         for (int tick = 0; tick < SimulationLoop.TICK_RATE_HZ; tick++) liveLoop.tick();
 
         assertEquals(1.0, simulation.clock().elapsedSeconds(), 1e-9);
+    }
+
+    @Test
+    void seededId_sameSeed_givesTheSameVersionFourId() {
+        UUID firstId = SimulationLoop.seededId(new Random(5L));
+        UUID secondId = SimulationLoop.seededId(new Random(5L));
+
+        assertEquals(firstId, secondId);
+        assertEquals(4, firstId.version());
+        assertEquals(2, firstId.variant());
     }
 
     @Nested
@@ -231,7 +242,8 @@ class SimulationLoopTest {
             doThrow(new IllegalStateException("disk full")).when(failingExporter)
                     .record(anyLong(), anyDouble(), anyDouble());
             ScheduledExecutorService mockExecutor = mock(ScheduledExecutorService.class);
-            var testLoop = new SimulationLoop(world, CONFIG, DIAGNOSTICS, mockExecutor, failingExporter);
+            var testLoop = new SimulationLoop(new Simulation(world, CONFIG, new Random(1L), new Random(2L)),
+                    CONFIG, DIAGNOSTICS, mockExecutor, failingExporter);
             ArgumentCaptor<Runnable> tickCaptor = ArgumentCaptor.forClass(Runnable.class);
             testLoop.start();
             verify(mockExecutor).scheduleAtFixedRate(tickCaptor.capture(), anyLong(), anyLong(), any());

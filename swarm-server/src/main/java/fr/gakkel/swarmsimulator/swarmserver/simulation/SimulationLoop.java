@@ -42,19 +42,8 @@ public class SimulationLoop {
     private int tickCount = 0;
     private int consecutiveFailedTicks = 0;
 
-    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
-                          ScheduledExecutorService executor) {
-        this(world, config, diagnosticsConfig, executor, null);
-    }
-
-    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
-                          ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
-        this(new Simulation(world, config, new Random(), new Random()), config, diagnosticsConfig,
-                executor, csvExporter);
-    }
-
     /**
-     * Canonical constructor. The loop only gives the live pace: every 1/30 s of real time it asks
+     * The loop only gives the live pace: every 1/30 s of real time it asks
      * {@code simulation} for one step of 1/30 s of simulation time, then records the metrics
      * shown to the operator. Prefer the {@link #wire} factory, which builds the simulation from
      * one seed.
@@ -172,10 +161,6 @@ public class SimulationLoop {
         return Math.sqrt(sumSq / agents.size());
     }
 
-    // Distinct salts so the three RNG streams derived from the single master seed don't share state.
-    private static final long RESPAWN_SEED_SALT = 0x9E3779B97F4A7C15L;
-    private static final long WANDER_SEED_SALT  = 0xC2B2AE3D27D4EB4FL;
-
     /** A world, the simulation that moves it and the live loop that drives it, from one master seed. */
     public record Wiring(World world, Simulation simulation, SimulationLoop loop) {}
 
@@ -189,12 +174,10 @@ public class SimulationLoop {
                               BoidsConfig boids, DiagnosticsConfig diagnostics,
                               PredatorConfig predator, long masterSeed,
                               ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
-        World world = createWorld(agentCount, width, height, depth, predator,
-                new Random(masterSeed));
-        Simulation simulation = new Simulation(world, boids,
-                new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
+        Simulation simulation = Simulation.create(agentCount, width, height, depth, boids, predator,
+                masterSeed);
         SimulationLoop loop = new SimulationLoop(simulation, boids, diagnostics, executor, csvExporter);
-        return new Wiring(world, simulation, loop);
+        return new Wiring(simulation.world(), simulation, loop);
     }
 
     public static World createDefaultWorld() {
@@ -229,7 +212,7 @@ public class SimulationLoop {
                     rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
                     rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
                     rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
-            world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
+            world.addAgent(new Agent(seededId(rng), AgentType.EXPLORER, pos, vel));
         }
         double radiusScale = Math.min(width / SimulationConstants.DEFAULT_WORLD_WIDTH,
                 Math.min(height / SimulationConstants.DEFAULT_WORLD_HEIGHT, depth / SimulationConstants.DEFAULT_WORLD_DEPTH));
@@ -238,7 +221,17 @@ public class SimulationLoop {
         world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
         Vector3D predatorStart = new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth);
         world.setPredator(
-                new Predator(UUID.randomUUID(), predatorStart, Vector3D.ZERO, predatorConfig));
+                new Predator(seededId(rng), predatorStart, Vector3D.ZERO, predatorConfig));
         return world;
+    }
+
+    /**
+     * A random version-4 UUID drawn from {@code rng} instead of {@code UUID.randomUUID()}, which
+     * has no seed: the same seed then gives the same drone ids, so "sorted by id" is the same order.
+     */
+    static UUID seededId(Random rng) {
+        long mostSignificantBits = (rng.nextLong() & ~0xF000L) | 0x4000L;                // version 4
+        long leastSignificantBits = (rng.nextLong() & ~(0x3L << 62)) | (0x2L << 62);      // IETF variant
+        return new UUID(mostSignificantBits, leastSignificantBits);
     }
 }

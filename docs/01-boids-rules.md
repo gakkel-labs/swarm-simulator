@@ -219,8 +219,23 @@ for each obstacle: if p is inside, put p back on the surface and remove the inwa
 if p is past a wall: set the velocity towards that wall to 0, then clamp p inside the world
 ```
 
-All the steering vectors of a tick are computed **first**, from the same copy of the drone
-list, and only then are the drones moved. The order of the drones does not change the result.
+All the steering vectors of a step are computed **first**, from the same copy of the drone
+list, and only then are the drones moved. So no drone sees a neighbour that has already moved.
+
+The order still matters a little: the wander force draws its random numbers drone after drone,
+and with floating-point numbers, adding the same values in another order can change the last
+digits. This is why the world keeps its drones **sorted by id**.
+
+**Determinism rules** (same seed, same result, bit for bit):
+
+- One simulation = one seed. Everything random in it comes from generators built from that seed,
+  including the drone ids.
+- A random generator is never shared between two simulations or two threads.
+- Same order every time: drones by id, no loop over a `HashMap` or `HashSet`, no parallel sums.
+- Time comes from the simulation clock (`SimulationClock`), never from the computer's clock.
+
+The test `SimulationTest.Reproducibility` checks these rules: the same seed run twice gives
+strictly equal positions and velocities after 30 s, danger included.
 
 ---
 

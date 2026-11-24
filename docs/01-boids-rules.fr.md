@@ -256,13 +256,13 @@ d'environnement `SWARM_BOIDS_*` ou une propriété `swarm.boids.*` (voir le [REA
 | `threatFleeRadius`         | `15.0` m          | Distance à laquelle un drone fuit le danger                     | Zone de panique plus large                   |
 | `threatFleeWeight`         | `200.0`           | Poids de la fuite du danger                                     | Panique plus forte                           |
 | `wanderWeight`             | `0.0`             | Poids de l'errance (0 = éteinte)                                | Plus de hasard, moins mécanique              |
-| `maxSpeed`                 | `5.0` m/s         | Vitesse maximale d'un drone                                     | Essaim plus rapide et plus réactif           |
 | `dt` *(boucle)*            | `1/30 s ≈ 33 ms`  | Pas de temps (30 Hz)                                            | Pas plus grands → moins stable               |
 
 Le danger a ses propres réglages : vitesse 3 m/s (`SWARM_PREDATOR_SPEED`) et rayon de capture
-1,5 m (`SWARM_PREDATOR_EAT_RADIUS`), tous deux dans `PredatorConfig`. Autres valeurs fixes (dans
-le code, pas encore réglables) : rayon du capteur 10 m (`SimulationConstants.SENSOR_RADIUS_M`),
-retour après 5 s à au moins 30 m du danger (`Simulation`). Ces 5 s sont du temps de simulation, pas du temps réel.
+1,5 m (`SWARM_PREDATOR_EAT_RADIUS`), tous deux dans `PredatorConfig`. La vitesse maximale (5 m/s)
+et le rayon de détection (10 m) d'un drone ne sont pas des réglages de Boids : ils viennent de sa
+fiche technique dans le [catalogue de drones](drone-catalog.fr.md) (#176). Autres valeurs fixes
+(dans le code, pas encore réglables) : retour après 5 s à au moins 30 m du danger (`Simulation`). Ces 5 s sont du temps de simulation, pas du temps réel.
 
 **Repères :**
 - `w_sep` un peu plus grand que `w_align` et `w_coh` → pas de collision, l'essaim tient.

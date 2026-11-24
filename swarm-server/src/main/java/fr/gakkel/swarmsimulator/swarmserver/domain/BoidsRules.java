@@ -84,7 +84,7 @@ public final class BoidsRules {
     // grows exponentially as the agent approaches a sphere surface, so navigation curves
     // smoothly around obstacles instead of snapping at the threshold. Walls (boundaryRepulsion)
     // form a closed box and can stay binary; obstacles must be steered around, so they need
-    // distance-modulated force. maxSpeed clamping in SimulationLoop keeps things bounded.
+    // distance-modulated force. the cruise speed clamp in Simulation keeps things bounded.
     public Vector3D obstacleAvoidance(Agent agent, List<Obstacle> obstacles) {
         if (obstacles.isEmpty()) return Vector3D.ZERO;
 

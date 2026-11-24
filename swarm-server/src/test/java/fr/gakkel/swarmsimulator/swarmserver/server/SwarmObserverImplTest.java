@@ -40,7 +40,7 @@ class SwarmObserverImplTest {
     void setUp() {
         World world = new World(100, 100, 50);
         // mock executor prevents background scheduling — broadcast() called manually in tests
-        impl = new SwarmObserverImpl(world, () -> 0.0, mockExecutor);
+        impl = new SwarmObserverImpl(world, 10.0, () -> 0.0, mockExecutor);
     }
 
     @Test
@@ -86,7 +86,7 @@ class SwarmObserverImplTest {
     void broadcast_whenBuildingTheStateThrows_doesNotPropagateTheException() {
         // scheduleAtFixedRate stops a task for good, with no log, if it throws once.
         World world = new World(100, 100, 50);
-        SwarmObserverImpl failingImpl = new SwarmObserverImpl(world, () -> {
+        SwarmObserverImpl failingImpl = new SwarmObserverImpl(world, 10.0, () -> {
             throw new IllegalStateException("metric not ready");
         }, mockExecutor);
         failingImpl.subscribeWorldState(SubscribeRequest.newBuilder().setClientId("unity").build(), mockObserver);
@@ -98,7 +98,8 @@ class SwarmObserverImplTest {
     void constructor_doesNotStartTheBroadcaster() {
         ScheduledExecutorService untouchedExecutor = mock(ScheduledExecutorService.class);
 
-        new SwarmObserverImpl(new World(100, 100, 50), () -> 0.0, untouchedExecutor);
+        new SwarmObserverImpl(new World(100, 100, 50), 10.0, () -> 0.0,
+                untouchedExecutor);
 
         verifyNoInteractions(untouchedExecutor);
     }

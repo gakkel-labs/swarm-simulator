@@ -1,12 +1,15 @@
 package fr.gakkel.swarmsimulator.swarmserver.domain;
 
+/**
+ * The weights and radii of the Boids rules. The top speed of a drone is not here: it is the
+ * cruise speed of its {@link DroneSpecification} (#176).
+ */
 public record BoidsConfig(
         double perceptionRadius,
         double separationWeight,
         double alignmentWeight,
         double cohesionWeight,
         double wanderWeight,
-        double maxSpeed,
         double boundaryRepulsionRadius,
         double boundaryRepulsionWeight,
         double obstacleAvoidanceRadius,
@@ -20,9 +23,6 @@ public record BoidsConfig(
         }
         if (separationWeight < 0 || alignmentWeight < 0 || cohesionWeight < 0 || wanderWeight < 0) {
             throw new IllegalArgumentException("weights must be >= 0");
-        }
-        if (maxSpeed <= 0) {
-            throw new IllegalArgumentException("maxSpeed must be positive");
         }
         if (boundaryRepulsionRadius <= 0) {
             throw new IllegalArgumentException("boundaryRepulsionRadius must be positive");
@@ -55,7 +55,6 @@ public record BoidsConfig(
         private double alignmentWeight         = 1.5;
         private double cohesionWeight          = 1.5;
         private double wanderWeight            = 0.0;
-        private double maxSpeed                = 5.0;
         private double boundaryRepulsionRadius = 15.0;
         private double boundaryRepulsionWeight = 2.0;
         private double obstacleAvoidanceRadius = 8.0;
@@ -70,7 +69,6 @@ public record BoidsConfig(
         public Builder alignmentWeight(double value)         { alignmentWeight = value;         return this; }
         public Builder cohesionWeight(double value)          { cohesionWeight = value;          return this; }
         public Builder wanderWeight(double value)            { wanderWeight = value;            return this; }
-        public Builder maxSpeed(double value)                { maxSpeed = value;                return this; }
         public Builder boundaryRepulsionRadius(double value) { boundaryRepulsionRadius = value; return this; }
         public Builder boundaryRepulsionWeight(double value) { boundaryRepulsionWeight = value; return this; }
         public Builder obstacleAvoidanceRadius(double value) { obstacleAvoidanceRadius = value; return this; }
@@ -80,7 +78,7 @@ public record BoidsConfig(
 
         public BoidsConfig build() {
             return new BoidsConfig(perceptionRadius, separationWeight, alignmentWeight,
-                    cohesionWeight, wanderWeight, maxSpeed,
+                    cohesionWeight, wanderWeight,
                     boundaryRepulsionRadius, boundaryRepulsionWeight,
                     obstacleAvoidanceRadius, obstacleAvoidanceWeight,
                     threatFleeRadius, threatFleeWeight);

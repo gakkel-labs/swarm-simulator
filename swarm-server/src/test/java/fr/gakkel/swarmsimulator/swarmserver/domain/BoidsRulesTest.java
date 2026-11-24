@@ -21,7 +21,7 @@ class BoidsRulesTest {
     @BeforeEach
     void setUp() {
         rules = new BoidsRules(DEFAULT_CONFIG, new Random(0L));
-        agent = Agent.create(AgentType.EXPLORER, new Vector3D(0, 0, 0));
+        agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(0, 0, 0));
     }
 
     @Nested
@@ -34,14 +34,14 @@ class BoidsRulesTest {
 
         @Test
         void coLocatedNeighbor_returnsZero() {
-            var coLocated = Agent.create(AgentType.EXPLORER, new Vector3D(0, 0, 0));
+            var coLocated = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(0, 0, 0));
 
             assertEquals(Vector3D.ZERO, rules.separation(agent, List.of(coLocated)));
         }
 
         @Test
         void oneNeighbor_returnsVectorAwayFromNeighbor() {
-            var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
+            var neighbor = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 0, 0));
 
             var result = rules.separation(agent, List.of(neighbor));
 
@@ -52,8 +52,8 @@ class BoidsRulesTest {
 
         @Test
         void twoSymmetricNeighbors_forcesCancel() {
-            var left  = Agent.create(AgentType.EXPLORER, new Vector3D(-5, 0, 0));
-            var right = Agent.create(AgentType.EXPLORER, new Vector3D( 5, 0, 0));
+            var left  = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(-5, 0, 0));
+            var right = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D( 5, 0, 0));
 
             var result = rules.separation(agent, List.of(left, right));
 
@@ -63,8 +63,8 @@ class BoidsRulesTest {
         @Test
         void twoAgentsTooClose_generateOpposingForces() {
             // A at (0,0,0), B at (5,0,0) → A pushed -x, B pushed +x
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(0, 0, 0), Vector3D.ZERO);
-            var b = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(5, 0, 0), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(0, 0, 0), Vector3D.ZERO);
+            var b = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 0, 0), Vector3D.ZERO);
 
             var forceOnA = rules.separation(a, List.of(b));
             var forceOnB = rules.separation(b, List.of(a));
@@ -84,9 +84,9 @@ class BoidsRulesTest {
 
         @Test
         void neighborsWithSameVelocity_returnsThatDirection() {
-            var n1 = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
+            var n1 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 0, 0));
             n1.update(n1.position(), new Vector3D(3, 0, 0));
-            var n2 = Agent.create(AgentType.EXPLORER, new Vector3D(-5, 0, 0));
+            var n2 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(-5, 0, 0));
             n2.update(n2.position(), new Vector3D(3, 0, 0));
 
             var result = rules.alignment(List.of(n1, n2));
@@ -98,9 +98,9 @@ class BoidsRulesTest {
 
         @Test
         void neighborsWithOppositeVelocities_forcesCancel() {
-            var n1 = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
+            var n1 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 0, 0));
             n1.update(n1.position(), new Vector3D(1, 0, 0));
-            var n2 = Agent.create(AgentType.EXPLORER, new Vector3D(-5, 0, 0));
+            var n2 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(-5, 0, 0));
             n2.update(n2.position(), new Vector3D(-1, 0, 0));
 
             var result = rules.alignment(List.of(n1, n2));
@@ -119,7 +119,7 @@ class BoidsRulesTest {
 
         @Test
         void oneNeighbor_returnsDirectionTowardNeighbor() {
-            var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(10, 0, 0));
+            var neighbor = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10, 0, 0));
 
             var result = rules.cohesion(agent, List.of(neighbor));
 
@@ -130,8 +130,8 @@ class BoidsRulesTest {
 
         @Test
         void twoNeighbors_returnsDirectionTowardCentroid() {
-            var n1 = Agent.create(AgentType.EXPLORER, new Vector3D(4, 0, 0));
-            var n2 = Agent.create(AgentType.EXPLORER, new Vector3D(6, 0, 0));
+            var n1 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(4, 0, 0));
+            var n2 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(6, 0, 0));
 
             var result = rules.cohesion(agent, List.of(n1, n2));
 
@@ -144,8 +144,8 @@ class BoidsRulesTest {
         void threeAgentsInLine_outerAgentPulledTowardSwarmCenter() {
             // agent A at (0,0,0), neighbours B(10,0,0) and C(20,0,0)
             // centroid of neighbours = (15,0,0) → cohesion force points +x
-            var b = Agent.create(AgentType.EXPLORER, new Vector3D(10, 0, 0));
-            var c = Agent.create(AgentType.EXPLORER, new Vector3D(20, 0, 0));
+            var b = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10, 0, 0));
+            var c = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(20, 0, 0));
 
             var result = rules.cohesion(agent, List.of(b, c));
 
@@ -162,7 +162,7 @@ class BoidsRulesTest {
         void onlySeparationActive_equalsWeightedSeparation() {
             var config = BoidsConfig.builder().separationWeight(2.0).alignmentWeight(0.0).cohesionWeight(0.0).boundaryRepulsionWeight(0.0).build();
             var separationOnlyRules = new BoidsRules(config, new Random(0L));
-            var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
+            var neighbor = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 0, 0));
 
             var steer = separationOnlyRules.steer(agent, List.of(neighbor));
             var expected = separationOnlyRules.separation(agent, List.of(neighbor)).scale(2.0);
@@ -183,7 +183,7 @@ class BoidsRulesTest {
                     .separationWeight(1.8).alignmentWeight(1.5).cohesionWeight(1.5)
                     .boundaryRepulsionWeight(0.0).build();
             var fixedRules = new BoidsRules(config, new Random(0L));
-            var neighbor = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
+            var neighbor = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 0, 0));
             neighbor.update(neighbor.position(), new Vector3D(0, 1, 0));
 
             var steer = fixedRules.steer(agent, List.of(neighbor));
@@ -205,13 +205,13 @@ class BoidsRulesTest {
 
         @Test
         void farFromWalls_returnsZero() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -50, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, -50, 25), Vector3D.ZERO);
             assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, world));
         }
 
         @Test
         void nearXMinWall_forcePushesPositiveX() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(5, -50, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, -50, 25), Vector3D.ZERO);
             var force = rules.boundaryRepulsion(a, world);
             assertTrue(force.x() > 0, "force should push away from x=0 wall");
             assertEquals(0.0, force.y(), DELTA);
@@ -220,14 +220,14 @@ class BoidsRulesTest {
 
         @Test
         void atExactRadiusBoundary_returnsZero() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER,
+            var a = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE,
                     new Vector3D(DEFAULT_CONFIG.boundaryRepulsionRadius(), -50, 25), Vector3D.ZERO);
             assertEquals(Vector3D.ZERO, rules.boundaryRepulsion(a, world));
         }
 
         @Test
         void nearXMaxWall_forcePushesNegativeX_andYZAreZero() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(95, -50, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(95, -50, 25), Vector3D.ZERO);
             var force = rules.boundaryRepulsion(a, world);
             assertTrue(force.x() < 0, "force should push away from x=width wall");
             assertEquals(0.0, force.y(), DELTA);
@@ -237,7 +237,7 @@ class BoidsRulesTest {
         // The world's Y axis goes from -height (seabed) to 0 (surface), see World.isInBounds.
         @Test
         void nearSurface_forcePushesDown() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -5, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, -5, 25), Vector3D.ZERO);
             var force = rules.boundaryRepulsion(a, world);
             assertTrue(force.y() < 0, "force should push away from the surface (y = 0)");
             assertEquals(0.0, force.x(), DELTA);
@@ -246,7 +246,7 @@ class BoidsRulesTest {
 
         @Test
         void nearSeabed_forcePushesUp() {
-            var a = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -95, 25), Vector3D.ZERO);
+            var a = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, -95, 25), Vector3D.ZERO);
             var force = rules.boundaryRepulsion(a, world);
             assertTrue(force.y() > 0, "force should push away from the seabed (y = -height)");
             assertEquals(0.0, force.x(), DELTA);
@@ -288,8 +288,8 @@ class BoidsRulesTest {
             // farAgent at x=4 → 4u from the surface; nearAgent at x=7 → 1u from the surface
             // "far"/"near" labels refer to distance from the OBSTACLE SURFACE, not from the origin
             var obstacle = new Obstacle(new Vector3D(10, 0, 0), 2.0);
-            var farAgent  = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(4, 0, 0), Vector3D.ZERO);
-            var nearAgent = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(7, 0, 0), Vector3D.ZERO);
+            var farAgent  = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(4, 0, 0), Vector3D.ZERO);
+            var nearAgent = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(7, 0, 0), Vector3D.ZERO);
 
             double farMag  = rules.obstacleAvoidance(farAgent,  List.of(obstacle)).magnitude();
             double nearMag = rules.obstacleAvoidance(nearAgent, List.of(obstacle)).magnitude();
@@ -302,7 +302,7 @@ class BoidsRulesTest {
         void atSurface_strengthIsOne() {
             // obstacle r=2 at (5,0,0), agent at (3,0,0) → distance=2, gap=0, t=0, exp(0)=1.0
             var obstacle = new Obstacle(new Vector3D(5, 0, 0), 2.0);
-            var surfaceAgent = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(3, 0, 0), Vector3D.ZERO);
+            var surfaceAgent = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(3, 0, 0), Vector3D.ZERO);
 
             var force = rules.obstacleAvoidance(surfaceAgent, List.of(obstacle));
 
@@ -314,7 +314,7 @@ class BoidsRulesTest {
         void agentInsideObstacle_strengthSaturatesToOne() {
             // obstacle r=5 at (10,0,0), agent at (12,0,0) → distance=2, gap=-3 → t=max(-3,0)/8=0, strength=1
             var obstacle = new Obstacle(new Vector3D(10, 0, 0), 5.0);
-            var insideAgent = new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(12, 0, 0), Vector3D.ZERO);
+            var insideAgent = new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(12, 0, 0), Vector3D.ZERO);
 
             var force = rules.obstacleAvoidance(insideAgent, List.of(obstacle));
 
@@ -348,7 +348,7 @@ class BoidsRulesTest {
 
         @Test
         void whenAgentInRange_returnsRepulsionVector() {
-            var agent    = Agent.create(AgentType.EXPLORER, new Vector3D(5, 0, 0));
+            var agent    = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 0, 0));
             var predator = new Predator(Vector3D.ZERO, Vector3D.ZERO);
 
             var result = rules.predatorFlee(agent, predator);
@@ -362,7 +362,7 @@ class BoidsRulesTest {
         void whenAgentOutsideFleeRadius_returnsZero() {
             var config = BoidsConfig.builder().threatFleeRadius(15.0).build();
             var localRules = new BoidsRules(config, new Random(0L));
-            var agent    = Agent.create(AgentType.EXPLORER, new Vector3D(20, 0, 0));
+            var agent    = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(20, 0, 0));
             var predator = new Predator(Vector3D.ZERO, Vector3D.ZERO);
 
             var result = localRules.predatorFlee(agent, predator);
@@ -372,7 +372,7 @@ class BoidsRulesTest {
 
         @Test
         void coLocatedWithPredator_returnsZero() {
-            var agent    = Agent.create(AgentType.EXPLORER, Vector3D.ZERO);
+            var agent    = Agent.create(TestDrones.DEMO_DETECTION_DRONE, Vector3D.ZERO);
             var predator = new Predator(Vector3D.ZERO, Vector3D.ZERO);
 
             var result = rules.predatorFlee(agent, predator);

@@ -14,10 +14,10 @@ class BoidsSearchPatternTest {
     @Test
     void steer_givesTheSameForceAsTheBoidsRulesWithTheNeighborsInPerceptionRadius() {
         World world = new World(100, 100, 50);
-        Agent drone = Agent.create(AgentType.EXPLORER, new Vector3D(50, -50, 25));
+        Agent drone = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, -50, 25));
         world.addAgent(drone);
-        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(55, -50, 25)));  // neighbor
-        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(90, -50, 25)));  // too far
+        world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(55, -50, 25)));  // neighbor
+        world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(90, -50, 25)));  // too far
         SearchPattern boids = new BoidsSearchPattern(CONFIG, new Random(7L));
         BoidsRules rules = new BoidsRules(CONFIG, new Random(7L));
         Vector3D expected =

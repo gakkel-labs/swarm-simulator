@@ -46,27 +46,19 @@ public final class Simulation {
 
     private final World world;
     private final SearchPattern searchPattern;
-    private final double maxSpeed;
     private final Random respawnRandom;
     private final SimulationClock clock = new SimulationClock();
     private final List<PendingRespawn> pendingRespawns = new ArrayList<>();
 
     /**
      * {@code searchPattern} says where each drone wants to go; the simulation then applies the
-     * same physics to every pattern: {@code maxSpeed}, obstacles and walls.
-     * {@code respawnRandom} places the drones that come back after the predator ate them.
+     * same physics to every pattern: the cruise speed of each drone (from its specification),
+     * obstacles and walls. {@code respawnRandom} places the drones that come back after the
+     * predator ate them.
      */
-    public Simulation(World world, SearchPattern searchPattern, double maxSpeed,
-                      Random respawnRandom) {
+    public Simulation(World world, SearchPattern searchPattern, Random respawnRandom) {
         this.world = Objects.requireNonNull(world, "world");
         this.searchPattern = Objects.requireNonNull(searchPattern, "searchPattern");
-        // "!(x > 0)" also rejects NaN, which fails every comparison; an infinite speed would
-        // switch the speed limit off.
-        if (!(maxSpeed > 0) || Double.isInfinite(maxSpeed)) {
-            throw new IllegalArgumentException(
-                    "maxSpeed must be positive and finite, got " + maxSpeed);
-        }
-        this.maxSpeed = maxSpeed;
         this.respawnRandom = Objects.requireNonNull(respawnRandom, "respawnRandom");
     }
 
@@ -78,7 +70,7 @@ public final class Simulation {
      */
     public static Simulation create(FleetConfiguration fleet, double width, double height,
                                     double depth, PredatorConfig predator, long masterSeed) {
-        World world = WorldFactory.createWorld(fleet.droneCount(), width, height, depth, predator,
+        World world = WorldFactory.createWorld(fleet.droneGroups(), width, height, depth, predator,
                 new Random(masterSeed));
         Random searchPatternRandom = new Random(masterSeed ^ SEARCH_PATTERN_SEED_SALT);
         // A factory: the configuration only names the pattern and its settings, and each run
@@ -86,7 +78,7 @@ public final class Simulation {
         return switch (fleet.searchPattern()) {
             case SearchPatternSettings.Boids boids -> new Simulation(world,
                     new BoidsSearchPattern(boids.config(), searchPatternRandom),
-                    boids.config().maxSpeed(), new Random(masterSeed ^ RESPAWN_SEED_SALT));
+                    new Random(masterSeed ^ RESPAWN_SEED_SALT));
         };
     }
 
@@ -133,7 +125,8 @@ public final class Simulation {
         for (int index = 0; index < agents.size(); index++) {
             Agent agent = agents.get(index);
             Vector3D newVelocity = clampSpeed(
-                    agent.velocity().add(steers.get(index).scale(stepSeconds)), maxSpeed);
+                    agent.velocity().add(steers.get(index).scale(stepSeconds)),
+                    agent.specification().cruiseSpeedMetersPerSecond());
             Vector3D newPosition = agent.position().add(newVelocity.scale(stepSeconds));
             for (Obstacle obstacle : world.obstacles()) {
                 ObstacleCollision collision = resolveObstacleCollision(newPosition, newVelocity, obstacle);
@@ -162,7 +155,9 @@ public final class Simulation {
         Target target = world.target();
         if (target == null || target.isFound()) return;
         for (Agent agent : agents) {
-            if (agent.position().distanceTo(target.position()) <= SimulationConstants.SENSOR_RADIUS_M) {
+            // A sphere of the sensor range for now: the side-scan swath comes with its own issue.
+            double detectionRange = agent.specification().searchSensor().maxRangeMeters();
+            if (agent.position().distanceTo(target.position()) <= detectionRange) {
                 target.markFound(agent.id().toString());
                 LOG.atInfo()
                    .setMessage("Target found by drone {} in {}s")

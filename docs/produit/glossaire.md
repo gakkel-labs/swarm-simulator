@@ -68,7 +68,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Target** | In the simulation, the object to find (the "wreck"). Today the operator places it with a click in the viewer. | ✅ |
 | **Contact** | Something a drone has detected and that could be the target. A contact must be checked. Status: *to review*, *confirmed*, *dismissed*. | 🔜 |
 | **Detection** | The moment a drone passes close enough to the target to "see" it. | ✅ |
-| **Sensor radius** | The distance at which a drone can detect the target (10 m today). Replaced by the side-scan sonar band in the realistic scale ([ADR-0011](../adr/0011-model-assumptions-and-scale.md)). | ✅ |
+| **Sensor radius** | The distance at which a drone can detect the target (10 m in the live demo). It is the range of the drone's search sensor, read from its drone specification. Replaced by the side-scan sonar band in the realistic scale ([ADR-0011](../adr/0011-model-assumptions-and-scale.md)). | ✅ |
 | **Sonar** | The underwater sensor that "sees" with sound. Simulated later. | 🔜 |
 | **Side-scan sonar** | The search sensor of a detection drone. It sees a band of seabed on each side (50 m), not right under the drone (blind gap), and its detection chance falls with range. | 🔜 |
 | **Swath** | The band of seabed a search sensor sees as the drone moves. The lawnmower spaces its lines from it ([diagram](#diagram-swath-nadir-and-line-spacing)). | 🔜 |
@@ -76,7 +76,9 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Working altitude** | The height above the seabed where a search sensor works well (15 m for the side-scan sonar). | 🔜 |
 | **Seabed following** | The drone keeps its working altitude: if the seabed rises, the drone rises. The search pattern only decides the horizontal moves. | 🔜 |
 | **Forward obstacle sonar** | A navigation sensor that sees a cone in front of the drone (about 100 m). A drone sees an obstacle only there. | 🔜 |
-| **Drone specification** | The technical values of a drone type: speeds, turn rate, working altitude, endurance, sensors, acoustic modem. A value object: one per drone type ([ADR-0011](../adr/0011-model-assumptions-and-scale.md)). | 🔜 |
+| **Drone specification** | The technical values of a drone model: speeds, turn rate, working altitude, endurance, sensors, acoustic modem. A value object: one per drone model ([ADR-0011](../adr/0011-model-assumptions-and-scale.md)). | ✅ (`DroneSpecification`) |
+| **Drone model** | A kind of drone, with its own name and drone specification, for example `side-scan-drone`. A fleet configuration says which models and how many of each: a swarm can mix several models. | ✅ |
+| **Drone catalog** | The list of drone models available, each with its drone specification. It is a configuration file, not code: adding a model means adding one entry, with no rebuild ([format](../drone-catalog.md)). Later, the operator will edit it from the control station. | ✅ (`DroneCatalog`) |
 | **Acoustic link** | The underwater radio-like link (with sound) between the swarm and the drone carrier. It is slow and can be cut. | 🔜 |
 | **Acoustic modem** | The device each drone uses to send its position by sound (every 10 s, range about 1 km, some messages lost). Boids uses these announced positions. | 🔜 |
 | **Score** | The **success probability** of a fleet configuration: the share of successful scenarios in the common set of scenarios. Example: "succeeds in 460 scenarios out of 500" = 92%. Used by the backend to compare configurations ([problem sheet](problem-find-a-wreck.md)). | 🔜 |

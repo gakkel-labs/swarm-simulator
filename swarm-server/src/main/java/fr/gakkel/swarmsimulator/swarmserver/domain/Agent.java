@@ -3,29 +3,39 @@ package fr.gakkel.swarmsimulator.swarmserver.domain;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * A drone of the fleet. An entity: it keeps its identity (its id) while its position and
+ * velocity change. Its {@link DroneSpecification} says what it can do.
+ */
 public final class Agent {
 
     private final UUID id;
-    private final AgentType type;
+    private final DroneSpecification specification;
     // One volatile value instead of two: see Motion.
     private volatile Motion motion;
 
-    public Agent(UUID id, AgentType type, Vector3D position, Vector3D velocity) {
+    public Agent(UUID id, DroneSpecification specification, Vector3D position,
+                 Vector3D velocity) {
         this.id = Objects.requireNonNull(id, "id");
-        this.type = Objects.requireNonNull(type, "type");
+        this.specification = Objects.requireNonNull(specification, "specification");
         this.motion = new Motion(position, velocity);
     }
 
-    public static Agent create(AgentType type, Vector3D position) {
-        return new Agent(UUID.randomUUID(), type, position, Vector3D.ZERO);
+    public static Agent create(DroneSpecification specification, Vector3D position) {
+        return new Agent(UUID.randomUUID(), specification, position, Vector3D.ZERO);
     }
 
     public UUID id() {
         return id;
     }
 
+    /** The role of the drone, given by its specification. */
     public AgentType type() {
-        return type;
+        return specification.role();
+    }
+
+    public DroneSpecification specification() {
+        return specification;
     }
 
     public Motion motion() {
@@ -59,7 +69,7 @@ public final class Agent {
 
     @Override
     public String toString() {
-        return "Agent[id=" + id + ", type=" + type + ", position=" + motion.position()
+        return "Agent[id=" + id + ", model=" + specification.model() + ", position=" + motion.position()
                 + ", velocity=" + motion.velocity() + "]";
     }
 }

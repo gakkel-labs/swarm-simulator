@@ -1,7 +1,6 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -23,7 +22,7 @@ public class FlockingDiagnostician {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlockingDiagnostician.class);
 
-    private final BoidsConfig boidsConfig;
+    private final double referenceSpeedMetersPerSecond;
     private final DiagnosticsConfig diagnosticsConfig;
 
     private Vector3D lastCentroid = null;
@@ -32,8 +31,18 @@ public class FlockingDiagnostician {
     private final List<Double> recentSigmas = new ArrayList<>();
     private volatile boolean flockingConfirmed = false;
 
-    public FlockingDiagnostician(BoidsConfig boidsConfig, DiagnosticsConfig diagnosticsConfig) {
-        this.boidsConfig = Objects.requireNonNull(boidsConfig, "boidsConfig");
+    /**
+     * {@code referenceSpeedMetersPerSecond} is the speed the "not moving" and "frozen" alerts
+     * compare with: the cruise speed of the fastest drone model of the fleet.
+     */
+    public FlockingDiagnostician(double referenceSpeedMetersPerSecond,
+                                 DiagnosticsConfig diagnosticsConfig) {
+        if (!(referenceSpeedMetersPerSecond > 0)
+                || Double.isInfinite(referenceSpeedMetersPerSecond)) {
+            throw new IllegalArgumentException("referenceSpeedMetersPerSecond must be positive and "
+                    + "finite, got " + referenceSpeedMetersPerSecond);
+        }
+        this.referenceSpeedMetersPerSecond = referenceSpeedMetersPerSecond;
         this.diagnosticsConfig = Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig");
     }
 
@@ -77,7 +86,7 @@ public class FlockingDiagnostician {
 
     private void checkAlerts(int elapsedSeconds, World world, double drift, double driftRounded,
                              double positionStandardDeviation, double standardDeviationRounded) {
-        if (drift < boidsConfig.maxSpeed() * diagnosticsConfig.immobileThresholdFraction()) {
+        if (drift < referenceSpeedMetersPerSecond * diagnosticsConfig.immobileThresholdFraction()) {
             LOG.warn("t={}s | ALERT swarm not moving (drift={} u/s)", elapsedSeconds, driftRounded);
         }
 
@@ -101,7 +110,7 @@ public class FlockingDiagnostician {
         }
 
         long frozenCount = world.agents().stream()
-                .filter(agent -> agent.velocity().magnitude() < boidsConfig.maxSpeed() * diagnosticsConfig.frozenThresholdFraction())
+                .filter(agent -> agent.velocity().magnitude() < referenceSpeedMetersPerSecond * diagnosticsConfig.frozenThresholdFraction())
                 .count();
         if (frozenCount > 0) {
             LOG.warn("t={}s | ALERT {} drone(s) frozen", elapsedSeconds, frozenCount);

@@ -1,0 +1,33 @@
+{
+  "drones": [
+    {
+      "model": "side-scan-drone",
+      "role": "detection-drone",
+      "movement": {
+        "cruiseSpeedMetersPerSecond": 5,
+        "maxTurnRateDegreesPerSecond": 10,
+        "verticalSpeedMetersPerSecond": 0.5,
+        "workingAltitudeMeters": 15,
+        "maxDepthMeters": 6000
+      },
+      "enduranceHours": 16,
+      "searchSensor": {
+        "type": "side-scan-sonar",
+        "rangePerSideMeters": 10,
+        "nadirHalfWidthMeters": 0,
+        "detectionProbability": 1,
+        "fullProbabilityUntilMeters": 10,
+        "falseContactsPerSquareKilometer": 0
+      },
+      "navigationSensors": {
+        "altimeterMaxRangeMeters": 200,
+        "forwardSonar": { "rangeMeters": 100, "fieldOfViewDegrees": 120 }
+      },
+      "acousticModem": {
+        "rangeMeters": 1000,
+        "messagePeriodSeconds": 10,
+        "messageLossRate": 0.15
+      }
+    }
+  ]
+}

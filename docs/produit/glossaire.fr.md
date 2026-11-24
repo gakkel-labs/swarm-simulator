@@ -71,8 +71,8 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Rayon de détection** | La distance à laquelle un drone peut détecter la cible (10 m aujourd'hui). Remplacé par la bande du sonar latéral à l'échelle réaliste ([ADR-0011](../adr/0011-model-assumptions-and-scale.fr.md)). | ✅ |
 | **Sonar** | Le capteur sous-marin qui « voit » avec le son. Simulé plus tard. | 🔜 |
 | **Sonar latéral** | Le capteur de recherche d'un drone de détection. Il voit une bande de fond de chaque côté (50 m), pas juste sous le drone (trou), et sa chance de détection baisse avec la distance. | 🔜 |
-| **Fauchée** | La bande de fond qu'un capteur de recherche voit pendant que le drone avance. La tondeuse espace ses lignes à partir d'elle ([schéma](../adr/0011-model-assumptions-and-scale.fr.md#4-deux-familles-de-capteurs)). | 🔜 |
-| **Nadir** | Le point du fond juste sous le drone. Le sonar latéral ne voit pas autour du nadir : c'est le « trou » que la ligne voisine doit couvrir ([schéma](../adr/0011-model-assumptions-and-scale.fr.md#6-lécart-des-lignes-de-la-tondeuse-vient-du-capteur)). | 🔜 |
+| **Fauchée** | La bande de fond qu'un capteur de recherche voit pendant que le drone avance. La tondeuse espace ses lignes à partir d'elle ([schéma](#schéma--fauchée-nadir-et-espacement-des-lignes)). | 🔜 |
+| **Nadir** | Le point du fond juste sous le drone. Le sonar latéral ne voit pas autour du nadir : c'est le « trou » que la ligne voisine doit couvrir ([schéma](#schéma--fauchée-nadir-et-espacement-des-lignes)). | 🔜 |
 | **Altitude de travail** | La hauteur au-dessus du fond où un capteur de recherche marche bien (15 m pour le sonar latéral). | 🔜 |
 | **Suivi du fond** | Le drone garde son altitude de travail : si le fond monte, le drone monte. Le schéma de recherche ne décide que les déplacements horizontaux. | 🔜 |
 | **Sonar frontal d'évitement** | Un capteur de navigation qui voit un cône devant le drone (environ 100 m). Un drone ne voit un obstacle que là. | 🔜 |
@@ -85,6 +85,34 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Temps limite** | L'heure à laquelle la mission doit être finie (énergie des drones, météo). Le dépasser, c'est un échec. | 🔜 |
 | **Temps estimé** | La durée prévue d'une mission : le temps sous lequel 9 scénarios réussis sur 10 se terminent. Le dépasser rend la mission en retard, pas en échec. | 🔜 |
 | **Seuil de couverture** | La couverture à atteindre pour démontrer que l'épave n'est pas dans la zone de recherche. Choisi par l'opérateur (95 % par défaut). | 🔜 |
+
+### Schéma : fauchée, nadir et espacement des lignes
+
+Pour rappel, ce que voit le sonar latéral d'un drone de détection, puis comment la tondeuse place ses lignes pour que le nadir d'une ligne soit vu par ses voisines. Détails dans l'[ADR-0011](../adr/0011-model-assumptions-and-scale.fr.md).
+
+```
+          vue de face, le drone vient vers nous
+
+                       ●  drone
+                      /|\        altitude de travail : 15 m
+                     / | \
+                    /  |  \
+  //////////////////   |   //////////////////   fond
+  |<--- portée --->| nadir |<--- portée --->|
+  |  de 15 à 50 m  | 2x15 m|  de 15 à 50 m  |
+  |<---------------- fauchée --------------->|
+```
+
+```
+Coupe en travers de trois lignes voisines (1 caractère = 5 m, # = vu par le sonar)
+
+              -50       0         50        100 m
+              |         |         |         |
+ligne C          #######                      drone à -50 m
+ligne A       #######      #######            drone à 0 m
+ligne B                 #######      #######  drone à 50 m
+                     ^^^^^^  nadir de la ligne A : vu par C et B
+```
 
 ## 5. Le comportement de l'essaim (Boids)
 

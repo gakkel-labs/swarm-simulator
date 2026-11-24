@@ -82,6 +82,35 @@ fr.gakkel.swarmsimulator.swarmserver
 `Predator` est le nom de code du **danger** (voir le [glossaire](produit/glossaire.fr.md)) ;
 il sera renommé.
 
+### Backend — règle de dépendance
+
+Le domaine est du Java pur, au centre. Le moteur de simulation n'utilise que le domaine.
+Les adaptateurs, qui parlent au monde extérieur, restent autour : `server` (gRPC et le contrat
+généré) et `config` (fichiers JSON, variables d'environnement). Les flèches pointent toujours
+vers l'intérieur.
+
+```mermaid
+flowchart TB
+    SERVER[server<br/>gRPC, contrat] --> SIMULATION[simulation<br/>moteur]
+    CONFIG[config<br/>JSON, variables d'env] --> SIMULATION
+    SERVER --> DOMAIN[domain<br/>Java pur]
+    CONFIG --> DOMAIN
+    SIMULATION --> DOMAIN
+```
+
+Un test ArchUnit, [`ArchitectureTest`](../swarm-server/src/test/java/fr/gakkel/swarmsimulator/swarmserver/ArchitectureTest.java),
+vérifie cette règle à chaque `mvn verify` (donc dans la CI) :
+
+- `domain` ne dépend d'aucun autre package du serveur ;
+- `simulation` ne dépend ni de `server` ni de `config` ;
+- `domain` et `simulation` n'utilisent ni gRPC, ni Protobuf, ni Spring, ni planificateur
+  (`ScheduledExecutorService`, `ExecutorService`, `Executors`) ;
+- seul `server` utilise les classes générées du contrat ;
+- il n'y a pas de cycle entre les packages.
+
+Exception connue : `SimulationLoop` (l'horloge en direct, un pas toutes les 33 ms) utilise un
+planificateur. Elle sortira du moteur dans l'issue #186.
+
 ### Unity — scripts
 
 ```

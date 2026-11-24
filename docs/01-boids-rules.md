@@ -248,7 +248,7 @@ Default values (`BoidsConfig`). Each one can be changed at start with an environ
 The danger has its own settings: speed 3 m/s (`SWARM_PREDATOR_SPEED`) and catch radius 1.5 m
 (`SWARM_PREDATOR_EAT_RADIUS`), both in `PredatorConfig`. Other fixed values (in the code, not
 configurable yet): sensor radius 10 m (`SimulationConstants.SENSOR_RADIUS_M`), respawn after 5 s
-at least 30 m from the danger (`SimulationLoop`).
+at least 30 m from the danger (`Simulation`). The 5 s are simulation time, not real time.
 
 **Rules of thumb:**
 - `w_sep` a little higher than `w_align` and `w_coh` → no collisions, the swarm still holds.
@@ -339,8 +339,8 @@ What would not change: the 4 added rules, the O(N²) cost, the global flocking.
 
 ## 15. Tests and references
 
-- Unit tests: `BoidsRulesTest.java` tests each rule on its own; `SimulationLoopTest.java` tests
-  the movement, the obstacles and the walls.
+- Unit tests: `BoidsRulesTest.java` tests each rule on its own; `SimulationTest.java` tests
+  the movement, the obstacles, the walls, the respawn and the target detection.
 - **Reynolds, C. W.** (1987). *Flocks, herds and schools: A distributed behavioral model.*
   SIGGRAPH '87, pp. 25–34. [DOI: 10.1145/37401.37406](https://doi.org/10.1145/37401.37406)
   (often dated 1986, the year it was sent).

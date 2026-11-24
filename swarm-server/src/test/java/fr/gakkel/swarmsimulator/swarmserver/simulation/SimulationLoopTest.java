@@ -5,7 +5,6 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
-import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -61,32 +59,14 @@ class SimulationLoopTest {
     }
 
     @Test
-    void tick_agentsRemainInBoundsAfterManyTicks() {
-        for (int i = 0; i < 300; i++) loop.tick();
-        for (Agent a : world.agents()) {
-            assertTrue(world.isInBounds(a.position()), "agent out of bounds after 300 ticks: " + a.position());
-        }
-    }
+    void tick_movesTheSimulationForwardByOneThirtiethOfASecond() {
+        Simulation simulation = new Simulation(world, CONFIG, new Random(1L), new Random(2L));
+        var liveLoop = new SimulationLoop(simulation, CONFIG, DIAGNOSTICS,
+                mock(ScheduledExecutorService.class), null);
 
-    @Test
-    void tick_velocityNeverExceedsMaxSpeed() {
-        for (int i = 0; i < 300; i++) loop.tick();
-        for (Agent a : world.agents()) {
-            assertTrue(a.velocity().magnitude() <= CONFIG.maxSpeed() + 1e-9,
-                    "velocity exceeds maxSpeed: " + a.velocity().magnitude());
-        }
-    }
+        for (int tick = 0; tick < SimulationLoop.TICK_RATE_HZ; tick++) liveLoop.tick();
 
-    @Test
-    void clampSpeed_noChangeWhenBelowMax() {
-        Vector3D vector = new Vector3D(1, 0, 0);
-        assertEquals(vector, SimulationLoop.clampSpeed(vector, 5.0));
-    }
-
-    @Test
-    void clampSpeed_scalesDownWhenAboveMax() {
-        Vector3D clamped = SimulationLoop.clampSpeed(new Vector3D(10, 0, 0), 5.0);
-        assertEquals(5.0, clamped.magnitude(), 1e-9);
+        assertEquals(1.0, simulation.clock().elapsedSeconds(), 1e-9);
     }
 
     @Nested
@@ -219,220 +199,8 @@ class SimulationLoopTest {
     }
 
     @Test
-    void tick_agentsNeverInsideObstaclesAfterManyTicks() {
-        World testWorld = SimulationLoop.createWorld(20, new Random(42L));
-        SimulationLoop testLoop = new SimulationLoop(testWorld, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
-        for (int i = 0; i < 600; i++) testLoop.tick();
-        long penetrations = SimulationLoop.countAgentsInsideObstacles(testWorld.agents(), testWorld.obstacles());
-        assertEquals(0, penetrations, "agents should not be inside obstacles after 600 ticks");
-    }
-
-    @Nested
-    class ResolveObstacleCollision {
-
-        @Test
-        void outsideObstacle_nothingChanges() {
-            var pos = new Vector3D(20, 0, 0);
-            var vel = new Vector3D(-5, 0, 0);
-            var obstacle = new Obstacle(new Vector3D(0, 0, 0), 5.0);
-
-            var result = SimulationLoop.resolveObstacleCollision(pos, vel, obstacle);
-
-            assertEquals(pos, result.position());
-            assertEquals(vel, result.velocity());
-        }
-
-        @Test
-        void agentInsideObstacle_ejectedToSurface() {
-            var pos = new Vector3D(2, 0, 0);
-            var obstacle = new Obstacle(new Vector3D(0, 0, 0), 5.0);
-
-            var result = SimulationLoop.resolveObstacleCollision(pos, Vector3D.ZERO, obstacle);
-
-            assertEquals(5.0, result.position().distanceTo(obstacle.position()), 1e-9);
-        }
-
-        @Test
-        void agentMovingInward_inwardComponentZeroed() {
-            var pos = new Vector3D(2, 0, 0);
-            var vel = new Vector3D(-3, 2, 0);
-            var obstacle = new Obstacle(new Vector3D(0, 0, 0), 5.0);
-
-            var result = SimulationLoop.resolveObstacleCollision(pos, vel, obstacle);
-
-            // outward direction is +X; tangential (+Y) must be preserved, inward (-X) zeroed
-            assertEquals(0.0, result.velocity().x(), 1e-9);
-            assertEquals(2.0, result.velocity().y(), 1e-9);
-        }
-
-        @Test
-        void agentMovingOutward_velocityPreserved() {
-            var pos = new Vector3D(2, 0, 0);
-            var vel = new Vector3D(3, 0, 0);
-            var obstacle = new Obstacle(new Vector3D(0, 0, 0), 5.0);
-
-            var result = SimulationLoop.resolveObstacleCollision(pos, vel, obstacle);
-
-            assertEquals(vel, result.velocity());
-        }
-
-        @Test
-        void agentAtObstacleCenter_fallbackEjectionUpward() {
-            var pos = new Vector3D(0, 0, 0);
-            var obstacle = new Obstacle(new Vector3D(0, 0, 0), 5.0);
-
-            var result = SimulationLoop.resolveObstacleCollision(pos, Vector3D.ZERO, obstacle);
-
-            assertEquals(5.0, result.position().distanceTo(obstacle.position()), 1e-9);
-        }
-    }
-
-    @Nested
-    class ConstrainVelocityToWalls {
-
-        private static final World W = new World(100, 100, 50);
-
-        @Test
-        void insideBounds_velocityUnchanged() {
-            // Y=-50: valid underwater position (surface=0, floor=-100)
-            var vel = new Vector3D(1, -1, 1);
-            assertEquals(vel, SimulationLoop.constrainVelocityToWalls(new Vector3D(50, -50, 25), vel, W));
-        }
-
-        @Test
-        void belowFloor_downwardVelocityZeroed() {
-            // Y=-101: 1m below sea floor (floor at -100)
-            var result = SimulationLoop.constrainVelocityToWalls(
-                    new Vector3D(50, -101, 25), new Vector3D(2, -3, 1), W);
-            assertEquals(0.0, result.y(), 1e-9);
-            assertEquals(2.0, result.x(), 1e-9);
-            assertEquals(1.0, result.z(), 1e-9);
-        }
-
-        @Test
-        void belowFloor_upwardVelocityPreserved() {
-            // Y=-101: below floor but moving up → allowed
-            var vel = new Vector3D(0, 3, 0);
-            assertEquals(vel, SimulationLoop.constrainVelocityToWalls(new Vector3D(50, -101, 25), vel, W));
-        }
-
-        @Test
-        void aboveSurface_upwardVelocityZeroed() {
-            // Y=1: 1m above water surface (surface at Y=0)
-            var result = SimulationLoop.constrainVelocityToWalls(
-                    new Vector3D(50, 1, 25), new Vector3D(1, 5, 0), W);
-            assertEquals(0.0, result.y(), 1e-9);
-        }
-
-        @Test
-        void beyondXWall_outwardVelocityZeroed() {
-            var result = SimulationLoop.constrainVelocityToWalls(
-                    new Vector3D(101, 50, 25), new Vector3D(4, 1, 0), W);
-            assertEquals(0.0, result.x(), 1e-9);
-        }
-    }
-
-    @Test
     void createDefaultWorld_hasPredator() {
         assertNotNull(SimulationLoop.createDefaultWorld().predator());
-    }
-
-    @Nested
-    class ScheduleRespawn {
-
-        @Test
-        void agentReappearsAfterDelayExpires() {
-            var testWorld = new World(100, 100, 50);
-            var predator  = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
-            var agent     = Agent.create(AgentType.EXPLORER,
-                    new Vector3D(10.5, -50, 25)); // within EAT_RADIUS (1.5)
-            testWorld.addAgent(agent);
-            testWorld.setPredator(predator);
-
-            ScheduledExecutorService mockExecutor = mock(ScheduledExecutorService.class);
-            var testLoop = new SimulationLoop(testWorld, CONFIG, DIAGNOSTICS, mockExecutor);
-
-            testLoop.tick();
-
-            // agent eaten — world is empty
-            assertEquals(0, testWorld.agentCount());
-
-            // capture and run the respawn task
-            ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-            verify(mockExecutor).schedule(captor.capture(),
-                    eq(5_000L), eq(TimeUnit.MILLISECONDS));
-            captor.getValue().run();
-
-            assertEquals(1, testWorld.agentCount());
-        }
-    }
-
-    @Nested
-    class CheckTargetDetection {
-
-        private World detectionWorld;
-        private SimulationLoop detectionLoop;
-
-        @BeforeEach
-        void setUp() {
-            detectionWorld = new World(100, 100, 50);
-            detectionLoop = new SimulationLoop(detectionWorld, CONFIG, DIAGNOSTICS, mock(ScheduledExecutorService.class));
-        }
-
-        @Test
-        void agentWithinSensorRadius_marksTargetFound() {
-            Vector3D targetPosition = new Vector3D(50, -50, 25);
-            detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            Agent nearAgent = createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M - 1, -50, 25));
-            detectionWorld.addAgent(nearAgent);
-
-            detectionLoop.tick();
-
-            assertTrue(detectionWorld.target().isFound());
-            assertEquals(nearAgent.id().toString(), detectionWorld.target().foundByAgentId());
-        }
-
-        @Test
-        void agentBeyondSensorRadius_doesNotMarkFound() {
-            Vector3D targetPosition = new Vector3D(50, -50, 25);
-            detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            detectionWorld.addAgent(createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M + 1, -50, 25)));
-
-            detectionLoop.tick();
-
-            assertFalse(detectionWorld.target().isFound());
-        }
-
-        @Test
-        void agentExactlyAtSensorRadius_marksTargetFound() {
-            Vector3D targetPosition = new Vector3D(50, -50, 25);
-            detectionWorld.setTarget(new fr.gakkel.swarmsimulator.swarmserver.domain.Target(targetPosition));
-            detectionWorld.addAgent(createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M, -50, 25)));
-
-            detectionLoop.tick();
-
-            assertTrue(detectionWorld.target().isFound());
-        }
-
-        @Test
-        void alreadyFoundTarget_notDetectedAgain() {
-            var target = new fr.gakkel.swarmsimulator.swarmserver.domain.Target(new Vector3D(50, -50, 25));
-            target.markFound("first-agent");
-            detectionWorld.setTarget(target);
-            Agent secondAgent = createAgent(new Vector3D(50, -50, 25));
-            detectionWorld.addAgent(secondAgent);
-
-            detectionLoop.tick();
-
-            assertEquals("first-agent", detectionWorld.target().foundByAgentId());
-        }
-
-        @Test
-        void noTarget_tickRunsWithoutError() {
-            detectionWorld.addAgent(createAgent(new Vector3D(50, -50, 25)));
-
-            assertDoesNotThrow(() -> detectionLoop.tick());
-        }
     }
 
     private static Agent createAgent(Vector3D position) {

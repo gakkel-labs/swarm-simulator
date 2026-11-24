@@ -20,7 +20,8 @@ class BoidsSearchPatternTest {
         world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(90, -50, 25)));  // too far
         SearchPattern boids = new BoidsSearchPattern(CONFIG, new Random(7L));
         BoidsRules rules = new BoidsRules(CONFIG, new Random(7L));
-        Vector3D expected = rules.steer(drone, world.neighbors(drone, CONFIG.perceptionRadius()), world);
+        Vector3D expected =
+                rules.steer(drone, world.neighbors(drone, CONFIG.perceptionRadius()), world);
 
         Vector3D steer = boids.steer(drone, world);
 

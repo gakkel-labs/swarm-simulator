@@ -90,8 +90,17 @@ class SimulationTest {
 
         private static final int THIRTY_SECONDS_OF_STEPS = 30 * 30;
 
+        /**
+         * Golden master: the fingerprint of the drones after 30 s with seed 42, recorded before
+         * the search pattern interface (#81). If it changes, Boids no longer moves the drones
+         * exactly as before: find why before updating it.
+         */
+        private static final String SEED_42_FINGERPRINT =
+                "f5ac8aa7842997388b58c95427271df7d07f97ed677c5f03ee1ab7374f31a989";
+
         private static Simulation createSeededSimulation(long seed) {
-            FleetConfiguration fleet = new FleetConfiguration(20, new SearchPatternSettings.Boids(CONFIG));
+            FleetConfiguration fleet =
+                    new FleetConfiguration(20, new SearchPatternSettings.Boids(CONFIG));
             return Simulation.create(fleet, 100, 100, 50, PredatorConfig.defaults(), seed);
         }
 
@@ -114,13 +123,6 @@ class SimulationTest {
             // No tolerance: the same seed must give the very same numbers, bit for bit.
             assertEquals(finalDrones(firstRun), finalDrones(secondRun));
         }
-
-        /**
-         * Golden master: the fingerprint of the drones after 30 s with seed 42, recorded before
-         * the search pattern interface (#81). If it changes, Boids no longer moves the drones
-         * exactly as before: find why before updating it.
-         */
-        private static final String SEED_42_FINGERPRINT = "f5ac8aa7842997388b58c95427271df7d07f97ed677c5f03ee1ab7374f31a989";
 
         @Test
         void seed42_givesTheSameDronesAsBeforeTheSearchPatternInterface() {
@@ -182,7 +184,8 @@ class SimulationTest {
             Agent drone = createAgent(new Vector3D(50, -50, 25));
             world.addAgent(drone);
             SearchPattern alwaysEast = (anyDrone, anyWorld) -> new Vector3D(1, 0, 0);
-            Simulation simulation = new Simulation(world, alwaysEast, CONFIG.maxSpeed(), new Random(1L));
+            Simulation simulation =
+                    new Simulation(world, alwaysEast, CONFIG.maxSpeed(), new Random(1L));
 
             simulation.step(1.0);
 
@@ -200,6 +203,18 @@ class SimulationTest {
             simulation.step(1.0);
 
             assertEquals(2.0, drone.velocity().magnitude(), 1e-9);
+        }
+
+        @Test
+        void constructor_maxSpeedNotPositive_throwsIllegalArgumentException() {
+            World world = new World(100, 100, 50);
+            SearchPattern standStill = (anyDrone, anyWorld) -> Vector3D.ZERO;
+
+            for (double maxSpeed : new double[] {0.0, -1.0, Double.NaN}) {
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Simulation(world, standStill, maxSpeed, new Random(1L)),
+                        "maxSpeed " + maxSpeed);
+            }
         }
 
         @Test

@@ -171,11 +171,13 @@ public class SimulationLoop {
                               CohesionCsvExporter csvExporter) {
         Simulation simulation = Simulation.create(fleet, width, height, depth, predator,
                 masterSeed);
-        // The live diagnostics watch a flock, so they need the Boids settings.
-        BoidsConfig boids = switch (fleet.searchPattern()) {
-            case SearchPatternSettings.Boids boidsSettings -> boidsSettings.config();
+        // The live diagnostics watch a flock, so they need the Boids settings. #156 moves the
+        // speed limit out of Boids, then the diagnostics will no longer need this switch.
+        BoidsConfig boidsConfig = switch (fleet.searchPattern()) {
+            case SearchPatternSettings.Boids boids -> boids.config();
         };
-        SimulationLoop loop = new SimulationLoop(simulation, boids, diagnostics, executor, csvExporter);
+        SimulationLoop loop = new SimulationLoop(simulation, boidsConfig, diagnostics, executor,
+                csvExporter);
         return new Wiring(simulation.world(), simulation, loop);
     }
 }

@@ -3,9 +3,13 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -13,6 +17,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -25,7 +33,8 @@ class SimulationTest {
     private static final double STEP_SECONDS = 1.0 / 30;
 
     private static Simulation createSimulation(World world) {
-        return new Simulation(world, CONFIG, new Random(1L), new Random(2L));
+        return new Simulation(world, new BoidsSearchPattern(CONFIG, new Random(2L)),
+                CONFIG.maxSpeed(), new Random(1L));
     }
 
     private static Agent createAgent(Vector3D position) {
@@ -81,8 +90,19 @@ class SimulationTest {
 
         private static final int THIRTY_SECONDS_OF_STEPS = 30 * 30;
 
+        /**
+         * Golden master: each drone (id, position, velocity) after 30 s with seed 42, recorded
+         * before the search pattern interface (#81). If a line changes, Boids no longer moves the
+         * drones exactly as before: find why before updating the file. Checked on Windows and on
+         * the CI (Linux), both with JDK 21.
+         */
+        private static final String SEED_42_GOLDEN_MASTER =
+                "/golden-master/seed-42-drones-after-30-s.txt";
+
         private static Simulation createSeededSimulation(long seed) {
-            return Simulation.create(20, 100, 100, 50, CONFIG, PredatorConfig.defaults(), seed);
+            FleetConfiguration fleet =
+                    new FleetConfiguration(20, new SearchPatternSettings.Boids(CONFIG));
+            return Simulation.create(fleet, 100, 100, 50, PredatorConfig.defaults(), seed);
         }
 
         /** What a run leaves: each drone id with its position, in id order. */
@@ -103,6 +123,25 @@ class SimulationTest {
 
             // No tolerance: the same seed must give the very same numbers, bit for bit.
             assertEquals(finalDrones(firstRun), finalDrones(secondRun));
+        }
+
+        @Test
+        void create_seed42_givesTheRecordedDrones() {
+            Simulation simulation = createSeededSimulation(42L);
+
+            runSteps(simulation, THIRTY_SECONDS_OF_STEPS);
+
+            // A list, not a hash: a failure shows which drone moved differently.
+            assertEquals(readLines(SEED_42_GOLDEN_MASTER), finalDrones(simulation));
+        }
+
+        private static List<String> readLines(String resource) {
+            try (InputStream input = SimulationTest.class.getResourceAsStream(resource)) {
+                if (input == null) throw new IllegalStateException("missing resource " + resource);
+                return new String(input.readAllBytes(), StandardCharsets.UTF_8).lines().toList();
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
         }
 
         @Test
@@ -139,6 +178,58 @@ class SimulationTest {
 
     @Nested
     class Movement {
+
+        @Test
+        void step_searchPatternPushesEast_droneMovesEast() {
+            World world = new World(100, 100, 50);
+            Agent drone = createAgent(new Vector3D(50, -50, 25));
+            world.addAgent(drone);
+            SearchPattern alwaysEast = (anyDrone, anyWorld) -> new Vector3D(1, 0, 0);
+            Simulation simulation =
+                    new Simulation(world, alwaysEast, CONFIG.maxSpeed(), new Random(1L));
+
+            simulation.step(1.0);
+
+            assertEquals(new Vector3D(51, -50, 25), drone.position());
+        }
+
+        @Test
+        void step_searchPatternForceAboveMaxSpeed_speedIsLimited() {
+            World world = new World(100, 100, 50);
+            Agent drone = createAgent(new Vector3D(50, -50, 25));
+            world.addAgent(drone);
+            SearchPattern strongEast = (anyDrone, anyWorld) -> new Vector3D(100, 0, 0);
+            Simulation simulation = new Simulation(world, strongEast, 2.0, new Random(1L));
+
+            simulation.step(1.0);
+
+            assertEquals(2.0, drone.velocity().magnitude(), 1e-9);
+        }
+
+        @Test
+        void step_searchPatternReturnsNaN_throwsAndMovesNoDrone() {
+            World world = new World(100, 100, 50);
+            Agent drone = createAgent(new Vector3D(50, -50, 25));
+            world.addAgent(drone);
+            SearchPattern broken = (anyDrone, anyWorld) -> new Vector3D(Double.NaN, 0, 0);
+            Simulation simulation =
+                    new Simulation(world, broken, CONFIG.maxSpeed(), new Random(1L));
+
+            assertThrows(IllegalStateException.class, () -> simulation.step(1.0));
+            assertEquals(new Vector3D(50, -50, 25), drone.position());
+        }
+
+        @Test
+        void constructor_maxSpeedNotPositive_throwsIllegalArgumentException() {
+            World world = new World(100, 100, 50);
+            SearchPattern standStill = (anyDrone, anyWorld) -> Vector3D.ZERO;
+
+            for (double maxSpeed : new double[] {0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY}) {
+                assertThrows(IllegalArgumentException.class,
+                        () -> new Simulation(world, standStill, maxSpeed, new Random(1L)),
+                        "maxSpeed " + maxSpeed);
+            }
+        }
 
         @Test
         void drones_stayInTheSearchAreaAfterManySteps() {

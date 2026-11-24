@@ -1,7 +1,9 @@
 package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
@@ -54,6 +56,14 @@ public record Settings(
         if (agentCount < 1) {
             throw new IllegalArgumentException("agent count must be >= 1 (got " + agentCount + ")");
         }
+    }
+
+    /**
+     * The fleet configuration of the live simulation: the configured number of detection drones,
+     * flocking with Boids (the only search pattern for now).
+     */
+    public FleetConfiguration fleetConfiguration() {
+        return new FleetConfiguration(agentCount, new SearchPatternSettings.Boids(boids));
     }
 
     /** Loads settings from the process environment and the {@code application.properties} classpath resource. */

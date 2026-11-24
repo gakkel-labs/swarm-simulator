@@ -4,6 +4,7 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -28,16 +29,21 @@ class SimulationLoopTest {
     private World world;
     private SimulationLoop loop;
 
+    private Simulation createSimulation() {
+        return new Simulation(world, new BoidsSearchPattern(CONFIG, new Random(2L)),
+                CONFIG.maxSpeed(), new Random(1L));
+    }
+
     @BeforeEach
     void setUp() {
         world = WorldFactory.createWorld(10, new Random(0L));
-        loop = new SimulationLoop(new Simulation(world, CONFIG, new Random(1L), new Random(2L)), CONFIG,
-                DIAGNOSTICS, mock(ScheduledExecutorService.class), null);
+        loop = new SimulationLoop(createSimulation(), CONFIG, DIAGNOSTICS,
+                mock(ScheduledExecutorService.class), null);
     }
 
     @Test
     void tick_movesTheSimulationForwardByOneThirtiethOfASecond() {
-        Simulation simulation = new Simulation(world, CONFIG, new Random(1L), new Random(2L));
+        Simulation simulation = createSimulation();
         var liveLoop = new SimulationLoop(simulation, CONFIG, DIAGNOSTICS,
                 mock(ScheduledExecutorService.class), null);
 
@@ -203,7 +209,7 @@ class SimulationLoopTest {
             doThrow(new IllegalStateException("disk full")).when(failingExporter)
                     .record(anyLong(), anyDouble(), anyDouble());
             ScheduledExecutorService mockExecutor = mock(ScheduledExecutorService.class);
-            var testLoop = new SimulationLoop(new Simulation(world, CONFIG, new Random(1L), new Random(2L)),
+            var testLoop = new SimulationLoop(createSimulation(),
                     CONFIG, DIAGNOSTICS, mockExecutor, failingExporter);
             ArgumentCaptor<Runnable> tickCaptor = ArgumentCaptor.forClass(Runnable.class);
             testLoop.start();

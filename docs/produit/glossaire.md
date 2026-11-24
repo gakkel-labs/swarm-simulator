@@ -46,7 +46,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Detection drone** | A drone of the swarm. It explores the search area with its sensors and reports what it finds. | ✅ (*agent* `EXPLORER`) |
 | **Specialised drone** | A drone sent by the drone carrier for a precise job on site. It has one role or several roles, for example **qualify a contact** (check what it is) or **intervene** on it (recover the black box, neutralise a mine). Later, other roles: **take samples** or **deploy an instrument** (and recover it). | 🔜 (type reserved) |
 | **Drone pool** | All the drones available at the base, with their state: **ready**, **in maintenance** or **spare**. A drone can fail during a mission (or during a simulation); the backend can then propose **reserve drones** to take with the fleet. | 🔜 |
-| **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend can test many configurations and propose the best one. But this is a help, not a must: the operator can also choose the configuration themselves. | 🔜 |
+| **Fleet configuration** | The choice of drones for a mission: how many, which types, which settings. The backend can test many configurations and propose the best one. But this is a help, not a must: the operator can also choose the configuration themselves. Today it holds the number of detection drones and the search pattern. | ✅ (`FleetConfiguration`) |
 
 ## 3. How a fleet works: Drop, Detect, Confirm, Intervene
 
@@ -63,7 +63,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | Word | Definition | In the code |
 |------|------------|:-----------:|
 | **Search area** | The part of the sea to search, often 50 to 100 km². | ✅ (*world*) |
-| **Search pattern** | The way the drones move to cover the search area. It is a setting of the fleet configuration. Patterns planned for step 2: **lawnmower** (parallel lines), **Boids** (free flocking), **lawnmower + Boids**, **ant colony** (drones avoid places already searched) and **ant colony + Boids**. Today the swarm only flocks (Boids). | 🔜 |
+| **Search pattern** | The way the drones move to cover the search area. It is a setting of the fleet configuration. Patterns planned for step 2: **lawnmower** (parallel lines), **Boids** (free flocking), **lawnmower + Boids**, **ant colony** (drones avoid places already searched) and **ant colony + Boids**. Today only Boids exists. | ✅ (`SearchPattern`, `BoidsSearchPattern`) |
 | **Coverage** | The part of the search area already searched. The goal is no gaps and no overlaps. | 🔜 |
 | **Target** | In the simulation, the object to find (the "wreck"). Today the operator places it with a click in the viewer. | ✅ |
 | **Contact** | Something a drone has detected and that could be the target. A contact must be checked. Status: *to review*, *confirmed*, *dismissed*. | 🔜 |

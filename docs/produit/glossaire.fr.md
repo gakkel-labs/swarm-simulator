@@ -46,7 +46,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Drone de détection** | Un drone de l'essaim. Il fouille la zone de recherche avec ses capteurs et signale ce qu'il trouve. | ✅ (*agent* `EXPLORER`) |
 | **Drone spécialisé** | Un drone envoyé par le porte-drones pour un travail précis sur place. Il a un rôle ou plusieurs rôles, par exemple **qualifier un contact** (vérifier ce que c'est) ou **intervenir** dessus (récupérer la boîte noire, neutraliser une mine). Plus tard, d'autres rôles : **prélever** (des échantillons) ou **poser un instrument** (et le récupérer). | 🔜 (type réservé) |
 | **Parc** | Tous les drones disponibles à la base, avec leur état : **prêt**, **en maintenance** ou **de rechange**. Un drone peut tomber en panne pendant une mission (ou pendant une simulation) ; le backend peut alors proposer des **drones de réserve** à emmener avec la flotte. | 🔜 |
-| **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend peut tester beaucoup de configurations et proposer la meilleure. Mais c'est une aide, pas une obligation : l'opérateur peut aussi choisir la configuration lui-même. | 🔜 |
+| **Configuration de flotte** | Le choix des drones pour une mission : combien, quels types, quels réglages. Le backend peut tester beaucoup de configurations et proposer la meilleure. Mais c'est une aide, pas une obligation : l'opérateur peut aussi choisir la configuration lui-même. Aujourd'hui elle contient le nombre de drones de détection et le schéma de recherche. | ✅ (`FleetConfiguration`) |
 
 ## 3. Comment travaille une flotte : Déposer, Détecter, Confirmer, Intervenir
 
@@ -63,7 +63,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | Mot | Définition | Dans le code |
 |-----|------------|:------------:|
 | **Zone de recherche** | La partie de mer à fouiller, souvent 50 à 100 km². | ✅ (*world*) |
-| **Schéma de recherche** | La façon dont les drones se déplacent pour couvrir la zone de recherche. C'est un réglage de la configuration de flotte. Schémas prévus pour l'étape 2 : **tondeuse** (lignes parallèles), **Boids** (déplacement libre en groupe), **tondeuse + Boids**, **colonies de fourmis** (les drones évitent les endroits déjà fouillés) et **colonies de fourmis + Boids**. Aujourd'hui l'essaim se déplace seulement en groupe (Boids). | 🔜 |
+| **Schéma de recherche** | La façon dont les drones se déplacent pour couvrir la zone de recherche. C'est un réglage de la configuration de flotte. Schémas prévus pour l'étape 2 : **tondeuse** (lignes parallèles), **Boids** (déplacement libre en groupe), **tondeuse + Boids**, **colonies de fourmis** (les drones évitent les endroits déjà fouillés) et **colonies de fourmis + Boids**. Aujourd'hui seul Boids existe. | ✅ (`SearchPattern`, `BoidsSearchPattern`) |
 | **Couverture** | La partie de la zone de recherche déjà fouillée. Le but : aucun trou et aucun recouvrement. | 🔜 |
 | **Cible** | Dans la simulation, l'objet à trouver (l'« épave »). Aujourd'hui l'opérateur la place d'un clic dans la vue 3D. | ✅ |
 | **Contact** | Quelque chose qu'un drone a détecté et qui pourrait être la cible. Un contact doit être vérifié. Statut : *à revoir*, *confirmé*, *écarté*. | 🔜 |

@@ -1,11 +1,13 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
+import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationClock;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
@@ -37,40 +39,55 @@ public final class Simulation {
 
     // Distinct salts so the random streams derived from the one master seed don't share state.
     private static final long RESPAWN_SEED_SALT = 0x9E3779B97F4A7C15L;
-    private static final long WANDER_SEED_SALT  = 0xC2B2AE3D27D4EB4FL;
+    private static final long SEARCH_PATTERN_SEED_SALT = 0xC2B2AE3D27D4EB4FL;
 
     /** A drone eaten by the predator, waiting to come back into the search area. */
     private record PendingRespawn(Agent agent, double dueAtSeconds) {}
 
     private final World world;
-    private final BoidsConfig config;
-    private final BoidsRules rules;
+    private final SearchPattern searchPattern;
+    private final double maxSpeed;
     private final Random respawnRandom;
     private final SimulationClock clock = new SimulationClock();
     private final List<PendingRespawn> pendingRespawns = new ArrayList<>();
 
     /**
-     * {@code respawnRandom} places the drones that come back after the predator ate them;
-     * {@code wanderRandom} drives the Boids wander force.
+     * {@code searchPattern} says where each drone wants to go; the simulation then applies the
+     * same physics to every pattern: {@code maxSpeed}, obstacles and walls.
+     * {@code respawnRandom} places the drones that come back after the predator ate them.
      */
-    public Simulation(World world, BoidsConfig config, Random respawnRandom, Random wanderRandom) {
+    public Simulation(World world, SearchPattern searchPattern, double maxSpeed,
+                      Random respawnRandom) {
         this.world = Objects.requireNonNull(world, "world");
-        this.config = Objects.requireNonNull(config, "config");
-        this.rules = new BoidsRules(config, Objects.requireNonNull(wanderRandom, "wanderRandom"));
+        this.searchPattern = Objects.requireNonNull(searchPattern, "searchPattern");
+        // "!(x > 0)" also rejects NaN, which fails every comparison; an infinite speed would
+        // switch the speed limit off.
+        if (!(maxSpeed > 0) || Double.isInfinite(maxSpeed)) {
+            throw new IllegalArgumentException(
+                    "maxSpeed must be positive and finite, got " + maxSpeed);
+        }
+        this.maxSpeed = maxSpeed;
         this.respawnRandom = Objects.requireNonNull(respawnRandom, "respawnRandom");
     }
 
     /**
-     * Builds a world and its simulation from one master seed. Everything random in the run comes
-     * from that seed: drone ids and start positions, respawn places and the wander force. The
-     * generators belong to this simulation only: never share them with another simulation or thread.
+     * Builds a world and its simulation from a fleet configuration and one master seed.
+     * Everything random in the run comes from that seed: drone ids and start positions, respawn
+     * places and the random part of the search pattern. The generators belong to this simulation
+     * only: never share them with another simulation or thread.
      */
-    public static Simulation create(int agentCount, double width, double height, double depth,
-                                    BoidsConfig boids, PredatorConfig predator, long masterSeed) {
-        World world = WorldFactory.createWorld(agentCount, width, height, depth, predator,
+    public static Simulation create(FleetConfiguration fleet, double width, double height,
+                                    double depth, PredatorConfig predator, long masterSeed) {
+        World world = WorldFactory.createWorld(fleet.droneCount(), width, height, depth, predator,
                 new Random(masterSeed));
-        return new Simulation(world, boids,
-                new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
+        Random searchPatternRandom = new Random(masterSeed ^ SEARCH_PATTERN_SEED_SALT);
+        // A factory: the configuration only names the pattern and its settings, and each run
+        // gets a new pattern object with its own random generator.
+        return switch (fleet.searchPattern()) {
+            case SearchPatternSettings.Boids boids -> new Simulation(world,
+                    new BoidsSearchPattern(boids.config(), searchPatternRandom),
+                    boids.config().maxSpeed(), new Random(masterSeed ^ RESPAWN_SEED_SALT));
+        };
     }
 
     public World world() {
@@ -101,17 +118,22 @@ public final class Simulation {
     }
 
     // Steer forces are all computed from the positions at time t before any drone moves,
-    // so the order of the drones does not change the forces.
+    // so the order of the drones does not change the forces. A bad force is refused before
+    // any drone moves: NaN would pass the speed limit and reach the display.
     private void moveDrones(List<Agent> agents, double stepSeconds) {
         List<Vector3D> steers = new ArrayList<>(agents.size());
         for (Agent agent : agents) {
-            List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
-            steers.add(rules.steer(agent, neighbors, world));
+            Vector3D steer = searchPattern.steer(agent, world);
+            if (!isFinite(steer)) {
+                throw new IllegalStateException("search pattern gave the force " + steer
+                        + " to drone " + agent.id());
+            }
+            steers.add(steer);
         }
         for (int index = 0; index < agents.size(); index++) {
             Agent agent = agents.get(index);
             Vector3D newVelocity = clampSpeed(
-                    agent.velocity().add(steers.get(index).scale(stepSeconds)), config.maxSpeed());
+                    agent.velocity().add(steers.get(index).scale(stepSeconds)), maxSpeed);
             Vector3D newPosition = agent.position().add(newVelocity.scale(stepSeconds));
             for (Obstacle obstacle : world.obstacles()) {
                 ObstacleCollision collision = resolveObstacleCollision(newPosition, newVelocity, obstacle);
@@ -185,6 +207,11 @@ public final class Simulation {
             }
         }
         return new Vector3D(world.width() / 2, -world.height() / 2, world.depth() / 2);
+    }
+
+    private static boolean isFinite(Vector3D vector) {
+        return vector != null && Double.isFinite(vector.x()) && Double.isFinite(vector.y())
+                && Double.isFinite(vector.z());
     }
 
     static Vector3D clampSpeed(Vector3D velocity, double maxSpeed) {

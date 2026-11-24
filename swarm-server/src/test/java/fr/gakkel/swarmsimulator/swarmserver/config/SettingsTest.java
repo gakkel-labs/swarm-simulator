@@ -1,7 +1,9 @@
 package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +42,16 @@ class SettingsTest {
         assertEquals(42L, s.seed());
         assertEquals(BoidsConfig.builder().build(), s.boids());
         assertEquals(DiagnosticsConfig.builder().build(), s.diagnostics());
+    }
+
+    @Test
+    void fleetConfiguration_agentCountSet_returnsThatDroneCountWithBoids() {
+        Settings settings = load(Map.of(), props("swarm.agent-count", "8"));
+
+        FleetConfiguration fleet = settings.fleetConfiguration();
+
+        assertEquals(new FleetConfiguration(8, new SearchPatternSettings.Boids(settings.boids())),
+                fleet);
     }
 
     @Test

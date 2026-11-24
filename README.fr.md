@@ -203,6 +203,9 @@ threads, catalogue des messages).
   par le backend**, et une installation qui marche hors ligne sur un poste à bord (proposée).
 - [ADR-0010](docs/adr/0010-sorted-drone-list.fr.md) — **Garder les drones triés par id** pour que
   la même graine donne le même résultat, et ne pas optimiser pour l'instant (proposée).
+- [ADR-0011](docs/adr/0011-model-assumptions-and-scale.fr.md) — **Une échelle réaliste pour le score** :
+  zone de recherche de 7 x 7 km, fiche technique du drone, sonar latéral, voisins par modem
+  acoustique ; la démo Unity garde un petit monde (proposée).
 
 ### Configuration
 

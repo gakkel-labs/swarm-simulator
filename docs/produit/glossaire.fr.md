@@ -68,15 +68,51 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Cible** | Dans la simulation, l'objet à trouver (l'« épave »). Aujourd'hui l'opérateur la place d'un clic dans la vue 3D. | ✅ |
 | **Contact** | Quelque chose qu'un drone a détecté et qui pourrait être la cible. Un contact doit être vérifié. Statut : *à revoir*, *confirmé*, *écarté*. | 🔜 |
 | **Détection** | Le moment où un drone passe assez près de la cible pour la « voir ». | ✅ |
-| **Rayon de détection** | La distance à laquelle un drone peut détecter la cible (10 m aujourd'hui). | ✅ |
+| **Rayon de détection** | La distance à laquelle un drone peut détecter la cible (10 m aujourd'hui). Remplacé par la bande du sonar latéral à l'échelle réaliste ([ADR-0011](../adr/0011-model-assumptions-and-scale.fr.md)). | ✅ |
 | **Sonar** | Le capteur sous-marin qui « voit » avec le son. Simulé plus tard. | 🔜 |
+| **Sonar latéral** | Le capteur de recherche d'un drone de détection. Il voit une bande de fond de chaque côté (50 m), pas juste sous le drone (trou), et sa chance de détection baisse avec la distance. | 🔜 |
+| **Fauchée** | La bande de fond qu'un capteur de recherche voit pendant que le drone avance. La tondeuse espace ses lignes à partir d'elle ([schéma](#schéma--fauchée-nadir-et-espacement-des-lignes)). | 🔜 |
+| **Nadir** | Le point du fond juste sous le drone. Le sonar latéral ne voit pas autour du nadir : c'est le « trou » que la ligne voisine doit couvrir ([schéma](#schéma--fauchée-nadir-et-espacement-des-lignes)). | 🔜 |
+| **Altitude de travail** | La hauteur au-dessus du fond où un capteur de recherche marche bien (15 m pour le sonar latéral). | 🔜 |
+| **Suivi du fond** | Le drone garde son altitude de travail : si le fond monte, le drone monte. Le schéma de recherche ne décide que les déplacements horizontaux. | 🔜 |
+| **Sonar frontal d'évitement** | Un capteur de navigation qui voit un cône devant le drone (environ 100 m). Un drone ne voit un obstacle que là. | 🔜 |
+| **Fiche technique** | Les valeurs techniques d'un type de drone : vitesses, virage, altitude de travail, autonomie, capteurs, modem acoustique. Un objet-valeur : une fiche par type de drone ([ADR-0011](../adr/0011-model-assumptions-and-scale.fr.md)). | 🔜 |
 | **Liaison acoustique** | La liaison sous l'eau (par le son) entre l'essaim et le porte-drones. Elle est lente et peut se couper. | 🔜 |
+| **Modem acoustique** | L'appareil avec lequel chaque drone envoie sa position par le son (toutes les 10 s, portée d'environ 1 km, avec des messages perdus). Boids utilise ces positions annoncées. | 🔜 |
 | **Score** | La **probabilité de réussite** d'une configuration de flotte : la part des scénarios réussis dans le jeu de scénarios commun. Exemple : « réussit dans 460 scénarios sur 500 » = 92 %. Le backend s'en sert pour comparer les configurations ([fiche problème](problem-find-a-wreck.fr.md)). | 🔜 |
 | **Jeu de scénarios commun** | La liste des scénarios sur lesquels chaque configuration de flotte est simulée : l'épave en position A, B, C… (réparties dans la zone de recherche), plus des scénarios sans épave. Chaque scénario a sa seed. Toutes les configurations passent sur les mêmes scénarios, pour une comparaison juste. | 🔜 |
 | **Part de scénarios sans épave** | La part du jeu de scénarios où l'épave n'est pas dans la zone de recherche. L'opérateur la règle dans la mission selon son doute (20 % par défaut). | 🔜 |
 | **Temps limite** | L'heure à laquelle la mission doit être finie (énergie des drones, météo). Le dépasser, c'est un échec. | 🔜 |
 | **Temps estimé** | La durée prévue d'une mission : le temps sous lequel 9 scénarios réussis sur 10 se terminent. Le dépasser rend la mission en retard, pas en échec. | 🔜 |
 | **Seuil de couverture** | La couverture à atteindre pour démontrer que l'épave n'est pas dans la zone de recherche. Choisi par l'opérateur (95 % par défaut). | 🔜 |
+
+### Schéma : fauchée, nadir et espacement des lignes
+
+Pour rappel, ce que voit le sonar latéral d'un drone de détection, puis comment la tondeuse place ses lignes pour que le nadir d'une ligne soit vu par ses voisines. Détails dans l'[ADR-0011](../adr/0011-model-assumptions-and-scale.fr.md).
+
+```
+          vue de face, le drone vient vers nous
+
+                       ●  drone
+                      /|\        altitude de travail : 15 m
+                     / | \
+                    /  |  \
+  //////////////////   |   //////////////////   fond
+  |<--- portée --->| nadir |<--- portée --->|
+  |  de 15 à 50 m  | 2x15 m|  de 15 à 50 m  |
+  |<---------------- fauchée --------------->|
+```
+
+```
+Coupe en travers de trois lignes voisines (1 caractère = 5 m, # = vu par le sonar)
+
+              -50       0         50        100 m
+              |         |         |         |
+ligne C          #######                      drone à -50 m
+ligne A       #######      #######            drone à 0 m
+ligne B                 #######      #######  drone à 50 m
+                     ^^^^^^  nadir de la ligne A : vu par C et B
+```
 
 ## 5. Le comportement de l'essaim (Boids)
 

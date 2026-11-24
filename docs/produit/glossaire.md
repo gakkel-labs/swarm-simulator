@@ -68,15 +68,51 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Target** | In the simulation, the object to find (the "wreck"). Today the operator places it with a click in the viewer. | ✅ |
 | **Contact** | Something a drone has detected and that could be the target. A contact must be checked. Status: *to review*, *confirmed*, *dismissed*. | 🔜 |
 | **Detection** | The moment a drone passes close enough to the target to "see" it. | ✅ |
-| **Sensor radius** | The distance at which a drone can detect the target (10 m today). | ✅ |
+| **Sensor radius** | The distance at which a drone can detect the target (10 m today). Replaced by the side-scan sonar band in the realistic scale ([ADR-0011](../adr/0011-model-assumptions-and-scale.md)). | ✅ |
 | **Sonar** | The underwater sensor that "sees" with sound. Simulated later. | 🔜 |
+| **Side-scan sonar** | The search sensor of a detection drone. It sees a band of seabed on each side (50 m), not right under the drone (blind gap), and its detection chance falls with range. | 🔜 |
+| **Swath** | The band of seabed a search sensor sees as the drone moves. The lawnmower spaces its lines from it ([diagram](#diagram-swath-nadir-and-line-spacing)). | 🔜 |
+| **Nadir** | The point of the seabed right under the drone. The side-scan sonar does not see around the nadir: this is the gap the next line must cover ([diagram](#diagram-swath-nadir-and-line-spacing)). | 🔜 |
+| **Working altitude** | The height above the seabed where a search sensor works well (15 m for the side-scan sonar). | 🔜 |
+| **Seabed following** | The drone keeps its working altitude: if the seabed rises, the drone rises. The search pattern only decides the horizontal moves. | 🔜 |
+| **Forward obstacle sonar** | A navigation sensor that sees a cone in front of the drone (about 100 m). A drone sees an obstacle only there. | 🔜 |
+| **Drone specification** | The technical values of a drone type: speeds, turn rate, working altitude, endurance, sensors, acoustic modem. A value object: one per drone type ([ADR-0011](../adr/0011-model-assumptions-and-scale.md)). | 🔜 |
 | **Acoustic link** | The underwater radio-like link (with sound) between the swarm and the drone carrier. It is slow and can be cut. | 🔜 |
+| **Acoustic modem** | The device each drone uses to send its position by sound (every 10 s, range about 1 km, some messages lost). Boids uses these announced positions. | 🔜 |
 | **Score** | The **success probability** of a fleet configuration: the share of successful scenarios in the common set of scenarios. Example: "succeeds in 460 scenarios out of 500" = 92%. Used by the backend to compare configurations ([problem sheet](problem-find-a-wreck.md)). | 🔜 |
 | **Common set of scenarios** | The list of scenarios every fleet configuration is simulated on: the wreck at position A, B, C… (spread across the search area), plus scenarios with no wreck. Each scenario has its seed. All configurations run on the same scenarios, so the comparison is fair. | 🔜 |
 | **Share of no-wreck scenarios** | The share of the scenario set where the wreck is not in the search area. The operator sets it in the mission, depending on their doubt (20% by default). | 🔜 |
 | **Limit time** | The time when the mission must be over (drone energy, weather). Going over it is a failure. | 🔜 |
 | **Estimated time** | The expected duration of a mission: the time under which 9 successful scenarios out of 10 end. Going over it makes the mission late, not failed. | 🔜 |
 | **Coverage threshold** | The coverage to reach to show that the wreck is not in the search area. Chosen by the operator (95% by default). | 🔜 |
+
+### Diagram: swath, nadir and line spacing
+
+As a reminder, what the side-scan sonar of a detection drone sees, then how the lawnmower places its lines so that the nadir of one line is seen by its neighbours. Details in [ADR-0011](../adr/0011-model-assumptions-and-scale.md).
+
+```
+          front view, the drone comes towards us
+
+                       ●  drone
+                      /|\        working altitude: 15 m
+                     / | \
+                    /  |  \
+  //////////////////   |   //////////////////   seabed
+  |<--- range ---->| nadir |<--- range ---->|
+  |  15 to 50 m    | 2x15 m|    15 to 50 m  |
+  |<----------------- swath ---------------->|
+```
+
+```
+Cross-section of three neighbouring lines (1 character = 5 m, # = seen by the sonar)
+
+              -50       0         50        100 m
+              |         |         |         |
+line C           #######                      drone at -50 m
+line A        #######      #######            drone at 0 m
+line B                  #######      #######  drone at 50 m
+                     ^^^^^^  nadir of line A: seen by C and B
+```
 
 ## 5. Swarm behaviour (Boids)
 

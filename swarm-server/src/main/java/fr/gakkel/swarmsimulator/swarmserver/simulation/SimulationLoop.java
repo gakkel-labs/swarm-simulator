@@ -2,8 +2,10 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
@@ -163,12 +165,16 @@ public class SimulationLoop {
      * reproducible. This is the public assembly entry point — callers never touch
      * {@link WorldFactory} or the per-stream RNGs directly.
      */
-    public static Wiring wire(int agentCount, double width, double height, double depth,
-                              BoidsConfig boids, DiagnosticsConfig diagnostics,
-                              PredatorConfig predator, long masterSeed,
-                              ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
-        Simulation simulation = Simulation.create(agentCount, width, height, depth, boids, predator,
+    public static Wiring wire(FleetConfiguration fleet, double width, double height, double depth,
+                              DiagnosticsConfig diagnostics, PredatorConfig predator,
+                              long masterSeed, ScheduledExecutorService executor,
+                              CohesionCsvExporter csvExporter) {
+        Simulation simulation = Simulation.create(fleet, width, height, depth, predator,
                 masterSeed);
+        // The live diagnostics watch a flock, so they need the Boids settings.
+        BoidsConfig boids = switch (fleet.searchPattern()) {
+            case SearchPatternSettings.Boids boidsSettings -> boidsSettings.config();
+        };
         SimulationLoop loop = new SimulationLoop(simulation, boids, diagnostics, executor, csvExporter);
         return new Wiring(simulation.world(), simulation, loop);
     }

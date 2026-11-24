@@ -4,10 +4,12 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -89,7 +91,8 @@ class SimulationTest {
         private static final int THIRTY_SECONDS_OF_STEPS = 30 * 30;
 
         private static Simulation createSeededSimulation(long seed) {
-            return Simulation.create(20, 100, 100, 50, CONFIG, PredatorConfig.defaults(), seed);
+            FleetConfiguration fleet = new FleetConfiguration(20, new SearchPatternSettings.Boids(CONFIG));
+            return Simulation.create(fleet, 100, 100, 50, PredatorConfig.defaults(), seed);
         }
 
         /** What a run leaves: each drone id with its position, in id order. */

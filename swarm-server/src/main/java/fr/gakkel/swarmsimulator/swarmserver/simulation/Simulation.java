@@ -1,12 +1,13 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationClock;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
@@ -68,18 +69,23 @@ public final class Simulation {
     }
 
     /**
-     * Builds a world and its simulation from one master seed. Everything random in the run comes
-     * from that seed: drone ids and start positions, respawn places and the wander force. The
-     * generators belong to this simulation only: never share them with another simulation or thread.
+     * Builds a world and its simulation from a fleet configuration and one master seed.
+     * Everything random in the run comes from that seed: drone ids and start positions, respawn
+     * places and the random part of the search pattern. The generators belong to this simulation
+     * only: never share them with another simulation or thread.
      */
-    public static Simulation create(int agentCount, double width, double height, double depth,
-                                    BoidsConfig boids, PredatorConfig predator, long masterSeed) {
-        World world = WorldFactory.createWorld(agentCount, width, height, depth, predator,
+    public static Simulation create(FleetConfiguration fleet, double width, double height,
+                                    double depth, PredatorConfig predator, long masterSeed) {
+        World world = WorldFactory.createWorld(fleet.droneCount(), width, height, depth, predator,
                 new Random(masterSeed));
-        SearchPattern searchPattern =
-                new BoidsSearchPattern(boids, new Random(masterSeed ^ WANDER_SEED_SALT));
-        return new Simulation(world, searchPattern, boids.maxSpeed(),
-                new Random(masterSeed ^ RESPAWN_SEED_SALT));
+        Random searchPatternRandom = new Random(masterSeed ^ WANDER_SEED_SALT);
+        // A factory: the configuration only names the pattern and its settings, and each run
+        // gets a new pattern object with its own random generator.
+        return switch (fleet.searchPattern()) {
+            case SearchPatternSettings.Boids boids -> new Simulation(world,
+                    new BoidsSearchPattern(boids.config(), searchPatternRandom),
+                    boids.config().maxSpeed(), new Random(masterSeed ^ RESPAWN_SEED_SALT));
+        };
     }
 
     public World world() {

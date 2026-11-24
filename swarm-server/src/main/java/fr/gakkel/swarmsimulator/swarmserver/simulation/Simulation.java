@@ -95,7 +95,8 @@ public final class Simulation {
         moveDrones(agents, stepSeconds);
         clock.advance(stepSeconds);
         huntWithPredator(stepSeconds);
-        checkTargetDetection(agents);
+        // Only the drones still in the world: a drone eaten in this step cannot report the target.
+        checkTargetDetection(world.agents());
         respawnDronesWhoseDelayIsOver();
     }
 

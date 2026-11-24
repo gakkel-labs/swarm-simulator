@@ -285,6 +285,18 @@ class SimulationTest {
         }
 
         @Test
+        void droneEatenInTheSameStep_doesNotFindTheTarget() {
+            Target target = placeTarget();
+            world.setPredator(new Predator(TARGET_POSITION, Vector3D.ZERO));
+            world.addAgent(createAgent(TARGET_POSITION)); // on the target and in the eat radius
+
+            simulation.step(STEP_SECONDS);
+
+            assertEquals(0, world.agentCount(), "the drone is eaten in this step");
+            assertFalse(target.isFound(), "a lost drone cannot report the target");
+        }
+
+        @Test
         void noTarget_stepRunsWithoutError() {
             world.addAgent(createAgent(TARGET_POSITION));
 

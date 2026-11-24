@@ -71,7 +71,8 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Rayon de détection** | La distance à laquelle un drone peut détecter la cible (10 m aujourd'hui). Remplacé par la bande du sonar latéral à l'échelle réaliste ([ADR-0011](../adr/0011-model-assumptions-and-scale.fr.md)). | ✅ |
 | **Sonar** | Le capteur sous-marin qui « voit » avec le son. Simulé plus tard. | 🔜 |
 | **Sonar latéral** | Le capteur de recherche d'un drone de détection. Il voit une bande de fond de chaque côté (50 m), pas juste sous le drone (trou), et sa chance de détection baisse avec la distance. | 🔜 |
-| **Fauchée** | La bande de fond qu'un capteur de recherche voit pendant que le drone avance. La tondeuse espace ses lignes à partir d'elle. | 🔜 |
+| **Fauchée** | La bande de fond qu'un capteur de recherche voit pendant que le drone avance. La tondeuse espace ses lignes à partir d'elle ([schéma](../adr/0011-model-assumptions-and-scale.fr.md#4-deux-familles-de-capteurs)). | 🔜 |
+| **Nadir** | Le point du fond juste sous le drone. Le sonar latéral ne voit pas autour du nadir : c'est le « trou » que la ligne voisine doit couvrir ([schéma](../adr/0011-model-assumptions-and-scale.fr.md#6-lécart-des-lignes-de-la-tondeuse-vient-du-capteur)). | 🔜 |
 | **Altitude de travail** | La hauteur au-dessus du fond où un capteur de recherche marche bien (15 m pour le sonar latéral). | 🔜 |
 | **Suivi du fond** | Le drone garde son altitude de travail : si le fond monte, le drone monte. Le schéma de recherche ne décide que les déplacements horizontaux. | 🔜 |
 | **Sonar frontal d'évitement** | Un capteur de navigation qui voit un cône devant le drone (environ 100 m). Un drone ne voit un obstacle que là. | 🔜 |

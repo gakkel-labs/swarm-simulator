@@ -103,6 +103,21 @@ or real relief can be plugged in later without touching the rest (see
   forward obstacle sonar. A drone sees an obstacle only inside its forward cone. It climbs over it
   if it can, else it turns.
 
+Words used in hydrography, as a reminder: **swath** (the band of seabed seen), **range** (one side), **nadir** (the blind gap right under the drone), **line spacing** and **overlap**.
+
+```
+          front view, the drone comes towards us
+
+                       ●  drone
+                      /|\        working altitude: 15 m
+                     / | \
+                    /  |  \
+  //////////////////   |   //////////////////   seabed
+  |<--- range ---->| nadir |<--- range ---->|
+  |  15 to 50 m    | 2x15 m|    15 to 50 m  |
+  |<----------------- swath ---------------->|
+```
+
 The detection chance is drawn from the scenario seed: the same scenario still gives the same
 result (ADR-0010).
 
@@ -126,6 +141,17 @@ stays together with late and incomplete information is exactly the real problem.
 Lawnmower lines (#156) are spaced by about one side's range (50 m), not by twice the range: then
 the blind gap under one line is seen by the next line. The spacing is a setting of the lawnmower,
 so the optimiser can try tighter lines (better detection chance, more time).
+
+```
+Cross-section of three neighbouring lines (1 character = 5 m, # = seen by the sonar)
+
+              -50       0         50        100 m
+              |         |         |         |
+line C           #######                      drone at -50 m
+line A        #######      #######            drone at 0 m
+line B                  #######      #######  drone at 50 m
+                     ^^^^^^  nadir of line A: seen by C and B
+```
 
 Order of magnitude: one drone sweeps 50 m x 1.5 m/s ≈ 0.27 km² per hour, so 50 km² take about
 185 drone-hours, about 19 hours with 10 drones. This is more than 16 h of endurance: choosing

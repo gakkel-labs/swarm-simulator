@@ -107,6 +107,21 @@ l'étape 2. Une pente ou un vrai relief pourront s'y brancher plus tard sans tou
   altitude, sonar frontal d'évitement. Un drone ne voit un obstacle que dans son cône frontal. Il
   passe par-dessus s'il peut, sinon il tourne.
 
+Les mots de l'hydrographie, pour rappel : **fauchée** (la bande de fond vue), **portée** (un côté), **nadir** (le trou juste sous le drone), **espacement des lignes** et **recouvrement**.
+
+```
+          vue de face, le drone vient vers nous
+
+                       ●  drone
+                      /|\        altitude de travail : 15 m
+                     / | \
+                    /  |  \
+  //////////////////   |   //////////////////   fond
+  |<--- portée --->| nadir |<--- portée --->|
+  |  de 15 à 50 m  | 2x15 m|  de 15 à 50 m  |
+  |<---------------- fauchée --------------->|
+```
+
 La chance de détection est tirée avec la seed du scénario : le même scénario donne toujours le
 même résultat (ADR-0010).
 
@@ -132,6 +147,17 @@ Les lignes de la tondeuse (#156) sont espacées d'environ une portée d'un côt�
 fois la portée : le trou sous une ligne est alors vu par la ligne voisine. L'écart est un réglage
 de la tondeuse : l'optimiseur peut essayer des lignes plus serrées (meilleure chance de
 détection, plus de temps).
+
+```
+Coupe en travers de trois lignes voisines (1 caractère = 5 m, # = vu par le sonar)
+
+              -50       0         50        100 m
+              |         |         |         |
+ligne C          #######                      drone à -50 m
+ligne A       #######      #######            drone à 0 m
+ligne B                 #######      #######  drone à 50 m
+                     ^^^^^^  nadir de la ligne A : vu par C et B
+```
 
 Ordre de grandeur : un drone balaie 50 m x 1,5 m/s ≈ 0,27 km² par heure, donc 50 km² demandent
 environ 185 heures-drone, soit environ 19 heures avec 10 drones. C'est plus que 16 h d'autonomie :

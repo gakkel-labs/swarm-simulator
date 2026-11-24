@@ -71,7 +71,8 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Sensor radius** | The distance at which a drone can detect the target (10 m today). Replaced by the side-scan sonar band in the realistic scale ([ADR-0011](../adr/0011-model-assumptions-and-scale.md)). | ✅ |
 | **Sonar** | The underwater sensor that "sees" with sound. Simulated later. | 🔜 |
 | **Side-scan sonar** | The search sensor of a detection drone. It sees a band of seabed on each side (50 m), not right under the drone (blind gap), and its detection chance falls with range. | 🔜 |
-| **Swath** | The band of seabed a search sensor sees as the drone moves. The lawnmower spaces its lines from it. | 🔜 |
+| **Swath** | The band of seabed a search sensor sees as the drone moves. The lawnmower spaces its lines from it ([diagram](../adr/0011-model-assumptions-and-scale.md#4-two-families-of-sensors)). | 🔜 |
+| **Nadir** | The point of the seabed right under the drone. The side-scan sonar does not see around the nadir: this is the gap the next line must cover ([diagram](../adr/0011-model-assumptions-and-scale.md#6-lawnmower-line-spacing-comes-from-the-sensor)). | 🔜 |
 | **Working altitude** | The height above the seabed where a search sensor works well (15 m for the side-scan sonar). | 🔜 |
 | **Seabed following** | The drone keeps its working altitude: if the seabed rises, the drone rises. The search pattern only decides the horizontal moves. | 🔜 |
 | **Forward obstacle sonar** | A navigation sensor that sees a cone in front of the drone (about 100 m). A drone sees an obstacle only there. | 🔜 |

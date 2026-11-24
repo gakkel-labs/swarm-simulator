@@ -304,6 +304,7 @@ repeatable runs, is planned for Step 2.
 - [ADR-0006 — detailed and simple view](adr/0006-detailed-and-simple-view.md)
 - [ADR-0007 — coordinate frames](adr/0007-coordinate-frames.md)
 - [ADR-0008 — share the World without locks](adr/0008-shared-world-concurrency.md)
+- [ADR-0009 — storage and offline operation](adr/0009-storage-and-offline-operation.md)
 - [Boids rules](01-boids-rules.md) · [gRPC contract](02-grpc-contract.md) ·
   [Unity integration](03-unity-integration.md) · [Seabed bathymetry](04-seabed-bathymetry.md)
 - [Tech debt, 2026-11-22](tech-debt/tech-debt-2026-11-22.md) (earlier snapshots: [2026-05-21](tech-debt/tech-debt-2026-05-21.md), [2026-05-25](tech-debt/tech-debt-2026-05-25.md))

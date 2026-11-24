@@ -22,6 +22,7 @@ These are hypotheses, to check with real operators.
 - The drone carrier must never be lost; the specialised drones neither, by default.
 - To show absence, the coverage must reach the **coverage threshold** (95% by default) and every contact must be classified.
 - The result must be reproducible: every configuration is compared on the same scenarios.
+- Everything must work **without internet**, on a workstation on board: at sea, the satellite link is slow, expensive or cut (see [ADR-0009](../adr/0009-storage-and-offline-operation.md)).
 
 ## 4. A successful mission
 

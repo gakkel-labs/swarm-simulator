@@ -22,6 +22,7 @@ Ce sont des hypothèses, à vérifier avec de vrais opérateurs.
 - Le porte-drones ne doit jamais être perdu ; les drones spécialisés non plus, par défaut.
 - Pour démontrer l'absence, la couverture doit atteindre le **seuil de couverture** (95 % par défaut) et chaque contact doit être classifié.
 - Le résultat doit être reproductible : chaque configuration est comparée sur les mêmes scénarios.
+- Tout doit marcher **sans internet**, sur un poste à bord : en mer, la liaison satellite est lente, chère ou coupée (voir l'[ADR-0009](../adr/0009-storage-and-offline-operation.fr.md)).
 
 ## 4. Une mission réussie
 

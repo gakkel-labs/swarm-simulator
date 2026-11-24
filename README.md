@@ -195,6 +195,8 @@ message catalogue).
   own axes, the wire is NED, Unity converts on its side.
 - [ADR-0008](docs/adr/0008-shared-world-concurrency.md) — **Share the World without locks**
   between the simulation and the broadcast threads.
+- [ADR-0009](docs/adr/0009-storage-and-offline-operation.md) — **One PostgreSQL database owned by
+  the backend**, and a stack that runs offline on a ship workstation (proposed).
 
 ### Configuration
 

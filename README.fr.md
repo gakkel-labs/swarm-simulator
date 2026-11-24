@@ -199,6 +199,8 @@ threads, catalogue des messages).
   propres axes, le réseau est en NED, Unity convertit de son côté.
 - [ADR-0008](docs/adr/0008-shared-world-concurrency.fr.md) — **Partager le World sans verrou**
   entre le thread de simulation et le thread de diffusion.
+- [ADR-0009](docs/adr/0009-storage-and-offline-operation.fr.md) — **Une seule base PostgreSQL tenue
+  par le backend**, et une installation qui marche hors ligne sur un poste à bord (proposée).
 
 ### Configuration
 

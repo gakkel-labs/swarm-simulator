@@ -257,13 +257,13 @@ Default values (`BoidsConfig`). Each one can be changed at start with an environ
 | `threatFleeRadius`         | `15.0` m          | Distance at which a drone flees the danger                      | Wider panic zone                             |
 | `threatFleeWeight`         | `200.0`           | Weight of the danger flee                                       | Stronger panic response                      |
 | `wanderWeight`             | `0.0`             | Weight of wander (0 = off)                                      | More random, less mechanical                 |
-| `maxSpeed`                 | `5.0` m/s         | Speed limit of a drone                                          | Faster, more reactive swarm                  |
 | `dt` *(simulation loop)*   | `1/30 s ≈ 33 ms`  | Time step (30 Hz)                                               | Larger steps → less stable                   |
 
 The danger has its own settings: speed 3 m/s (`SWARM_PREDATOR_SPEED`) and catch radius 1.5 m
-(`SWARM_PREDATOR_EAT_RADIUS`), both in `PredatorConfig`. Other fixed values (in the code, not
-configurable yet): sensor radius 10 m (`SimulationConstants.SENSOR_RADIUS_M`), respawn after 5 s
-at least 30 m from the danger (`Simulation`). The 5 s are simulation time, not real time.
+(`SWARM_PREDATOR_EAT_RADIUS`), both in `PredatorConfig`. The speed limit (5 m/s) and
+the detection radius (10 m) of a drone are not Boids settings: they come from its drone
+specification in the [drone catalog](drone-catalog.md) (#176). Other fixed values (in the code,
+not configurable yet): respawn after 5 s at least 30 m from the danger (`Simulation`). The 5 s are simulation time, not real time.
 
 **Rules of thumb:**
 - `w_sep` a little higher than `w_align` and `w_coh` → no collisions, the swarm still holds.

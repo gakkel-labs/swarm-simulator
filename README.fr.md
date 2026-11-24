@@ -221,7 +221,9 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | Variable | Propriété | Défaut | Rôle |
 |----------|-----------|--------|------|
 | `SWARM_PORT` | `swarm.port` | `50051` | Port d'écoute gRPC |
-| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Nombre de drones dans l'essaim |
+| `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Nombre de drones dans l'essaim, si `SWARM_FLEET` n'est pas donné |
+| `SWARM_FLEET` | `swarm.fleet` | (vide) | Modèles de drones et leur nombre, par exemple `side-scan-drone:6,fast-drone:4` |
+| `SWARM_DRONE_CATALOG` | `swarm.drone-catalog` | `classpath:drone-catalog-demo.json` | Le [catalogue de drones](docs/drone-catalog.fr.md) : un chemin de fichier, ou `classpath:` pour un fichier du jar |
 | `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | Taille Est–Ouest de la zone de recherche (m) |
 | `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Colonne d'eau, de la surface au fond (m) |
 | `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Taille Nord–Sud de la zone de recherche (m) |

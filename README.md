@@ -199,6 +199,9 @@ message catalogue).
   the backend**, and a stack that runs offline on a ship workstation (proposed).
 - [ADR-0010](docs/adr/0010-sorted-drone-list.md) — **Keep the drones sorted by id** so the same
   seed gives the same result, and do not optimise yet (proposed).
+- [ADR-0011](docs/adr/0011-model-assumptions-and-scale.md) — **A realistic scale for the score**:
+  a 7 x 7 km search area, a drone specification, a side-scan sonar, neighbours from the acoustic
+  modem; the Unity demo keeps a small world (proposed).
 
 ### Configuration
 

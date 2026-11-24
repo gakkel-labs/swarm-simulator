@@ -33,7 +33,7 @@ Le moteur et ses règles sont les mêmes. Seules les valeurs changent, lues dans
 
 | | `demo` (Unity, en direct) | `batch` (score #82, optimiseur #83) |
 |---|---|---|
-| Zone de recherche | 100 x 100 m, comme aujourd'hui | 7 x 7 km (environ 50 km²) |
+| Zone de recherche | 100 x 100 m, comme aujourd'hui | celle de la mission ; 7 x 7 km (environ 50 km²) par défaut |
 | Pas de simulation | 1/30 s, temps réel | 1 s, aussi vite que possible |
 | Fond marin | plat, comme aujourd'hui | plat à 1 000 m par défaut |
 | Unity | oui | non |
@@ -169,7 +169,16 @@ environ 185 heures-drone, soit environ 19 heures avec 10 drones. C'est plus que 
 choisir le nombre de drones et l'écart des lignes, c'est justement le compromis que l'optimiseur
 (#83) doit montrer.
 
-### 7. La zone de recherche est liée à une vraie position
+### 7. La zone de recherche est choisie par l'opérateur et liée à une vraie position
+La zone de recherche appartient à la **mission**, pas au moteur. L'opérateur la dessinera sur la
+carte marine (étape 3). En attendant, elle est lue dans la configuration de la mission, avec les
+7 x 7 km du profil `batch` comme valeur par défaut. Le moteur ne suppose jamais une taille fixe :
+la zone de recherche, le point de dépose et les lignes de la tondeuse sont tous calculés à partir
+de la zone de recherche de la mission.
+
+À l'étape 2, la zone de recherche est un rectangle (origine, largeur vers l'Est, longueur vers le
+Nord). Un rectangle tourné ou un polygone dessiné sur la carte viendra avec l'étape 3 (#182).
+
 La zone de recherche a une **origine** : la latitude / longitude (WGS84) de son coin sud-ouest.
 Les positions restent en mètres locaux, dans les repères de l'ADR-0007. La conversion utilise une
 approximation « terre plate » :

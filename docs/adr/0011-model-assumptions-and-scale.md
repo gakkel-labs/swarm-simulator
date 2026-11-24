@@ -32,7 +32,7 @@ The engine and its rules are the same. Only the values change, read from the con
 
 | | `demo` (Unity, live) | `batch` (score #82, optimiser #83) |
 |---|---|---|
-| Search area | 100 x 100 m, as today | 7 x 7 km (about 50 km²) |
+| Search area | 100 x 100 m, as today | from the mission; 7 x 7 km (about 50 km²) by default |
 | Simulation step | 1/30 s, real time | 1 s, as fast as possible |
 | Seabed | flat, as today | flat at 1,000 m by default |
 | Unity | yes | no |
@@ -161,7 +161,16 @@ Order of magnitude: one drone sweeps 50 m x 1.5 m/s ≈ 0.27 km² per hour, so 5
 185 drone-hours, about 19 hours with 10 drones. This is more than 16 h of endurance: choosing
 how many drones and which spacing is exactly the trade-off the optimiser (#83) must show.
 
-### 7. The search area is tied to a real position
+### 7. The search area is set by the operator and tied to a real position
+The search area belongs to the **mission**, not to the engine. The operator will draw it on the
+nautical chart (Step 3). Until then, it is read from the mission configuration, with the
+7 x 7 km of the `batch` profile as a default value. The engine never assumes a fixed size: the
+search area, the drop point and the lawnmower lines are all computed from the search area of the
+mission.
+
+In Step 2 the search area is a rectangle (origin, width to the East, length to the North). A
+rotated rectangle or a polygon drawn on the chart comes with Step 3 (#182).
+
 The search area has an **origin**: the latitude / longitude (WGS84) of its south-west corner.
 Positions stay in local metres, in the frames of ADR-0007. The conversion uses a flat-earth
 approximation:

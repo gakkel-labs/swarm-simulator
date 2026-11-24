@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class BoidsSearchPatternTest {
 
@@ -25,6 +25,6 @@ class BoidsSearchPatternTest {
 
         Vector3D steer = boids.steer(drone, world);
 
-        assertEquals(expected, steer);
+        assertThat(steer).isEqualTo(expected);
     }
 }

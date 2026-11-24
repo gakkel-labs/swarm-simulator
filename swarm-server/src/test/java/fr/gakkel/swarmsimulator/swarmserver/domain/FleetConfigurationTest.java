@@ -2,8 +2,8 @@ package fr.gakkel.swarmsimulator.swarmserver.domain;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FleetConfigurationTest {
 
@@ -16,26 +16,30 @@ class FleetConfigurationTest {
         FleetConfiguration first = new FleetConfiguration(20, BOIDS);
         FleetConfiguration second = new FleetConfiguration(20, BOIDS);
 
-        assertEquals(first, second);
+        assertThat(first).isEqualTo(second);
     }
 
     @Test
     void constructor_noDrone_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new FleetConfiguration(0, BOIDS));
+        assertThatThrownBy(() -> new FleetConfiguration(0, BOIDS))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void constructor_negativeDroneCount_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new FleetConfiguration(-1, BOIDS));
+        assertThatThrownBy(() -> new FleetConfiguration(-1, BOIDS))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void constructor_noSearchPattern_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new FleetConfiguration(20, null));
+        assertThatThrownBy(() -> new FleetConfiguration(20, null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void boidsConstructor_noConfig_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new SearchPatternSettings.Boids(null));
+        assertThatThrownBy(() -> new SearchPatternSettings.Boids(null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

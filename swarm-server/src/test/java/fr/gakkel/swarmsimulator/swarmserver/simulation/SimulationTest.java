@@ -3,9 +3,11 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -29,7 +31,8 @@ class SimulationTest {
     private static final double STEP_SECONDS = 1.0 / 30;
 
     private static Simulation createSimulation(World world) {
-        return new Simulation(world, CONFIG, new Random(1L), new Random(2L));
+        return new Simulation(world, new BoidsSearchPattern(CONFIG, new Random(2L)),
+                CONFIG.maxSpeed(), new Random(1L));
     }
 
     private static Agent createAgent(Vector3D position) {
@@ -169,6 +172,32 @@ class SimulationTest {
 
     @Nested
     class Movement {
+
+        @Test
+        void drones_followTheForceOfTheSearchPattern() {
+            World world = new World(100, 100, 50);
+            Agent drone = createAgent(new Vector3D(50, -50, 25));
+            world.addAgent(drone);
+            SearchPattern alwaysEast = (anyDrone, anyWorld) -> new Vector3D(1, 0, 0);
+            Simulation simulation = new Simulation(world, alwaysEast, CONFIG.maxSpeed(), new Random(1L));
+
+            simulation.step(1.0);
+
+            assertEquals(new Vector3D(51, -50, 25), drone.position());
+        }
+
+        @Test
+        void searchPatternForce_isLimitedByTheMaxSpeed() {
+            World world = new World(100, 100, 50);
+            Agent drone = createAgent(new Vector3D(50, -50, 25));
+            world.addAgent(drone);
+            SearchPattern strongEast = (anyDrone, anyWorld) -> new Vector3D(100, 0, 0);
+            Simulation simulation = new Simulation(world, strongEast, 2.0, new Random(1L));
+
+            simulation.step(1.0);
+
+            assertEquals(2.0, drone.velocity().magnitude(), 1e-9);
+        }
 
         @Test
         void drones_stayInTheSearchAreaAfterManySteps() {

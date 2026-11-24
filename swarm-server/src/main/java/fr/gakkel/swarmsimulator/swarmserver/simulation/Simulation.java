@@ -2,10 +2,11 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
+import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationClock;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
@@ -43,20 +44,26 @@ public final class Simulation {
     private record PendingRespawn(Agent agent, double dueAtSeconds) {}
 
     private final World world;
-    private final BoidsConfig config;
-    private final BoidsRules rules;
+    private final SearchPattern searchPattern;
+    private final double maxSpeed;
     private final Random respawnRandom;
     private final SimulationClock clock = new SimulationClock();
     private final List<PendingRespawn> pendingRespawns = new ArrayList<>();
 
     /**
-     * {@code respawnRandom} places the drones that come back after the predator ate them;
-     * {@code wanderRandom} drives the Boids wander force.
+     * {@code searchPattern} says where each drone wants to go; the simulation then applies the
+     * same physics to every pattern: {@code maxSpeed}, obstacles and walls.
+     * {@code respawnRandom} places the drones that come back after the predator ate them.
      */
-    public Simulation(World world, BoidsConfig config, Random respawnRandom, Random wanderRandom) {
+    public Simulation(World world, SearchPattern searchPattern, double maxSpeed,
+                      Random respawnRandom) {
         this.world = Objects.requireNonNull(world, "world");
-        this.config = Objects.requireNonNull(config, "config");
-        this.rules = new BoidsRules(config, Objects.requireNonNull(wanderRandom, "wanderRandom"));
+        this.searchPattern = Objects.requireNonNull(searchPattern, "searchPattern");
+        // "!(x > 0)" also rejects NaN, which fails every comparison.
+        if (!(maxSpeed > 0)) {
+            throw new IllegalArgumentException("maxSpeed must be positive, got " + maxSpeed);
+        }
+        this.maxSpeed = maxSpeed;
         this.respawnRandom = Objects.requireNonNull(respawnRandom, "respawnRandom");
     }
 
@@ -69,8 +76,10 @@ public final class Simulation {
                                     BoidsConfig boids, PredatorConfig predator, long masterSeed) {
         World world = WorldFactory.createWorld(agentCount, width, height, depth, predator,
                 new Random(masterSeed));
-        return new Simulation(world, boids,
-                new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
+        SearchPattern searchPattern =
+                new BoidsSearchPattern(boids, new Random(masterSeed ^ WANDER_SEED_SALT));
+        return new Simulation(world, searchPattern, boids.maxSpeed(),
+                new Random(masterSeed ^ RESPAWN_SEED_SALT));
     }
 
     public World world() {
@@ -105,13 +114,12 @@ public final class Simulation {
     private void moveDrones(List<Agent> agents, double stepSeconds) {
         List<Vector3D> steers = new ArrayList<>(agents.size());
         for (Agent agent : agents) {
-            List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
-            steers.add(rules.steer(agent, neighbors, world));
+            steers.add(searchPattern.steer(agent, world));
         }
         for (int index = 0; index < agents.size(); index++) {
             Agent agent = agents.get(index);
             Vector3D newVelocity = clampSpeed(
-                    agent.velocity().add(steers.get(index).scale(stepSeconds)), config.maxSpeed());
+                    agent.velocity().add(steers.get(index).scale(stepSeconds)), maxSpeed);
             Vector3D newPosition = agent.position().add(newVelocity.scale(stepSeconds));
             for (Obstacle obstacle : world.obstacles()) {
                 ObstacleCollision collision = resolveObstacleCollision(newPosition, newVelocity, obstacle);

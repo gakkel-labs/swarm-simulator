@@ -37,8 +37,8 @@ class SimulationLoopTest {
     @BeforeEach
     void setUp() {
         world = WorldFactory.createWorld(10, new Random(0L));
-        loop = new SimulationLoop(createSimulation(), CONFIG,
-                DIAGNOSTICS, mock(ScheduledExecutorService.class), null);
+        loop = new SimulationLoop(createSimulation(), CONFIG, DIAGNOSTICS,
+                mock(ScheduledExecutorService.class), null);
     }
 
     @Test

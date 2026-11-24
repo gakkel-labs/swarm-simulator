@@ -45,7 +45,7 @@ class SettingsTest {
     }
 
     @Test
-    void fleetConfiguration_isTheDroneCountWithBoids() {
+    void fleetConfiguration_agentCountSet_returnsThatDroneCountWithBoids() {
         Settings settings = load(Map.of(), props("swarm.agent-count", "8"));
 
         FleetConfiguration fleet = settings.fleetConfiguration();

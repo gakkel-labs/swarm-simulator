@@ -39,7 +39,7 @@ public final class Simulation {
 
     // Distinct salts so the random streams derived from the one master seed don't share state.
     private static final long RESPAWN_SEED_SALT = 0x9E3779B97F4A7C15L;
-    private static final long WANDER_SEED_SALT  = 0xC2B2AE3D27D4EB4FL;
+    private static final long SEARCH_PATTERN_SEED_SALT = 0xC2B2AE3D27D4EB4FL;
 
     /** A drone eaten by the predator, waiting to come back into the search area. */
     private record PendingRespawn(Agent agent, double dueAtSeconds) {}
@@ -78,7 +78,7 @@ public final class Simulation {
                                     double depth, PredatorConfig predator, long masterSeed) {
         World world = WorldFactory.createWorld(fleet.droneCount(), width, height, depth, predator,
                 new Random(masterSeed));
-        Random searchPatternRandom = new Random(masterSeed ^ WANDER_SEED_SALT);
+        Random searchPatternRandom = new Random(masterSeed ^ SEARCH_PATTERN_SEED_SALT);
         // A factory: the configuration only names the pattern and its settings, and each run
         // gets a new pattern object with its own random generator.
         return switch (fleet.searchPattern()) {

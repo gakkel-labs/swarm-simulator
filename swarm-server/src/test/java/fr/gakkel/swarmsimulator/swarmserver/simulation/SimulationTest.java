@@ -125,7 +125,7 @@ class SimulationTest {
         }
 
         @Test
-        void seed42_givesTheSameDronesAsBeforeTheSearchPatternInterface() {
+        void create_seed42_givesTheRecordedDroneFingerprint() {
             Simulation simulation = createSeededSimulation(42L);
 
             runSteps(simulation, THIRTY_SECONDS_OF_STEPS);
@@ -179,7 +179,7 @@ class SimulationTest {
     class Movement {
 
         @Test
-        void drones_followTheForceOfTheSearchPattern() {
+        void step_searchPatternPushesEast_droneMovesEast() {
             World world = new World(100, 100, 50);
             Agent drone = createAgent(new Vector3D(50, -50, 25));
             world.addAgent(drone);
@@ -193,7 +193,7 @@ class SimulationTest {
         }
 
         @Test
-        void searchPatternForce_isLimitedByTheMaxSpeed() {
+        void step_searchPatternForceAboveMaxSpeed_speedIsLimited() {
             World world = new World(100, 100, 50);
             Agent drone = createAgent(new Vector3D(50, -50, 25));
             world.addAgent(drone);

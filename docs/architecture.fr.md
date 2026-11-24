@@ -94,22 +94,25 @@ flowchart TB
     SERVER[server<br/>gRPC, contrat] --> SIMULATION[simulation<br/>moteur]
     CONFIG[config<br/>JSON, variables d'env] --> SIMULATION
     SERVER --> DOMAIN[domain<br/>Java pur]
+    SERVER -->|assemblage au démarrage| CONFIG
     CONFIG --> DOMAIN
     SIMULATION --> DOMAIN
 ```
 
-Un test ArchUnit, [`ArchitectureTest`](../swarm-server/src/test/java/fr/gakkel/swarmsimulator/swarmserver/ArchitectureTest.java),
-vérifie cette règle à chaque `mvn verify` (donc dans la CI) :
+Un test ArchUnit vérifie cette règle à chaque `mvn verify` (donc dans la CI) :
+[`ArchitectureTest`](../swarm-server/src/test/java/fr/gakkel/swarmsimulator/swarmserver/ArchitectureTest.java).
+Ses règles sont regroupées par thème (domaine, moteur, adaptateurs) :
 
 - `domain` ne dépend d'aucun autre package du serveur ;
 - `simulation` ne dépend ni de `server` ni de `config` ;
-- `domain` et `simulation` n'utilisent ni gRPC, ni Protobuf, ni Spring, ni planificateur
-  (`ScheduledExecutorService`, `ExecutorService`, `Executors`) ;
+- `domain` et `simulation` n'utilisent ni gRPC, ni Protobuf, ni Spring, ni threads
+  (`Thread`, tout `Executor`, `Executors`, `CompletableFuture`) ;
 - seul `server` utilise les classes générées du contrat ;
+- `config` ne dépend pas de `server` (`server` utilise `config` seulement pour assembler le serveur au démarrage) ;
 - il n'y a pas de cycle entre les packages.
 
-Exception connue : `SimulationLoop` (l'horloge en direct, un pas toutes les 33 ms) utilise un
-planificateur. Elle sortira du moteur dans l'issue #186.
+Exception connue : `SimulationLoop` (l'horloge en direct qui cadence la simulation pour Unity)
+utilise un planificateur. Elle sortira du moteur dans l'issue #186.
 
 ### Unity — scripts
 

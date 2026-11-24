@@ -34,7 +34,7 @@ sequenceDiagram
     participant L as SimulationLoop (30 Hz)
     participant W as World
 
-    L->>W: tick() — applique les règles Boids, met à jour les agents (toutes les 33 ms)
+    L->>W: tick() appelle Simulation.step(1/30 s) — applique les règles Boids, met à jour les agents (toutes les 33 ms)
     Note over S,L: la boucle sim et le broadcaster tournent sur deux executors distincts
 
     C->>S: SubscribeWorldState(SubscribeRequest{client_id="unity-1"})

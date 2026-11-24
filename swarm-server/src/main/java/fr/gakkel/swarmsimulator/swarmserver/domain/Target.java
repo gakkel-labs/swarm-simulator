@@ -8,12 +8,15 @@ public final class Target {
     record FoundRecord(String agentId, double foundAtElapsedS) {}
 
     private final Vector3D position;
-    private final long placedAtNanos;
+    private final SimulationClock clock;
+    private final double placedAtSeconds;
     private final AtomicReference<FoundRecord> foundRecord = new AtomicReference<>();
 
-    public Target(Vector3D position) {
+    /** Times are read from {@code clock}, the simulation time, never from the computer's clock. */
+    public Target(Vector3D position, SimulationClock clock) {
         this.position = Objects.requireNonNull(position, "position");
-        this.placedAtNanos = System.nanoTime();
+        this.clock = Objects.requireNonNull(clock, "clock");
+        this.placedAtSeconds = clock.elapsedSeconds();
     }
 
     public void markFound(String agentId) {
@@ -21,7 +24,7 @@ public final class Target {
     }
 
     public double elapsedSeconds() {
-        return (System.nanoTime() - placedAtNanos) / 1_000_000_000.0;
+        return clock.elapsedSeconds() - placedAtSeconds;
     }
 
     public Vector3D position()      { return position; }

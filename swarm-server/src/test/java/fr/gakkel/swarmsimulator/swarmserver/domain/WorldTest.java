@@ -3,6 +3,8 @@ package fr.gakkel.swarmsimulator.swarmserver.domain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -241,5 +243,19 @@ class WorldTest {
         }
 
         assertNull(readerFailure.get(), () -> "reader failed: " + readerFailure.get());
+    }
+
+    @Test
+    void agents_areKeptInIdOrder_whateverTheOrderTheyWereAdded() {
+        World world = new World(100, 100, 50);
+        Agent first  = new Agent(new UUID(0, 1), AgentType.EXPLORER, Vector3D.ZERO, Vector3D.ZERO);
+        Agent second = new Agent(new UUID(0, 2), AgentType.EXPLORER, Vector3D.ZERO, Vector3D.ZERO);
+        Agent third  = new Agent(new UUID(0, 3), AgentType.EXPLORER, Vector3D.ZERO, Vector3D.ZERO);
+
+        world.addAgent(third);
+        world.addAgent(first);
+        world.addAgent(second);
+
+        assertEquals(List.of(first, second, third), world.agents());
     }
 }

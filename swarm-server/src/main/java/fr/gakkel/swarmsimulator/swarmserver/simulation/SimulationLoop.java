@@ -1,13 +1,9 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsRules;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
-import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
-import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
@@ -15,12 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -28,54 +20,36 @@ public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
     public static final int  TICK_RATE_HZ          = 30;
-    private static final long BOID_RESPAWN_DELAY_MS = 5_000L;
-    private static final double RESPAWN_MIN_DIST  = 30.0;
     private static final double DT = 1.0 / TICK_RATE_HZ;
     // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics
     private static final int LOG_INTERVAL_TICKS = 5 * TICK_RATE_HZ;
 
-    private static final double INITIAL_SPEED_XY = 2.0;
-    private static final double INITIAL_SPEED_Z  = 1.0;
-
+    private final Simulation simulation;
     private final World world;
-    private final BoidsRules rules;
     private final BoidsConfig config;
     private final FlockingDiagnostician diagnostician;
     private final CohesionMetric cohesionMetric;
     private final CohesionCsvExporter csvExporter;
     private final ScheduledExecutorService executor;
-    private final Random rng;
 
     private int tickCount = 0;
     private int consecutiveFailedTicks = 0;
 
-    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
-                          ScheduledExecutorService executor) {
-        this(world, config, diagnosticsConfig, executor, null);
-    }
-
-    public SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
-                          ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
-        this(world, config, diagnosticsConfig, executor, csvExporter, new Random(), new Random());
-    }
-
     /**
-     * Canonical constructor. {@code respawnRng} drives post-predator respawn placement and
-     * {@code wanderRng} drives the Boids wander force; both are injected so a single master seed
-     * makes an entire run reproducible. Prefer the {@link #wire} factory, which derives both
-     * streams from one seed — this constructor stays package-private for tests and that factory.
+     * The loop only gives the live pace: every 1/30 s of real time it asks
+     * {@code simulation} for one step of 1/30 s of simulation time, then records the metrics
+     * shown to the operator. Prefer the {@link #wire} factory, which builds the simulation from
+     * one seed.
      */
-    SimulationLoop(World world, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
-                   ScheduledExecutorService executor, CohesionCsvExporter csvExporter,
-                   Random respawnRng, Random wanderRng) {
-        this.world = Objects.requireNonNull(world, "world");
+    SimulationLoop(Simulation simulation, BoidsConfig config, DiagnosticsConfig diagnosticsConfig,
+                   ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
+        this.simulation = Objects.requireNonNull(simulation, "simulation");
+        this.world = simulation.world();
         this.config = Objects.requireNonNull(config, "config");
-        this.rules = new BoidsRules(config, Objects.requireNonNull(wanderRng, "wanderRng"));
         this.diagnostician = new FlockingDiagnostician(config, Objects.requireNonNull(diagnosticsConfig, "diagnosticsConfig"));
         this.cohesionMetric = new CohesionMetric(30);
         this.csvExporter = csvExporter;
         this.executor = Objects.requireNonNull(executor, "executor");
-        this.rng = Objects.requireNonNull(respawnRng, "respawnRng");
     }
 
     public double cohesionSpreadM() {
@@ -118,52 +92,22 @@ public class SimulationLoop {
         }
     }
 
-    // snapshot steer forces before applying — parallel Boids update, all forces
-    // computed from time t so order of iteration doesn't affect the result
     void tick() {
         MDC.put("simulation_tick", String.valueOf(tickCount));
         try {
+            simulation.step(DT);
+
             List<Agent> agents = List.copyOf(world.agents());
-            List<Vector3D> steers = new ArrayList<>(agents.size());
-            for (Agent agent : agents) {
-                List<Agent> neighbors = world.neighbors(agent, config.perceptionRadius());
-                Vector3D steer = rules.steer(agent, neighbors, world);
-                steers.add(steer);
-            }
-            for (int i = 0; i < agents.size(); i++) {
-                Agent agent = agents.get(i);
-                Vector3D newVelocity = clampSpeed(agent.velocity().add(steers.get(i).scale(DT)), config.maxSpeed());
-                Vector3D newPosition = agent.position().add(newVelocity.scale(DT));
-                for (Obstacle obstacle : world.obstacles()) {
-                    ObstacleCollision c = resolveObstacleCollision(newPosition, newVelocity, obstacle);
-                    newPosition = c.position();
-                    newVelocity = c.velocity();
-                }
-                newVelocity = constrainVelocityToWalls(newPosition, newVelocity, world);
-                newPosition = world.clamp(newPosition);
-                agent.update(newPosition, newVelocity);
-            }
             // An empty swarm (all drones eaten) has no centroid: skip it instead of recording NaN.
             if (!agents.isEmpty()) {
                 Vector3D centroid = computeCentroid(agents);
                 cohesionMetric.record(computePositionStandardDeviation(agents, centroid));
             }
 
-            Predator predator = world.predator();
-            if (predator != null) {
-                predator.update(world, DT);
-                Agent eaten = predator.tryEat(world);
-                if (eaten != null) {
-                    LOG.info("drone {} eaten - respawn in {}ms", eaten.id(), BOID_RESPAWN_DELAY_MS);
-                    scheduleRespawn(eaten, predator);
-                }
-            }
-
-            checkTargetDetection(agents);
-
             tickCount++;
             if (csvExporter != null && tickCount % TICK_RATE_HZ == 0) {
-                csvExporter.record(System.currentTimeMillis(), (double) tickCount / TICK_RATE_HZ,
+                // The wall-clock time only labels the CSV row; the simulation time comes from the clock.
+                csvExporter.record(System.currentTimeMillis(), simulation.clock().elapsedSeconds(),
                         cohesionMetric.smoothedSpreadM());
             }
             if (tickCount % LOG_INTERVAL_TICKS == 0) {
@@ -174,46 +118,6 @@ public class SimulationLoop {
         } finally {
             MDC.remove("simulation_tick");
         }
-    }
-
-    private void checkTargetDetection(List<Agent> agents) {
-        Target target = world.target();
-        if (target == null || target.isFound()) return;
-        for (Agent agent : agents) {
-            if (agent.position().distanceTo(target.position()) <= SimulationConstants.SENSOR_RADIUS_M) {
-                target.markFound(agent.id().toString());
-                LOG.atInfo()
-                   .setMessage("Target found by drone {} in {}s")
-                   .addArgument(agent.id())
-                   .addArgument(() -> String.format(Locale.ROOT, "%.1f", target.foundAtElapsedS()))
-                   .log();
-                break;
-            }
-        }
-    }
-
-    private void scheduleRespawn(Agent agent, Predator predator) {
-        executor.schedule(() -> {
-            Vector3D pos = findRespawnPosition(predator);
-            Vector3D vel = new Vector3D(
-                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
-                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
-                    rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
-            agent.update(pos, vel);
-            world.addAgent(agent);
-            LOG.info("drone {} respawned", agent.id());
-        }, BOID_RESPAWN_DELAY_MS, TimeUnit.MILLISECONDS);
-    }
-
-    private Vector3D findRespawnPosition(Predator predator) {
-        for (int i = 0; i < 20; i++) {
-            Vector3D pos = new Vector3D(
-                    rng.nextDouble(0, world.width()),
-                    rng.nextDouble(-world.height(), 0),
-                    rng.nextDouble(0, world.depth()));
-            if (pos.distanceTo(predator.position()) >= RESPAWN_MIN_DIST) return pos;
-        }
-        return new Vector3D(world.width() / 2, -world.height() / 2, world.depth() / 2);
     }
 
     static Vector3D computeCentroid(List<Agent> agents) {
@@ -250,107 +154,22 @@ public class SimulationLoop {
         return Math.sqrt(sumSq / agents.size());
     }
 
-    static Vector3D clampSpeed(Vector3D velocity, double maxSpeed) {
-        double mag = velocity.magnitude();
-        if (mag > maxSpeed) return velocity.scale(maxSpeed / mag);
-        return velocity;
-    }
-
-    record ObstacleCollision(Vector3D position, Vector3D velocity) {}
-
-    static ObstacleCollision resolveObstacleCollision(Vector3D position, Vector3D velocity, Obstacle obstacle) {
-        double dist = position.distanceTo(obstacle.position());
-        if (dist >= obstacle.radius()) return new ObstacleCollision(position, velocity);
-        Vector3D outward = dist > 1e-10
-                ? position.subtract(obstacle.position()).scale(1.0 / dist)
-                : new Vector3D(0, 1, 0);
-        Vector3D ejected = obstacle.position().add(outward.scale(obstacle.radius()));
-        double radial = velocity.dot(outward);
-        Vector3D corrected = radial < 0 ? velocity.subtract(outward.scale(radial)) : velocity;
-        return new ObstacleCollision(ejected, corrected);
-    }
-
-    static Vector3D constrainVelocityToWalls(Vector3D position, Vector3D velocity, World world) {
-        double vx = velocity.x();
-        double vy = velocity.y();
-        double
-                vz = velocity.z();
-        if (position.x() < 0              && vx < 0) vx = 0;
-        if (position.x() > world.width()  && vx > 0) vx = 0;
-        if (position.y() < -world.height() && vy < 0) vy = 0;
-        if (position.y() > 0              && vy > 0) vy = 0;
-        if (position.z() < 0              && vz < 0) vz = 0;
-        if (position.z() > world.depth()  && vz > 0) vz = 0;
-        if (vx == velocity.x() && vy == velocity.y() && vz == velocity.z()) return velocity;
-        return new Vector3D(vx, vy, vz);
-    }
-
-    // Distinct salts so the three RNG streams derived from the single master seed don't share state.
-    private static final long RESPAWN_SEED_SALT = 0x9E3779B97F4A7C15L;
-    private static final long WANDER_SEED_SALT  = 0xC2B2AE3D27D4EB4FL;
-
-    /** A world and the simulation loop that drives it, both wired from one master seed. */
-    public record Wiring(World world, SimulationLoop loop) {}
+    /** A world, the simulation that moves it and the live loop that drives it, from one master seed. */
+    public record Wiring(World world, Simulation simulation, SimulationLoop loop) {}
 
     /**
      * Builds the world and the simulation loop from a single master seed: initial placement, predator
      * respawn and the wander force all derive from {@code masterSeed}, so the entire run is
-     * reproducible. This is the public assembly entry point — callers never touch the low-level
-     * {@code createWorld} primitive or the per-stream RNGs directly.
+     * reproducible. This is the public assembly entry point — callers never touch
+     * {@link WorldFactory} or the per-stream RNGs directly.
      */
     public static Wiring wire(int agentCount, double width, double height, double depth,
                               BoidsConfig boids, DiagnosticsConfig diagnostics,
                               PredatorConfig predator, long masterSeed,
                               ScheduledExecutorService executor, CohesionCsvExporter csvExporter) {
-        World world = createWorld(agentCount, width, height, depth, predator,
-                new Random(masterSeed));
-        SimulationLoop loop = new SimulationLoop(world, boids, diagnostics, executor, csvExporter,
-                new Random(masterSeed ^ RESPAWN_SEED_SALT), new Random(masterSeed ^ WANDER_SEED_SALT));
-        return new Wiring(world, loop);
-    }
-
-    public static World createDefaultWorld() {
-        return createWorld(SimulationConstants.DEFAULT_AGENT_COUNT,
-                SimulationConstants.DEFAULT_WORLD_WIDTH, SimulationConstants.DEFAULT_WORLD_HEIGHT,
-                SimulationConstants.DEFAULT_WORLD_DEPTH, new Random(SimulationConstants.DEFAULT_SEED));
-    }
-
-    static World createWorld(int agentCount, Random rng) {
-        return createWorld(agentCount,
-                SimulationConstants.DEFAULT_WORLD_WIDTH, SimulationConstants.DEFAULT_WORLD_HEIGHT,
-                SimulationConstants.DEFAULT_WORLD_DEPTH, rng);
-    }
-
-    // Obstacle/predator positions are expressed as fractions of the world dimensions, and obstacle
-    // radii scale by the smallest dimension ratio so a sphere never outgrows the smallest extent.
-    // At the default 100x100x50 the scale is 1.0, reproducing the original literal positions
-    // (50,-50,25)/(25,-70,25)/(75,-30,25), radii (8/5/6) and predator (5,-5,5) exactly.
-    static World createWorld(int agentCount, double width, double height, double depth, Random rng) {
-        return createWorld(agentCount, width, height, depth, PredatorConfig.defaults(), rng);
-    }
-
-    static World createWorld(int agentCount, double width, double height, double depth,
-                             PredatorConfig predatorConfig, Random rng) {
-        World world = new World(width, height, depth);
-        for (int i = 0; i < agentCount; i++) {
-            Vector3D pos = new Vector3D(
-                    rng.nextDouble(0, width),
-                    rng.nextDouble(-height, 0),
-                    rng.nextDouble(0, depth));
-            Vector3D vel = new Vector3D(
-                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
-                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
-                    rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
-            world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, pos, vel));
-        }
-        double radiusScale = Math.min(width / SimulationConstants.DEFAULT_WORLD_WIDTH,
-                Math.min(height / SimulationConstants.DEFAULT_WORLD_HEIGHT, depth / SimulationConstants.DEFAULT_WORLD_DEPTH));
-        world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0 * radiusScale));
-        world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
-        world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
-        Vector3D predatorStart = new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth);
-        world.setPredator(
-                new Predator(UUID.randomUUID(), predatorStart, Vector3D.ZERO, predatorConfig));
-        return world;
+        Simulation simulation = Simulation.create(agentCount, width, height, depth, boids, predator,
+                masterSeed);
+        SimulationLoop loop = new SimulationLoop(simulation, boids, diagnostics, executor, csvExporter);
+        return new Wiring(simulation.world(), simulation, loop);
     }
 }

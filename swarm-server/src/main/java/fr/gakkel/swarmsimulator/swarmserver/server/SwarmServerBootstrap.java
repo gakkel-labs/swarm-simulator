@@ -59,7 +59,7 @@ public final class SwarmServerBootstrap {
         Server grpcServer = ServerBuilder.forPort(settings.port())
                 .addService(new PingServiceImpl())
                 .addService(observer)
-                .addService(new SimulationControlImpl(new SimulationService(world)))
+                .addService(new SimulationControlImpl(new SimulationService(world, wiring.simulation().clock())))
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build();
 

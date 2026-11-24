@@ -216,9 +216,25 @@ pour chaque obstacle : si p est dedans, remettre p sur la surface et retirer la 
 si p dépasse une paroi : mettre à 0 la vitesse vers cette paroi, puis ramener p dans le monde
 ```
 
-Tous les vecteurs d'un tick sont calculés **d'abord**, à partir de la même copie de la liste des
-drones, et c'est seulement ensuite que les drones bougent. L'ordre des drones ne change pas le
-résultat.
+Tous les vecteurs d'un pas sont calculés **d'abord**, à partir de la même copie de la liste des
+drones, et c'est seulement ensuite que les drones bougent. Aucun drone ne voit donc un voisin qui
+a déjà bougé.
+
+L'ordre compte quand même un peu : la force d'errance tire ses nombres au hasard drone après
+drone, et avec des nombres à virgule flottante, additionner les mêmes valeurs dans un autre ordre
+peut changer les derniers chiffres. C'est pour cela que le monde garde ses drones **triés par id**.
+
+**Règles de déterminisme** (même graine, même résultat, au bit près) :
+
+- Une simulation = une graine. Tout le hasard qu'elle utilise vient de générateurs construits
+  à partir de cette graine, y compris les ids des drones.
+- Un générateur aléatoire n'est jamais partagé entre deux simulations ni entre deux threads.
+- Toujours le même ordre : drones par id, pas de boucle sur une `HashMap` ou un `HashSet`, pas de
+  somme en parallèle.
+- Le temps vient de l'horloge de simulation (`SimulationClock`), jamais de l'horloge de l'ordinateur.
+
+Le test `SimulationTest.Reproducibility` vérifie ces règles : la même graine lancée deux fois
+donne des positions et des vitesses strictement égales après 30 s, danger compris.
 
 ---
 
@@ -246,7 +262,7 @@ d'environnement `SWARM_BOIDS_*` ou une propriété `swarm.boids.*` (voir le [REA
 Le danger a ses propres réglages : vitesse 3 m/s (`SWARM_PREDATOR_SPEED`) et rayon de capture
 1,5 m (`SWARM_PREDATOR_EAT_RADIUS`), tous deux dans `PredatorConfig`. Autres valeurs fixes (dans
 le code, pas encore réglables) : rayon du capteur 10 m (`SimulationConstants.SENSOR_RADIUS_M`),
-retour après 5 s à au moins 30 m du danger (`SimulationLoop`).
+retour après 5 s à au moins 30 m du danger (`Simulation`). Ces 5 s sont du temps de simulation, pas du temps réel.
 
 **Repères :**
 - `w_sep` un peu plus grand que `w_align` et `w_coh` → pas de collision, l'essaim tient.
@@ -339,8 +355,8 @@ Ce qui ne changerait pas : les 4 règles ajoutées, le coût O(N²), le comporte
 
 ## 15. Tests et références
 
-- Tests unitaires : `BoidsRulesTest.java` teste chaque règle seule ; `SimulationLoopTest.java`
-  teste le déplacement, les obstacles et les parois.
+- Tests unitaires : `BoidsRulesTest.java` teste chaque règle seule ; `SimulationTest.java`
+  teste le déplacement, les obstacles, les parois, le retour des drones et la détection de la cible.
 - **Reynolds, C. W.** (1987). *Flocks, herds and schools: A distributed behavioral model.*
   SIGGRAPH '87, p. 25–34. [DOI : 10.1145/37401.37406](https://doi.org/10.1145/37401.37406)
   (souvent daté de 1986, l'année d'envoi).

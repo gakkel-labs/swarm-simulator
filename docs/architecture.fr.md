@@ -305,6 +305,7 @@ Pour l'instant, la simulation suit l'horloge de l'ordinateur. Une horloge de sim
 - [ADR-0007 — repères](adr/0007-coordinate-frames.fr.md)
 - [ADR-0008 — partager le World sans verrou](adr/0008-shared-world-concurrency.fr.md)
 - [ADR-0009 — stockage et fonctionnement hors ligne](adr/0009-storage-and-offline-operation.fr.md)
+- [ADR-0010 — drones triés par id, pas d'optimisation pour l'instant](adr/0010-sorted-drone-list.fr.md)
 - [Règles Boids](01-boids-rules.fr.md) · [Contrat gRPC](02-grpc-contract.fr.md) ·
   [Intégration Unity](03-unity-integration.fr.md) · [Bathymétrie du fond marin](04-seabed-bathymetry.fr.md)
 - [Dette technique, 2026-11-22](tech-debt/tech-debt-2026-11-22.fr.md) (bilans précédents : [2026-05-21](tech-debt/tech-debt-2026-05-21.fr.md), [2026-05-25](tech-debt/tech-debt-2026-05-25.fr.md))

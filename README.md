@@ -197,6 +197,8 @@ message catalogue).
   between the simulation and the broadcast threads.
 - [ADR-0009](docs/adr/0009-storage-and-offline-operation.md) — **One PostgreSQL database owned by
   the backend**, and a stack that runs offline on a ship workstation (proposed).
+- [ADR-0010](docs/adr/0010-sorted-drone-list.md) — **Keep the drones sorted by id** so the same
+  seed gives the same result, and do not optimise yet (proposed).
 
 ### Configuration
 

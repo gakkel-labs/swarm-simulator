@@ -1,5 +1,6 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
+import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationClock;
 import fr.gakkel.swarmsimulator.swarmserver.domain.TriggerSource;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -11,12 +12,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimulationServiceTest {
 
     private World world;
+    private SimulationClock clock;
     private SimulationService simulationService;
 
     @BeforeEach
     void setUp() {
         world = new World(100, 100, 50);
-        simulationService = new SimulationService(world);
+        clock = new SimulationClock();
+        simulationService = new SimulationService(world, clock);
     }
 
     @Test
@@ -27,6 +30,16 @@ class SimulationServiceTest {
 
         assertNotNull(world.target());
         assertEquals(position, world.target().position());
+    }
+
+    @Test
+    void placeTarget_targetTimeStartsAtTheCurrentSimulationTime() {
+        clock.advance(3.0);
+        simulationService.placeTarget(new Vector3D(50, -30, 25), TriggerSource.OPERATOR_CLICK);
+
+        clock.advance(2.0);
+
+        assertEquals(2.0, world.target().elapsedSeconds());
     }
 
     @Test

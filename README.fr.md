@@ -201,6 +201,8 @@ threads, catalogue des messages).
   entre le thread de simulation et le thread de diffusion.
 - [ADR-0009](docs/adr/0009-storage-and-offline-operation.fr.md) — **Une seule base PostgreSQL tenue
   par le backend**, et une installation qui marche hors ligne sur un poste à bord (proposée).
+- [ADR-0010](docs/adr/0010-sorted-drone-list.fr.md) — **Garder les drones triés par id** pour que
+  la même graine donne le même résultat, et ne pas optimiser pour l'instant (proposée).
 
 ### Configuration
 

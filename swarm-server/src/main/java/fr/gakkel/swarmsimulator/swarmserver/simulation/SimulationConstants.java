@@ -11,7 +11,7 @@ public final class SimulationConstants {
     public static final double SENSOR_RADIUS_M = 10.0;
 
     // Default scenario parameters — the single source of truth shared by Settings (the production
-    // config path) and SimulationLoop.createDefaultWorld (the test / standalone path). Keeping them
+    // config path) and WorldFactory.createDefaultWorld (the test / standalone path). Keeping them
     // here avoids two independent literals that could silently drift apart.
     public static final double DEFAULT_WORLD_WIDTH  = 100;
     public static final double DEFAULT_WORLD_HEIGHT = 100;

@@ -3,6 +3,7 @@ package fr.gakkel.swarmsimulator.swarmserver.server;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationClock;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -139,13 +140,15 @@ class WorldStateBuilderTest {
 
     @Test
     void build_withTarget_includesSearchStatus() {
-        world.setTarget(new Target(new Vector3D(50, -30, 25)));
+        SimulationClock simulationClock = new SimulationClock();
+        world.setTarget(new Target(new Vector3D(50, -30, 25), simulationClock));
+        simulationClock.advance(2.5);
 
         WorldState state = builder.build();
 
         assertThat(state.hasSearchStatus()).isTrue();
         assertThat(state.getSearchStatus().getTargetPlaced()).isTrue();
-        assertThat(state.getSearchStatus().getElapsedSimS()).isGreaterThanOrEqualTo(0f);
+        assertThat(state.getSearchStatus().getElapsedSimS()).isEqualTo(2.5f);
         // server(50,-30,25) → NED proto(x=25, y=50, z=30)
         assertThat(state.getSearchStatus().getTargetPosition().getX()).isEqualTo(25.0f);
         assertThat(state.getSearchStatus().getTargetPosition().getY()).isEqualTo(50.0f);
@@ -154,7 +157,9 @@ class WorldStateBuilderTest {
 
     @Test
     void build_withFoundTarget_includesFoundEvent() {
-        Target target = new Target(new Vector3D(50, -30, 25));
+        SimulationClock simulationClock = new SimulationClock();
+        Target target = new Target(new Vector3D(50, -30, 25), simulationClock);
+        simulationClock.advance(4.0);
         target.markFound("drone-007");
         world.setTarget(target);
 
@@ -162,7 +167,7 @@ class WorldStateBuilderTest {
 
         assertThat(state.getSearchStatus().hasFoundEvent()).isTrue();
         assertThat(state.getSearchStatus().getFoundEvent().getAgentId()).isEqualTo("drone-007");
-        assertThat(state.getSearchStatus().getFoundEvent().getElapsedSimS()).isGreaterThanOrEqualTo(0f);
+        assertThat(state.getSearchStatus().getFoundEvent().getElapsedSimS()).isEqualTo(4.0f);
     }
 
     @Test

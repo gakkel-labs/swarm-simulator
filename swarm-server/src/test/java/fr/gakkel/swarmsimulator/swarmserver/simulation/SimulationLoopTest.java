@@ -2,10 +2,10 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
+import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,26 +25,28 @@ class SimulationLoopTest {
 
     private static final BoidsConfig CONFIG = BoidsConfig.builder().build();
     private static final DiagnosticsConfig DIAGNOSTICS = DiagnosticsConfig.builder().build();
+    private static final double REFERENCE_SPEED =
+            TestDrones.DEMO_DETECTION_DRONE.cruiseSpeedMetersPerSecond();
 
     private World world;
     private SimulationLoop loop;
 
     private Simulation createSimulation() {
         return new Simulation(world, new BoidsSearchPattern(CONFIG, new Random(2L)),
-                CONFIG.maxSpeed(), new Random(1L));
+                new Random(1L));
     }
 
     @BeforeEach
     void setUp() {
-        world = WorldFactory.createWorld(10, new Random(0L));
-        loop = new SimulationLoop(createSimulation(), CONFIG, DIAGNOSTICS,
+        world = WorldFactory.createWorld(TestDrones.demoDrones(10), new Random(0L));
+        loop = new SimulationLoop(createSimulation(), REFERENCE_SPEED, DIAGNOSTICS,
                 mock(ScheduledExecutorService.class), null);
     }
 
     @Test
     void tick_movesTheSimulationForwardByOneThirtiethOfASecond() {
         Simulation simulation = createSimulation();
-        var liveLoop = new SimulationLoop(simulation, CONFIG, DIAGNOSTICS,
+        var liveLoop = new SimulationLoop(simulation, REFERENCE_SPEED, DIAGNOSTICS,
                 mock(ScheduledExecutorService.class), null);
 
         for (int tick = 0; tick < SimulationLoop.TICK_RATE_HZ; tick++) liveLoop.tick();
@@ -182,7 +184,7 @@ class SimulationLoopTest {
     }
 
     private static Agent createAgent(Vector3D position) {
-        return new Agent(UUID.randomUUID(), AgentType.EXPLORER, position, Vector3D.ZERO);
+        return new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, position, Vector3D.ZERO);
     }
 
     @Nested
@@ -210,7 +212,7 @@ class SimulationLoopTest {
                     .record(anyLong(), anyDouble(), anyDouble());
             ScheduledExecutorService mockExecutor = mock(ScheduledExecutorService.class);
             var testLoop = new SimulationLoop(createSimulation(),
-                    CONFIG, DIAGNOSTICS, mockExecutor, failingExporter);
+                    REFERENCE_SPEED, DIAGNOSTICS, mockExecutor, failingExporter);
             ArgumentCaptor<Runnable> tickCaptor = ArgumentCaptor.forClass(Runnable.class);
             testLoop.start();
             verify(mockExecutor).scheduleAtFixedRate(tickCaptor.capture(), anyLong(), anyLong(), any());

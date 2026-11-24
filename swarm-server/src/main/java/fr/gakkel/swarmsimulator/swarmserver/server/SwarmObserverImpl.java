@@ -29,8 +29,9 @@ public class SwarmObserverImpl extends SwarmObserverGrpc.SwarmObserverImplBase {
     private final ScheduledExecutorService broadcaster;
 
     /** Builds the service without sending anything yet: {@link #start()} begins the stream. */
-    public SwarmObserverImpl(World world, DoubleSupplier cohesionSpreadM, ScheduledExecutorService executor) {
-        this.worldStateBuilder = new WorldStateBuilder(world, cohesionSpreadM);
+    public SwarmObserverImpl(World world, double sensorRadiusMeters,
+                             DoubleSupplier cohesionSpreadM, ScheduledExecutorService executor) {
+        this.worldStateBuilder = new WorldStateBuilder(world, sensorRadiusMeters, cohesionSpreadM);
         this.broadcaster = Objects.requireNonNull(executor, "executor");
     }
 

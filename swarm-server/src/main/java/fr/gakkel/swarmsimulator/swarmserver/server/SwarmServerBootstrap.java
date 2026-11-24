@@ -1,6 +1,9 @@
 package fr.gakkel.swarmsimulator.swarmserver.server;
 
+import fr.gakkel.swarmsimulator.swarmserver.config.JsonDroneCatalogRepository;
 import fr.gakkel.swarmsimulator.swarmserver.config.Settings;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneCatalog;
+import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.CohesionCsvExporter;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationLoop;
@@ -46,15 +49,22 @@ public final class SwarmServerBootstrap {
      * no CSV file (useful in tests).
      */
     public static SwarmServerBootstrap create(Settings settings, CohesionCsvExporter csvExporter) {
+        // A wrong catalog or an unknown model stops the start with a clear message.
+        DroneCatalog catalog =
+                JsonDroneCatalogRepository.fromLocation(settings.droneCatalogLocation()).load();
+        FleetConfiguration fleet = settings.fleetConfiguration(catalog);
+        LOG.info("Drone catalog {} - models {} | fleet {} drones", settings.droneCatalogLocation(),
+                catalog.models(), fleet.droneCount());
         SimulationLoop.Wiring wiring = SimulationLoop.wire(
-                settings.fleetConfiguration(), settings.worldWidth(), settings.worldHeight(),
+                fleet, settings.worldWidth(), settings.worldHeight(),
                 settings.worldDepth(), settings.diagnostics(), settings.predator(), settings.seed(),
                 singleDaemonThreadExecutor("sim-loop"), csvExporter);
         World world = wiring.world();
         SimulationLoop simulation = wiring.loop();
 
         ScheduledExecutorService broadcastExecutor = singleDaemonThreadExecutor("swarm-broadcaster");
-        SwarmObserverImpl observer = new SwarmObserverImpl(world, simulation::cohesionSpreadM, broadcastExecutor);
+        SwarmObserverImpl observer = new SwarmObserverImpl(world,
+                fleet.longestSearchRangeMeters(), simulation::cohesionSpreadM, broadcastExecutor);
 
         Server grpcServer = ServerBuilder.forPort(settings.port())
                 .addService(new PingServiceImpl())

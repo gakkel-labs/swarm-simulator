@@ -7,7 +7,6 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
-import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
 import io.gakkel.swarm.contracts.v1.AgentState;
 import io.gakkel.swarm.contracts.v1.AgentType;
@@ -29,16 +28,24 @@ import java.util.function.DoubleSupplier;
 public class WorldStateBuilder {
 
     private final World world;
+    private final double sensorRadiusMeters;
     private final DoubleSupplier cohesionSpreadM;
     private final Clock clock;
 
-    public WorldStateBuilder(World world, DoubleSupplier cohesionSpreadM) {
-        this(world, cohesionSpreadM, Clock.systemUTC());
+    /**
+     * {@code sensorRadiusMeters} is the range shown around each drone by Unity: the longest
+     * search sensor range of the fleet (one value for the whole world in the contract).
+     */
+    public WorldStateBuilder(World world, double sensorRadiusMeters,
+                             DoubleSupplier cohesionSpreadM) {
+        this(world, sensorRadiusMeters, cohesionSpreadM, Clock.systemUTC());
     }
 
     /** The clock is injectable so a test can check the timestamp of a frame. */
-    public WorldStateBuilder(World world, DoubleSupplier cohesionSpreadM, Clock clock) {
+    public WorldStateBuilder(World world, double sensorRadiusMeters,
+                             DoubleSupplier cohesionSpreadM, Clock clock) {
         this.world = Objects.requireNonNull(world, "world");
+        this.sensorRadiusMeters = sensorRadiusMeters;
         this.cohesionSpreadM = Objects.requireNonNull(cohesionSpreadM, "cohesionSpreadM");
         this.clock = Objects.requireNonNull(clock, "clock");
     }
@@ -47,7 +54,7 @@ public class WorldStateBuilder {
         WorldState.Builder worldStateBuilder = WorldState.newBuilder()
                 .setTimestampUnixMs(clock.millis())
                 .setSearchAreaSizeM(searchAreaSizeInNed())
-                .setSensorRadiusM((float) SimulationConstants.SENSOR_RADIUS_M)
+                .setSensorRadiusM((float) sensorRadiusMeters)
                 .setCohesionSpreadM((float) cohesionSpreadM.getAsDouble());
         for (Agent agent : world.agents()) {
             worldStateBuilder.addAgents(toAgentState(agent));

@@ -1,8 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
-import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FlockingDiagnosticianTest {
 
-    private static final BoidsConfig BOIDS_CONFIG = BoidsConfig.builder().build();
+    private static final double REFERENCE_SPEED =
+            TestDrones.DEMO_DETECTION_DRONE.cruiseSpeedMetersPerSecond();
     private static final DiagnosticsConfig DIAGNOSTICS_CONFIG = DiagnosticsConfig.builder()
             .stabilitySamples(3)
             .stabilityTolerance(0.20)
@@ -29,7 +29,7 @@ class FlockingDiagnosticianTest {
     @BeforeEach
     void setUp() {
         world = new World(100, 100, 50);
-        diagnostician = new FlockingDiagnostician(BOIDS_CONFIG, DIAGNOSTICS_CONFIG);
+        diagnostician = new FlockingDiagnostician(REFERENCE_SPEED, DIAGNOSTICS_CONFIG);
     }
 
     @Test
@@ -72,16 +72,16 @@ class FlockingDiagnosticianTest {
     }
 
     private void addAgentsAtFixedPositions() {
-        world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -50, 25), Vector3D.ZERO));
-        world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(52, -50, 25), Vector3D.ZERO));
-        world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(50, -52, 25), Vector3D.ZERO));
+        world.addAgent(new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, -50, 25), Vector3D.ZERO));
+        world.addAgent(new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(52, -50, 25), Vector3D.ZERO));
+        world.addAgent(new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, -52, 25), Vector3D.ZERO));
     }
 
     private void scatterAgentsBeyondLostThreshold() {
         // smallest dim = depth = 50; flockingLostFraction default = 0.9 → σ must exceed 45.
         // Two opposite-corner agents on the same axis produce σ = halfDistance.
         for (Agent agent : List.copyOf(world.agents())) world.removeAgent(agent);
-        world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(0,   0, 0),  Vector3D.ZERO));
-        world.addAgent(new Agent(UUID.randomUUID(), AgentType.EXPLORER, new Vector3D(100, -100, 50), Vector3D.ZERO));
+        world.addAgent(new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(0,   0, 0),  Vector3D.ZERO));
+        world.addAgent(new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, new Vector3D(100, -100, 50), Vector3D.ZERO));
     }
 }

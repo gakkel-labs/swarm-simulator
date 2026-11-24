@@ -1,13 +1,14 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -23,14 +24,8 @@ public final class WorldFactory {
 
     private WorldFactory() {}
 
-    public static World createDefaultWorld() {
-        return createWorld(SimulationConstants.DEFAULT_AGENT_COUNT,
-                SimulationConstants.DEFAULT_WORLD_WIDTH, SimulationConstants.DEFAULT_WORLD_HEIGHT,
-                SimulationConstants.DEFAULT_WORLD_DEPTH, new Random(SimulationConstants.DEFAULT_SEED));
-    }
-
-    static World createWorld(int agentCount, Random rng) {
-        return createWorld(agentCount,
+    static World createWorld(List<DroneGroup> droneGroups, Random rng) {
+        return createWorld(droneGroups,
                 SimulationConstants.DEFAULT_WORLD_WIDTH, SimulationConstants.DEFAULT_WORLD_HEIGHT,
                 SimulationConstants.DEFAULT_WORLD_DEPTH, rng);
     }
@@ -39,23 +34,20 @@ public final class WorldFactory {
     // radii scale by the smallest dimension ratio so a sphere never outgrows the smallest extent.
     // At the default 100x100x50 the scale is 1.0, reproducing the original literal positions
     // (50,-50,25)/(25,-70,25)/(75,-30,25), radii (8/5/6) and predator (5,-5,5) exactly.
-    static World createWorld(int agentCount, double width, double height, double depth, Random rng) {
-        return createWorld(agentCount, width, height, depth, PredatorConfig.defaults(), rng);
+    static World createWorld(List<DroneGroup> droneGroups, double width, double height,
+                             double depth, Random rng) {
+        return createWorld(droneGroups, width, height, depth, PredatorConfig.defaults(), rng);
     }
 
-    static World createWorld(int agentCount, double width, double height, double depth,
-                             PredatorConfig predatorConfig, Random rng) {
+    // Drones are created group by group, in the order of the fleet configuration: the same
+    // configuration and seed always give the same random draws, so the same world.
+    static World createWorld(List<DroneGroup> droneGroups, double width, double height,
+                             double depth, PredatorConfig predatorConfig, Random rng) {
         World world = new World(width, height, depth);
-        for (int i = 0; i < agentCount; i++) {
-            Vector3D pos = new Vector3D(
-                    rng.nextDouble(0, width),
-                    rng.nextDouble(-height, 0),
-                    rng.nextDouble(0, depth));
-            Vector3D vel = new Vector3D(
-                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
-                    rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
-                    rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
-            world.addAgent(new Agent(seededId(rng), AgentType.EXPLORER, pos, vel));
+        for (DroneGroup group : droneGroups) {
+            for (int i = 0; i < group.count(); i++) {
+                world.addAgent(createDrone(group, width, height, depth, rng));
+            }
         }
         double radiusScale = Math.min(width / SimulationConstants.DEFAULT_WORLD_WIDTH,
                 Math.min(height / SimulationConstants.DEFAULT_WORLD_HEIGHT, depth / SimulationConstants.DEFAULT_WORLD_DEPTH));
@@ -66,6 +58,21 @@ public final class WorldFactory {
         world.setPredator(
                 new Predator(seededId(rng), predatorStart, Vector3D.ZERO, predatorConfig));
         return world;
+    }
+
+    // The order of the random draws (position, velocity, id) is kept from before #176, so the
+    // demo world of a given seed did not change.
+    private static Agent createDrone(DroneGroup group, double width, double height, double depth,
+                                     Random rng) {
+        Vector3D position = new Vector3D(
+                rng.nextDouble(0, width),
+                rng.nextDouble(-height, 0),
+                rng.nextDouble(0, depth));
+        Vector3D velocity = new Vector3D(
+                rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                rng.nextDouble(-INITIAL_SPEED_XY, INITIAL_SPEED_XY),
+                rng.nextDouble(-INITIAL_SPEED_Z, INITIAL_SPEED_Z));
+        return new Agent(seededId(rng), group.specification(), position, velocity);
     }
 
     /**

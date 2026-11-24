@@ -5,6 +5,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationClock;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
+import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import io.gakkel.swarm.contracts.v1.AgentState;
@@ -23,12 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WorldStateBuilderTest {
 
     private World world;
+    private static final double SENSOR_RADIUS_METERS = 50.0;
+
     private WorldStateBuilder builder;
 
     @BeforeEach
     void setUp() {
         world = new World(100, 100, 50);
-        builder = new WorldStateBuilder(world, () -> 0.0);
+        builder = new WorldStateBuilder(world, SENSOR_RADIUS_METERS, () -> 0.0);
     }
 
     @Test
@@ -36,7 +39,7 @@ class WorldStateBuilderTest {
         UUID id = UUID.randomUUID();
         Vector3D position = new Vector3D(1.0, 2.0, 3.0);
         Vector3D velocity = new Vector3D(0.5, 0.6, 0.7);
-        world.addAgent(new Agent(id, fr.gakkel.swarmsimulator.swarmserver.domain.AgentType.EXPLORER, position, velocity));
+        world.addAgent(new Agent(id, TestDrones.DEMO_DETECTION_DRONE, position, velocity));
 
         WorldState state = builder.build();
 
@@ -62,18 +65,18 @@ class WorldStateBuilderTest {
     }
 
     @Test
-    void build_alwaysIncludesSensorRadius() {
+    void build_alwaysIncludesTheSensorRadiusOfTheFleet() {
         WorldState state = builder.build();
 
         // Clients need this to size the detection-zone overlay
-        assertThat(state.getSensorRadiusM())
-                .isEqualTo((float) fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants.SENSOR_RADIUS_M);
+        assertThat(state.getSensorRadiusM()).isEqualTo((float) SENSOR_RADIUS_METERS);
     }
 
     @Test
     void toAgentState_carrierAgent_mapsToProtoCarrierType() {
         Agent agent = new Agent(UUID.randomUUID(),
-                fr.gakkel.swarmsimulator.swarmserver.domain.AgentType.CARRIER,
+                TestDrones.demoDroneWithRole(
+                        fr.gakkel.swarmsimulator.swarmserver.domain.AgentType.CARRIER),
                 new Vector3D(0, 0, 0), Vector3D.ZERO);
 
         AgentState result = builder.toAgentState(agent);
@@ -84,7 +87,8 @@ class WorldStateBuilderTest {
     @Test
     void toAgentState_specialistAgent_mapsToProtoSpecialistType() {
         Agent agent = new Agent(UUID.randomUUID(),
-                fr.gakkel.swarmsimulator.swarmserver.domain.AgentType.SPECIALIST,
+                TestDrones.demoDroneWithRole(
+                        fr.gakkel.swarmsimulator.swarmserver.domain.AgentType.SPECIALIST),
                 new Vector3D(0, 0, 0), Vector3D.ZERO);
 
         AgentState result = builder.toAgentState(agent);
@@ -179,7 +183,7 @@ class WorldStateBuilderTest {
 
     @Test
     void build_cohesionSupplierValue_isIncludedInWorldState() {
-        WorldStateBuilder builderWithCohesion = new WorldStateBuilder(world, () -> 12.5);
+        WorldStateBuilder builderWithCohesion = new WorldStateBuilder(world, SENSOR_RADIUS_METERS, () -> 12.5);
 
         WorldState state = builderWithCohesion.build();
 
@@ -189,7 +193,8 @@ class WorldStateBuilderTest {
     @Test
     void build_usesTheInjectedClockForTheTimestamp() {
         Clock fixedClock = Clock.fixed(Instant.ofEpochMilli(1_234_567L), ZoneOffset.UTC);
-        WorldStateBuilder clockedBuilder = new WorldStateBuilder(world, () -> 0.0, fixedClock);
+        WorldStateBuilder clockedBuilder = new WorldStateBuilder(world, SENSOR_RADIUS_METERS, () -> 0.0,
+                fixedClock);
 
         WorldState state = clockedBuilder.build();
 

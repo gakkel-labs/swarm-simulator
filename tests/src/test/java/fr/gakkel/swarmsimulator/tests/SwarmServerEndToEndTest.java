@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +43,7 @@ class SwarmServerEndToEndTest {
         // Port 0: the system picks a free port, so the test never clashes with a running server.
         Settings settings = new Settings(0, DRONE_COUNT, 100, 100, 50, 42L,
                 BoidsConfig.builder().build(), DiagnosticsConfig.builder().build(),
-                PredatorConfig.defaults());
+                PredatorConfig.defaults(), Settings.DEFAULT_DRONE_CATALOG, List.of());
         server = SwarmServerBootstrap.create(settings, null); // null: no metrics CSV file
         server.start();
         channel = ManagedChannelBuilder.forAddress("localhost", server.port())

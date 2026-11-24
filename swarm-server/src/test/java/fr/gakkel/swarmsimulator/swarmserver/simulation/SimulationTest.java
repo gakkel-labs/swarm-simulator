@@ -1,9 +1,10 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.AgentType;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneSpecification;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
@@ -11,6 +12,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
+import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,14 +33,17 @@ class SimulationTest {
 
     private static final BoidsConfig CONFIG = BoidsConfig.builder().build();
     private static final double STEP_SECONDS = 1.0 / 30;
+    private static final DroneSpecification DEMO_DRONE = TestDrones.DEMO_DETECTION_DRONE;
+    private static final double SENSOR_RANGE_METERS =
+            DEMO_DRONE.searchSensor().maxRangeMeters();
 
     private static Simulation createSimulation(World world) {
         return new Simulation(world, new BoidsSearchPattern(CONFIG, new Random(2L)),
-                CONFIG.maxSpeed(), new Random(1L));
+                new Random(1L));
     }
 
     private static Agent createAgent(Vector3D position) {
-        return new Agent(UUID.randomUUID(), AgentType.EXPLORER, position, Vector3D.ZERO);
+        return new Agent(UUID.randomUUID(), TestDrones.DEMO_DETECTION_DRONE, position, Vector3D.ZERO);
     }
 
     private static void runSteps(Simulation simulation, int stepCount) {
@@ -57,7 +62,7 @@ class SimulationTest {
 
         @Test
         void step_advancesTheSimulationClockByTheStepDuration() {
-            Simulation simulation = createSimulation(WorldFactory.createWorld(10, new Random(0L)));
+            Simulation simulation = createSimulation(WorldFactory.createWorld(TestDrones.demoDrones(10), new Random(0L)));
 
             simulation.step(0.1);
             simulation.step(0.2);
@@ -74,7 +79,7 @@ class SimulationTest {
 
         @Test
         void oneMinuteOfSimulation_runsFasterThanRealTime() {
-            Simulation simulation = createSimulation(WorldFactory.createWorld(20, new Random(0L)));
+            Simulation simulation = createSimulation(WorldFactory.createWorld(TestDrones.demoDrones(20), new Random(0L)));
             long startNanos = System.nanoTime();
 
             runSteps(simulation, 60 * 30);
@@ -100,8 +105,8 @@ class SimulationTest {
                 "/golden-master/seed-42-drones-after-30-s.txt";
 
         private static Simulation createSeededSimulation(long seed) {
-            FleetConfiguration fleet =
-                    new FleetConfiguration(20, new SearchPatternSettings.Boids(CONFIG));
+            FleetConfiguration fleet = FleetConfiguration.ofOneModel(DEMO_DRONE, 20,
+                    new SearchPatternSettings.Boids(CONFIG));
             return Simulation.create(fleet, 100, 100, 50, PredatorConfig.defaults(), seed);
         }
 
@@ -122,6 +127,24 @@ class SimulationTest {
             runSteps(secondRun, THIRTY_SECONDS_OF_STEPS);
 
             // No tolerance: the same seed must give the very same numbers, bit for bit.
+            assertEquals(finalDrones(firstRun), finalDrones(secondRun));
+        }
+
+        @Test
+        void create_mixedFleetSameSeedTwice_givesStrictlyEqualDronesAfterThirtySeconds() {
+            // A swarm of two models (#176): still the same numbers for the same seed.
+            FleetConfiguration mixedFleet = new FleetConfiguration(List.of(
+                    new DroneGroup(TestDrones.detectionDrone("side-scan-a", 1.5, 50.0), 6),
+                    new DroneGroup(TestDrones.detectionDrone("fast-b", 2.5, 30.0), 4)),
+                    new SearchPatternSettings.Boids(CONFIG));
+            Simulation firstRun =
+                    Simulation.create(mixedFleet, 100, 100, 50, PredatorConfig.defaults(), 42L);
+            Simulation secondRun =
+                    Simulation.create(mixedFleet, 100, 100, 50, PredatorConfig.defaults(), 42L);
+
+            runSteps(firstRun, THIRTY_SECONDS_OF_STEPS);
+            runSteps(secondRun, THIRTY_SECONDS_OF_STEPS);
+
             assertEquals(finalDrones(firstRun), finalDrones(secondRun));
         }
 
@@ -157,7 +180,8 @@ class SimulationTest {
 
         @Test
         void orderInWhichDronesWereAdded_doesNotChangeTheResult() {
-            List<Agent> drones = WorldFactory.createWorld(20, new Random(7L)).agents();
+            List<Agent> drones =
+                    WorldFactory.createWorld(TestDrones.demoDrones(20), new Random(7L)).agents();
             World worldInOrder = new World(100, 100, 50);
             World worldReversed = new World(100, 100, 50);
             for (Agent drone : drones) worldInOrder.addAgent(copyOf(drone));
@@ -172,7 +196,7 @@ class SimulationTest {
         }
 
         private static Agent copyOf(Agent drone) {
-            return new Agent(drone.id(), drone.type(), drone.position(), drone.velocity());
+            return new Agent(drone.id(), drone.specification(), drone.position(), drone.velocity());
         }
     }
 
@@ -185,8 +209,7 @@ class SimulationTest {
             Agent drone = createAgent(new Vector3D(50, -50, 25));
             world.addAgent(drone);
             SearchPattern alwaysEast = (anyDrone, anyWorld) -> new Vector3D(1, 0, 0);
-            Simulation simulation =
-                    new Simulation(world, alwaysEast, CONFIG.maxSpeed(), new Random(1L));
+            Simulation simulation = new Simulation(world, alwaysEast, new Random(1L));
 
             simulation.step(1.0);
 
@@ -194,12 +217,13 @@ class SimulationTest {
         }
 
         @Test
-        void step_searchPatternForceAboveMaxSpeed_speedIsLimited() {
+        void step_searchPatternForceAboveCruiseSpeed_speedIsLimitedToTheDroneCruiseSpeed() {
             World world = new World(100, 100, 50);
-            Agent drone = createAgent(new Vector3D(50, -50, 25));
+            Agent drone = Agent.create(TestDrones.detectionDrone("slow-drone", 2.0, 10.0),
+                    new Vector3D(50, -50, 25));
             world.addAgent(drone);
             SearchPattern strongEast = (anyDrone, anyWorld) -> new Vector3D(100, 0, 0);
-            Simulation simulation = new Simulation(world, strongEast, 2.0, new Random(1L));
+            Simulation simulation = new Simulation(world, strongEast, new Random(1L));
 
             simulation.step(1.0);
 
@@ -212,28 +236,34 @@ class SimulationTest {
             Agent drone = createAgent(new Vector3D(50, -50, 25));
             world.addAgent(drone);
             SearchPattern broken = (anyDrone, anyWorld) -> new Vector3D(Double.NaN, 0, 0);
-            Simulation simulation =
-                    new Simulation(world, broken, CONFIG.maxSpeed(), new Random(1L));
+            Simulation simulation = new Simulation(world, broken, new Random(1L));
 
             assertThrows(IllegalStateException.class, () -> simulation.step(1.0));
             assertEquals(new Vector3D(50, -50, 25), drone.position());
         }
 
         @Test
-        void constructor_maxSpeedNotPositive_throwsIllegalArgumentException() {
+        void step_twoModels_eachDroneKeepsItsOwnCruiseSpeed() {
+            // A mixed swarm (#176): the speed limit comes from each drone's specification.
             World world = new World(100, 100, 50);
-            SearchPattern standStill = (anyDrone, anyWorld) -> Vector3D.ZERO;
+            Agent slowDrone = Agent.create(TestDrones.detectionDrone("slow-drone", 1.5, 10.0),
+                    new Vector3D(30, -50, 25));
+            Agent fastDrone = Agent.create(TestDrones.detectionDrone("fast-drone", 2.5, 10.0),
+                    new Vector3D(30, -20, 25));
+            world.addAgent(slowDrone);
+            world.addAgent(fastDrone);
+            SearchPattern strongEast = (anyDrone, anyWorld) -> new Vector3D(100, 0, 0);
+            Simulation simulation = new Simulation(world, strongEast, new Random(1L));
 
-            for (double maxSpeed : new double[] {0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY}) {
-                assertThrows(IllegalArgumentException.class,
-                        () -> new Simulation(world, standStill, maxSpeed, new Random(1L)),
-                        "maxSpeed " + maxSpeed);
-            }
+            simulation.step(1.0);
+
+            assertEquals(1.5, slowDrone.velocity().magnitude(), 1e-9);
+            assertEquals(2.5, fastDrone.velocity().magnitude(), 1e-9);
         }
 
         @Test
         void drones_stayInTheSearchAreaAfterManySteps() {
-            World world = WorldFactory.createWorld(10, new Random(0L));
+            World world = WorldFactory.createWorld(TestDrones.demoDrones(10), new Random(0L));
             Simulation simulation = createSimulation(world);
 
             runSteps(simulation, 300);
@@ -245,20 +275,21 @@ class SimulationTest {
 
         @Test
         void drones_neverExceedMaxSpeed() {
-            World world = WorldFactory.createWorld(10, new Random(0L));
+            World world = WorldFactory.createWorld(TestDrones.demoDrones(10), new Random(0L));
             Simulation simulation = createSimulation(world);
 
             runSteps(simulation, 300);
 
             for (Agent agent : world.agents()) {
-                assertTrue(agent.velocity().magnitude() <= CONFIG.maxSpeed() + 1e-9,
-                        "speed exceeds maxSpeed: " + agent.velocity().magnitude());
+                assertTrue(agent.velocity().magnitude()
+                                <= DEMO_DRONE.cruiseSpeedMetersPerSecond() + 1e-9,
+                        "speed exceeds the cruise speed: " + agent.velocity().magnitude());
             }
         }
 
         @Test
         void drones_neverInsideObstaclesAfterManySteps() {
-            World world = WorldFactory.createWorld(20, new Random(42L));
+            World world = WorldFactory.createWorld(TestDrones.demoDrones(20), new Random(42L));
             Simulation simulation = createSimulation(world);
 
             runSteps(simulation, 600);
@@ -277,7 +308,7 @@ class SimulationTest {
         void setUp() {
             world = new World(100, 100, 50);
             world.setPredator(new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO));
-            world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(10.5, -50, 25))); // in eat radius
+            world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10.5, -50, 25))); // in eat radius
             simulation = createSimulation(world);
         }
 
@@ -324,7 +355,7 @@ class SimulationTest {
         @Test
         void droneWithinSensorRadius_marksTargetFound() {
             Target target = placeTarget();
-            Agent nearDrone = createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M - 1, -50, 25));
+            Agent nearDrone = createAgent(new Vector3D(50 + SENSOR_RANGE_METERS - 1, -50, 25));
             world.addAgent(nearDrone);
 
             simulation.step(STEP_SECONDS);
@@ -336,7 +367,7 @@ class SimulationTest {
         @Test
         void droneBeyondSensorRadius_doesNotMarkFound() {
             Target target = placeTarget();
-            world.addAgent(createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M + 1, -50, 25)));
+            world.addAgent(createAgent(new Vector3D(50 + SENSOR_RANGE_METERS + 1, -50, 25)));
 
             simulation.step(STEP_SECONDS);
 
@@ -346,7 +377,7 @@ class SimulationTest {
         @Test
         void droneExactlyAtSensorRadius_marksTargetFound() {
             Target target = placeTarget();
-            world.addAgent(createAgent(new Vector3D(50 + SimulationConstants.SENSOR_RADIUS_M, -50, 25)));
+            world.addAgent(createAgent(new Vector3D(50 + SENSOR_RANGE_METERS, -50, 25)));
 
             simulation.step(STEP_SECONDS);
 

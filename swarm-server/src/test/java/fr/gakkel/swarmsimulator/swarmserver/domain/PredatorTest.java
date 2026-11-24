@@ -19,7 +19,7 @@ class PredatorTest {
     @Test
     void predatorUpdate_movesTowardNearestAgent() {
         var predator = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(20, -50, 25));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(20, -50, 25));
         world.addAgent(agent);
 
         predator.update(world, 1.0);
@@ -43,7 +43,7 @@ class PredatorTest {
     void predatorTryEat_whenInEatRadius_removesAgentFromWorld() {
         var predator = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
         double eatRadius = PredatorConfig.defaults().eatRadius();
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10 + eatRadius * 0.5, -50, 25));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10 + eatRadius * 0.5, -50, 25));
         world.addAgent(agent);
 
         Agent eaten = predator.tryEat(world);
@@ -56,7 +56,7 @@ class PredatorTest {
     void predatorTryEat_whenOutsideEatRadius_returnsNull() {
         var predator = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
         double eatRadius = PredatorConfig.defaults().eatRadius();
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10 + eatRadius * 2, -50, 25));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10 + eatRadius * 2, -50, 25));
         world.addAgent(agent);
 
         Agent eaten = predator.tryEat(world);
@@ -69,7 +69,7 @@ class PredatorTest {
     void predatorUpdate_movesAtTheConfiguredSpeed() {
         var predator = new Predator(UUID.randomUUID(), new Vector3D(10, -50, 25), Vector3D.ZERO,
                 new PredatorConfig(2.0, 1.5));
-        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(40, -50, 25)));
+        world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(40, -50, 25)));
 
         predator.update(world, 1.0);
 
@@ -81,7 +81,7 @@ class PredatorTest {
     void predatorTryEat_usesTheConfiguredEatRadius() {
         var predator = new Predator(UUID.randomUUID(), new Vector3D(10, -50, 25), Vector3D.ZERO,
                 new PredatorConfig(3.0, 5.0));
-        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(14, -50, 25)));
+        world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(14, -50, 25)));
 
         Agent eaten = predator.tryEat(world);
 
@@ -91,7 +91,7 @@ class PredatorTest {
     @Test
     void predatorUpdate_motionGivesPositionAndVelocityOfTheSameStep() {
         var predator = new Predator(new Vector3D(10, -50, 25), Vector3D.ZERO);
-        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(20, -50, 25)));
+        world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(20, -50, 25)));
 
         predator.update(world, 1.0);
         Motion motion = predator.motion();

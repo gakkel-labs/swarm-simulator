@@ -1,6 +1,8 @@
 package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneCatalog;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
@@ -12,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -40,7 +44,15 @@ public record Settings(
         long seed,
         BoidsConfig boids,
         DiagnosticsConfig diagnostics,
-        PredatorConfig predator) {
+        PredatorConfig predator,
+        String droneCatalogLocation,
+        List<RequestedDrones> requestedFleet) {
+
+    /**
+     * A drone model and a count, as written in {@code swarm.fleet}. The model is only a name
+     * here: {@link #fleetConfiguration(DroneCatalog)} finds it in the drone catalog.
+     */
+    public record RequestedDrones(String model, int count) {}
 
     private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
@@ -48,7 +60,12 @@ public record Settings(
     // truth, also used by WorldFactory.createDefaultWorld) and are referenced below.
     public static final int DEFAULT_PORT = 50051;
 
+    /** The drone catalog read when none is set: the demo values, inside the jar. */
+    public static final String DEFAULT_DRONE_CATALOG = "classpath:drone-catalog-demo.json";
+
     private static final String PROPERTIES_RESOURCE = "application.properties";
+    private static final String FLEET_FORMAT = "model:count,model:count (for example "
+            + "side-scan-drone:6,fast-drone:4)";
 
     public Settings {
         // World dimensions are also validated by the World constructor, but agent count has no other
@@ -56,14 +73,28 @@ public record Settings(
         if (agentCount < 1) {
             throw new IllegalArgumentException("agent count must be >= 1 (got " + agentCount + ")");
         }
+        requestedFleet = List.copyOf(requestedFleet);
     }
 
     /**
-     * The fleet configuration of the live simulation: the configured number of detection drones,
-     * flocking with Boids (the only search pattern for now).
+     * The fleet configuration of the live simulation, flocking with Boids (the only search
+     * pattern for now). With {@code swarm.fleet} set, its models and counts; without it,
+     * {@code swarm.agent-count} drones of the first model of the catalog, as before #176.
+     *
+     * @throws fr.gakkel.swarmsimulator.swarmserver.domain.UnknownDroneModelException when
+     *         {@code swarm.fleet} names a model missing from {@code catalog}
      */
-    public FleetConfiguration fleetConfiguration() {
-        return new FleetConfiguration(agentCount, new SearchPatternSettings.Boids(boids));
+    public FleetConfiguration fleetConfiguration(DroneCatalog catalog) {
+        SearchPatternSettings searchPattern = new SearchPatternSettings.Boids(boids);
+        if (requestedFleet.isEmpty()) {
+            return FleetConfiguration.ofOneModel(catalog.defaultSpecification(), agentCount,
+                    searchPattern);
+        }
+        List<DroneGroup> groups = new ArrayList<>();
+        for (RequestedDrones requested : requestedFleet) {
+            groups.add(new DroneGroup(catalog.specification(requested.model()), requested.count()));
+        }
+        return new FleetConfiguration(groups, searchPattern);
     }
 
     /** Loads settings from the process environment and the {@code application.properties} classpath resource. */
@@ -86,12 +117,45 @@ public record Settings(
         BoidsConfig boids = resolveBoids(env, props);
         DiagnosticsConfig diagnostics = resolveDiagnostics(env, props);
         PredatorConfig predator = resolvePredator(env, props);
+        String droneCatalogLocation = raw(env, props, "SWARM_DRONE_CATALOG", "swarm.drone-catalog")
+                .orElse(DEFAULT_DRONE_CATALOG);
+        List<RequestedDrones> requestedFleet = raw(env, props, "SWARM_FLEET", "swarm.fleet")
+                .map(Settings::parseFleet)
+                .orElse(List.of());
 
-        LOG.info("Settings - port={} | agents={} | world={}x{}x{} | seed={}",
-                port, agentCount, worldWidth, worldHeight, worldDepth, seed);
+        LOG.info("Settings - port={} | agents={} | fleet={} | drone catalog={} | world={}x{}x{} "
+                        + "| seed={}", port, agentCount,
+                requestedFleet.isEmpty() ? "default model" : requestedFleet, droneCatalogLocation,
+                worldWidth, worldHeight, worldDepth, seed);
 
         return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed,
-                boids, diagnostics, predator);
+                boids, diagnostics, predator, droneCatalogLocation, requestedFleet);
+    }
+
+    /** Reads {@code model:count,model:count}; spaces around the parts are allowed. */
+    private static List<RequestedDrones> parseFleet(String value) {
+        List<RequestedDrones> fleet = new ArrayList<>();
+        for (String part : value.split(",")) {
+            String[] modelAndCount = part.trim().split(":");
+            if (modelAndCount.length != 2 || modelAndCount[0].isBlank()) {
+                throw new IllegalArgumentException("SWARM_FLEET='" + value + "': each part must be "
+                        + FLEET_FORMAT);
+            }
+            String count = modelAndCount[1].trim();
+            int parsedCount;
+            try {
+                parsedCount = Integer.parseInt(count);
+            } catch (NumberFormatException exception) {
+                throw new IllegalArgumentException("SWARM_FLEET='" + value + "': count '" + count
+                        + "' is not a whole number; expected " + FLEET_FORMAT);
+            }
+            if (parsedCount < 1) {
+                throw new IllegalArgumentException("SWARM_FLEET='" + value + "': count of '"
+                        + modelAndCount[0].trim() + "' must be >= 1, got " + parsedCount);
+            }
+            fleet.add(new RequestedDrones(modelAndCount[0].trim(), parsedCount));
+        }
+        return fleet;
     }
 
     private static BoidsConfig resolveBoids(Map<String, String> env, Properties props) {
@@ -101,7 +165,6 @@ public record Settings(
         applyDouble(env, props, "SWARM_BOIDS_ALIGNMENT_WEIGHT",         "swarm.boids.alignment-weight",         b::alignmentWeight);
         applyDouble(env, props, "SWARM_BOIDS_COHESION_WEIGHT",          "swarm.boids.cohesion-weight",          b::cohesionWeight);
         applyDouble(env, props, "SWARM_BOIDS_WANDER_WEIGHT",            "swarm.boids.wander-weight",            b::wanderWeight);
-        applyDouble(env, props, "SWARM_BOIDS_MAX_SPEED",                "swarm.boids.max-speed",                b::maxSpeed);
         applyDouble(env, props, "SWARM_BOIDS_BOUNDARY_REPULSION_RADIUS", "swarm.boids.boundary-repulsion-radius", b::boundaryRepulsionRadius);
         applyDouble(env, props, "SWARM_BOIDS_BOUNDARY_REPULSION_WEIGHT", "swarm.boids.boundary-repulsion-weight", b::boundaryRepulsionWeight);
         applyDouble(env, props, "SWARM_BOIDS_OBSTACLE_AVOIDANCE_RADIUS", "swarm.boids.obstacle-avoidance-radius", b::obstacleAvoidanceRadius);

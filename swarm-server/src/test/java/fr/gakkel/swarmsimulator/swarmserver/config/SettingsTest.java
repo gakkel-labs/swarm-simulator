@@ -1,16 +1,24 @@
 package fr.gakkel.swarmsimulator.swarmserver.config;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneCatalog;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
+import fr.gakkel.swarmsimulator.swarmserver.domain.DroneSpecification;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
+import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
+import fr.gakkel.swarmsimulator.swarmserver.domain.UnknownDroneModelException;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,14 +52,94 @@ class SettingsTest {
         assertEquals(DiagnosticsConfig.builder().build(), s.diagnostics());
     }
 
+    private static final DroneSpecification SIDE_SCAN =
+            TestDrones.detectionDrone("side-scan-a", 1.5, 50.0);
+    private static final DroneSpecification FAST = TestDrones.detectionDrone("fast-b", 2.5, 30.0);
+    private static final DroneCatalog CATALOG = new DroneCatalog(List.of(SIDE_SCAN, FAST));
+
     @Test
-    void fleetConfiguration_agentCountSet_returnsThatDroneCountWithBoids() {
+    void fleetConfiguration_noFleetSet_usesTheFirstCatalogModelTimesTheAgentCount() {
+        // Without swarm.fleet the live demo keeps working as before: SWARM_AGENT_COUNT drones.
         Settings settings = load(Map.of(), props("swarm.agent-count", "8"));
 
-        FleetConfiguration fleet = settings.fleetConfiguration();
+        FleetConfiguration fleet = settings.fleetConfiguration(CATALOG);
 
-        assertEquals(new FleetConfiguration(8, new SearchPatternSettings.Boids(settings.boids())),
-                fleet);
+        assertThat(fleet).isEqualTo(FleetConfiguration.ofOneModel(SIDE_SCAN, 8,
+                new SearchPatternSettings.Boids(settings.boids())));
+    }
+
+    @Test
+    void fleetConfiguration_twoModelsSet_mixesThemInTheGivenOrder() {
+        Settings settings = load(Map.of("SWARM_FLEET", "fast-b:4, side-scan-a:6"),
+                new Properties());
+
+        FleetConfiguration fleet = settings.fleetConfiguration(CATALOG);
+
+        assertThat(fleet.droneGroups())
+                .containsExactly(new DroneGroup(FAST, 4), new DroneGroup(SIDE_SCAN, 6));
+    }
+
+    @Test
+    void fleetConfiguration_fleetInPropertyFile_isRead() {
+        Settings settings = load(Map.of(), props("swarm.fleet", "fast-b:3"));
+
+        FleetConfiguration fleet = settings.fleetConfiguration(CATALOG);
+
+        assertThat(fleet.droneGroups()).containsExactly(new DroneGroup(FAST, 3));
+    }
+
+    @Test
+    void fleetConfiguration_modelMissingFromTheCatalog_throwsWithTheKnownModels() {
+        Settings settings = load(Map.of("SWARM_FLEET", "mystery-drone:4"), new Properties());
+
+        assertThatThrownBy(() -> settings.fleetConfiguration(CATALOG))
+                .isInstanceOf(UnknownDroneModelException.class)
+                .hasMessageContaining("'mystery-drone'")
+                .hasMessageContaining("side-scan-a, fast-b");
+    }
+
+    @Test
+    void load_fleetWithoutCount_throwsNamingTheExpectedFormat() {
+        Map<String, String> env = Map.of("SWARM_FLEET", "side-scan-a");
+
+        assertThatThrownBy(() -> load(env, new Properties()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("SWARM_FLEET")
+                .hasMessageContaining("model:count");
+    }
+
+    @Test
+    void load_fleetWithTextCount_throwsNamingTheExpectedFormat() {
+        Map<String, String> env = Map.of("SWARM_FLEET", "side-scan-a:six");
+
+        assertThatThrownBy(() -> load(env, new Properties()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("SWARM_FLEET")
+                .hasMessageContaining("'six'");
+    }
+
+    @Test
+    void load_fleetWithZeroDrones_throwsIllegalArgumentException() {
+        Map<String, String> env = Map.of("SWARM_FLEET", "side-scan-a:0");
+
+        assertThatThrownBy(() -> load(env, new Properties()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("SWARM_FLEET");
+    }
+
+    @Test
+    void load_noCatalogSet_usesTheDemoCatalogOfTheJar() {
+        Settings settings = load(Map.of(), new Properties());
+
+        assertThat(settings.droneCatalogLocation()).isEqualTo("classpath:drone-catalog-demo.json");
+    }
+
+    @Test
+    void load_catalogFileSet_keepsItsPath() {
+        Settings settings = load(Map.of("SWARM_DRONE_CATALOG", "C:/gakkel/my-drones.json"),
+                new Properties());
+
+        assertThat(settings.droneCatalogLocation()).isEqualTo("C:/gakkel/my-drones.json");
     }
 
     @Test
@@ -60,12 +148,12 @@ class SettingsTest {
                 "swarm.port", "50060",
                 "swarm.agent-count", "8",
                 "swarm.world.width", "200",
-                "swarm.boids.max-speed", "9.0"));
+                "swarm.boids.cohesion-weight", "9.0"));
 
         assertEquals(50060, s.port());
         assertEquals(8, s.agentCount());
         assertEquals(200, s.worldWidth());
-        assertEquals(9.0, s.boids().maxSpeed());
+        assertEquals(9.0, s.boids().cohesionWeight());
         // untouched keys keep their builder default
         assertEquals(BoidsConfig.builder().build().separationWeight(), s.boids().separationWeight());
     }

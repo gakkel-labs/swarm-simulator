@@ -23,7 +23,7 @@ class WorldTest {
 
     @Test
     void addAgent_agentAppearsInAgentsList() {
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10, 10, 5));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10, 10, 5));
 
         world.addAgent(agent);
 
@@ -32,7 +32,7 @@ class WorldTest {
 
     @Test
     void addAgent_duplicateAgent_throwsIllegalArgumentException() {
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(10, 10, 5));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10, 10, 5));
         world.addAgent(agent);
 
         assertThrows(IllegalArgumentException.class, () -> world.addAgent(agent));
@@ -40,7 +40,7 @@ class WorldTest {
 
     @Test
     void removeAgent_presentAgent_removesAndReturnsTrue() {
-        var agent = Agent.create(AgentType.SPECIALIST, new Vector3D(5, 5, 5));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(5, 5, 5));
         world.addAgent(agent);
 
         boolean removed = world.removeAgent(agent);
@@ -51,7 +51,7 @@ class WorldTest {
 
     @Test
     void removeAgent_absentAgent_returnsFalse() {
-        var agent = Agent.create(AgentType.EXPLORER, Vector3D.ZERO);
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, Vector3D.ZERO);
 
         boolean removed = world.removeAgent(agent);
 
@@ -60,8 +60,8 @@ class WorldTest {
 
     @Test
     void agentCount_reflectsAdditionsAndRemovals() {
-        var a1 = Agent.create(AgentType.EXPLORER, Vector3D.ZERO);
-        var a2 = Agent.create(AgentType.CARRIER, new Vector3D(1, 0, 0));
+        var a1 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, Vector3D.ZERO);
+        var a2 = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(1, 0, 0));
         world.addAgent(a1);
         world.addAgent(a2);
 
@@ -73,9 +73,9 @@ class WorldTest {
 
     @Test
     void neighbors_returnsAgentsWithinRadius_excludesSelf() {
-        var center = Agent.create(AgentType.EXPLORER, new Vector3D(50, 50, 25));
-        var near = Agent.create(AgentType.EXPLORER, new Vector3D(55, 50, 25));
-        var far = Agent.create(AgentType.EXPLORER, new Vector3D(90, 50, 25));
+        var center = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, 50, 25));
+        var near = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(55, 50, 25));
+        var far = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(90, 50, 25));
         world.addAgent(center);
         world.addAgent(near);
         world.addAgent(far);
@@ -90,8 +90,8 @@ class WorldTest {
 
     @Test
     void neighbors_radiusZero_returnsEmptyList() {
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(50, 50, 25));
-        var other = Agent.create(AgentType.EXPLORER, new Vector3D(51, 50, 25));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, 50, 25));
+        var other = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(51, 50, 25));
         world.addAgent(agent);
         world.addAgent(other);
 
@@ -100,7 +100,7 @@ class WorldTest {
 
     @Test
     void neighbors_negativeRadius_throwsIllegalArgumentException() {
-        var agent = Agent.create(AgentType.EXPLORER, new Vector3D(50, 50, 25));
+        var agent = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(50, 50, 25));
         world.addAgent(agent);
 
         assertThrows(IllegalArgumentException.class, () -> world.neighbors(agent, -1.0));
@@ -200,12 +200,12 @@ class WorldTest {
     // thread reads world.agents() to build the WorldState. Reading must never fail.
     @Test
     void agents_droneAddedDuringIteration_iterationDoesNotFail() {
-        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(10, -10, 5)));
-        world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(20, -20, 5)));
+        world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(10, -10, 5)));
+        world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(20, -20, 5)));
 
         assertDoesNotThrow(() -> {
             for (Agent ignored : world.agents()) {
-                world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(30, -30, 5)));
+                world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(30, -30, 5)));
             }
         });
     }
@@ -213,14 +213,14 @@ class WorldTest {
     @Test
     void agents_readByOneThreadWhileAnotherAddsAndRemoves_neverFails() throws InterruptedException {
         for (int i = 0; i < 50; i++) {
-            world.addAgent(Agent.create(AgentType.EXPLORER, new Vector3D(i, -i, 5)));
+            world.addAgent(Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(i, -i, 5)));
         }
         var stopWriter = new AtomicBoolean(false);
         var writerStarted = new CountDownLatch(1);
         Thread writer = new Thread(() -> {
             writerStarted.countDown();
             while (!stopWriter.get()) {
-                var drone = Agent.create(AgentType.EXPLORER, new Vector3D(1, -1, 1));
+                var drone = Agent.create(TestDrones.DEMO_DETECTION_DRONE, new Vector3D(1, -1, 1));
                 world.addAgent(drone);
                 world.removeAgent(drone);
             }
@@ -248,9 +248,9 @@ class WorldTest {
     @Test
     void agents_areKeptInIdOrder_whateverTheOrderTheyWereAdded() {
         World world = new World(100, 100, 50);
-        Agent first  = new Agent(new UUID(0, 1), AgentType.EXPLORER, Vector3D.ZERO, Vector3D.ZERO);
-        Agent second = new Agent(new UUID(0, 2), AgentType.EXPLORER, Vector3D.ZERO, Vector3D.ZERO);
-        Agent third  = new Agent(new UUID(0, 3), AgentType.EXPLORER, Vector3D.ZERO, Vector3D.ZERO);
+        Agent first  = new Agent(new UUID(0, 1), TestDrones.DEMO_DETECTION_DRONE, Vector3D.ZERO, Vector3D.ZERO);
+        Agent second = new Agent(new UUID(0, 2), TestDrones.DEMO_DETECTION_DRONE, Vector3D.ZERO, Vector3D.ZERO);
+        Agent third  = new Agent(new UUID(0, 3), TestDrones.DEMO_DETECTION_DRONE, Vector3D.ZERO, Vector3D.ZERO);
 
         world.addAgent(third);
         world.addAgent(first);

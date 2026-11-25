@@ -353,7 +353,9 @@ class SimulationTest {
         }
 
         private static void runHours(Simulation simulation, int hourCount) {
-            for (int hour = 0; hour < hourCount; hour++) simulation.step(ONE_HOUR_SECONDS);
+            for (int hour = 0; hour < hourCount; hour++) {
+                simulation.step(ONE_HOUR_SECONDS);
+            }
         }
 
         @Test
@@ -402,8 +404,11 @@ class SimulationTest {
         }
 
         @Test
-        void lostDrone_neverComesBack() {
-            Simulation simulation = createWithLossRisk(LossRiskLevel.LOW, 10, 42L);
+        void lostDrone_neverComesBackEvenWithTheDemoPredator() {
+            FleetConfiguration fleet = FleetConfiguration.ofOneModel(DEMO_DRONE, 10,
+                    new SearchPatternSettings.Boids(CONFIG));
+            Simulation simulation = Simulation.create(fleet, 100, 100, 50, LossRiskLevel.LOW,
+                    Optional.of(PredatorConfig.defaults()), 42L);
             simulation.step(FOREVER_SECONDS);
             assertEquals(0, simulation.world().agentCount(), "every drone is lost");
 

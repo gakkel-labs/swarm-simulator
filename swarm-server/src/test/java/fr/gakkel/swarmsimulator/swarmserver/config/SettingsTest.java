@@ -262,6 +262,28 @@ class SettingsTest {
     }
 
     @Test
+    void predator_switchedOff_ignoresItsOtherSettings() {
+        Settings settings = load(Map.of("SWARM_PREDATOR_ENABLED", "false",
+                "SWARM_PREDATOR_SPEED", "fast"), new Properties());
+
+        assertTrue(settings.demoPredator().isEmpty());
+    }
+
+    @Test
+    void constructor_nullLossRisk_throwsWithTheFieldName() {
+        Settings defaults = load(Map.of(), new Properties());
+
+        NullPointerException exception = assertThrows(NullPointerException.class,
+                () -> new Settings(defaults.port(), defaults.agentCount(), defaults.worldWidth(),
+                        defaults.worldHeight(), defaults.worldDepth(), defaults.seed(),
+                        defaults.boids(), defaults.diagnostics(), defaults.predator(),
+                        defaults.predatorEnabled(), null, defaults.droneCatalogLocation(),
+                        defaults.requestedFleet()));
+
+        assertEquals("lossRisk", exception.getMessage());
+    }
+
+    @Test
     void demoPredator_givesThePredatorOnlyWhenItIsOn() {
         assertEquals(Optional.of(PredatorConfig.defaults()),
                 load(Map.of(), new Properties()).demoPredator());

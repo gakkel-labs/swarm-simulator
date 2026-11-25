@@ -180,7 +180,9 @@ public final class Simulation {
     // One draw per drone, in the sorted order of the world, so the same seed loses the same
     // drones. With no risk there is no draw at all: the run is the same as before #130.
     private void loseDronesAtRisk(double stepSeconds) {
-        if (lossRisk == LossRiskLevel.NONE) return;
+        if (lossRisk == LossRiskLevel.NONE) {
+            return;
+        }
         double lossProbability = lossRisk.lossProbabilityDuring(stepSeconds);
         for (Agent agent : List.copyOf(world.agents())) {
             if (lossRandom.nextDouble() < lossProbability) {

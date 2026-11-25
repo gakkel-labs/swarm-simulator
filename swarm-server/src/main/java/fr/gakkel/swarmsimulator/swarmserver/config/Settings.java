@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
@@ -76,6 +77,8 @@ public record Settings(
         if (agentCount < 1) {
             throw new IllegalArgumentException("agent count must be >= 1 (got " + agentCount + ")");
         }
+        Objects.requireNonNull(predator, "predator");
+        Objects.requireNonNull(lossRisk, "lossRisk");
         requestedFleet = List.copyOf(requestedFleet);
     }
 
@@ -127,9 +130,12 @@ public record Settings(
 
         BoidsConfig boids = resolveBoids(env, props);
         DiagnosticsConfig diagnostics = resolveDiagnostics(env, props);
-        PredatorConfig predator = resolvePredator(env, props);
         boolean predatorEnabled = booleanValue(env, props, "SWARM_PREDATOR_ENABLED",
                 "swarm.predator.enabled", true);
+        // A switched-off predator must not stop the server because of its other settings.
+        PredatorConfig predator = predatorEnabled
+                ? resolvePredator(env, props)
+                : PredatorConfig.defaults();
         LossRiskLevel lossRisk = resolveLossRisk(env, props);
         String droneCatalogLocation = raw(env, props, "SWARM_DRONE_CATALOG", "swarm.drone-catalog")
                 .orElse(DEFAULT_DRONE_CATALOG);
@@ -281,8 +287,12 @@ public record Settings(
     private static boolean booleanValue(Map<String, String> env, Properties props, String envKey,
                                         String propKey, boolean def) {
         return raw(env, props, envKey, propKey).map(value -> {
-            if (value.equalsIgnoreCase("true")) return true;
-            if (value.equalsIgnoreCase("false")) return false;
+            if (value.equalsIgnoreCase("true")) {
+                return true;
+            }
+            if (value.equalsIgnoreCase("false")) {
+                return false;
+            }
             throw new IllegalArgumentException(envKey + "='" + value + "' must be true or false");
         }).orElse(def);
     }

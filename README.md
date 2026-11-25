@@ -205,6 +205,10 @@ message catalogue).
 - [ADR-0012](docs/adr/0012-loss-risk-replaces-the-predator.md) — **A loss risk instead of the
   predator**: the operator picks a level (none to extreme), lost drones do not come back; the
   predator stays for the live demo only (proposed).
+- [ADR-0013](docs/adr/0013-simulation-events-and-end-of-a-run.md) — **Events and an end for each
+  run**: the engine returns what happened (target detected, drone lost...) instead of logging it;
+  a batch run sets its wreck at the start and stops at detection, limit time or with no drone left;
+  predator and respawn are demo options (proposed).
 
 ### Configuration
 

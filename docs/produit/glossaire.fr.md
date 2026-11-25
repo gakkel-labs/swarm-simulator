@@ -66,7 +66,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Zone de recherche** | La partie de mer à fouiller, souvent 50 à 100 km². | ✅ (*world*) |
 | **Schéma de recherche** | La façon dont les drones se déplacent pour couvrir la zone de recherche. C'est un réglage de la configuration de flotte. Schémas prévus pour l'étape 2 : **tondeuse** (lignes parallèles), **Boids** (déplacement libre en groupe), **tondeuse + Boids**, **colonies de fourmis** (les drones évitent les endroits déjà fouillés) et **colonies de fourmis + Boids**. Aujourd'hui seul Boids existe. | ✅ (`SearchPattern`, `BoidsSearchPattern`) |
 | **Couverture** | La partie de la zone de recherche déjà fouillée. Le but : aucun trou et aucun recouvrement. | 🔜 |
-| **Cible** | Dans la simulation, l'objet à trouver (l'« épave »). Aujourd'hui l'opérateur la place d'un clic dans la vue 3D. | ✅ |
+| **Cible** | Dans la simulation, l'objet à trouver (l'« épave »). Dans la démo en direct, l'opérateur la place d'un clic dans la vue 3D ; dans un run en lot, le scénario la pose au départ, ou il n'y en a pas. | ✅ |
 | **Contact** | Quelque chose qu'un drone a détecté et qui pourrait être la cible. Un contact doit être vérifié. Statut : *à revoir*, *confirmé*, *écarté*. | 🔜 |
 | **Détection** | Le moment où un drone passe assez près de la cible pour la « voir ». | ✅ |
 | **Rayon de détection** | La distance à laquelle un drone peut détecter la cible (10 m dans la démo en direct). C'est la portée du capteur de recherche du drone, lue dans sa fiche technique. Remplacé par la bande du sonar latéral à l'échelle réaliste ([ADR-0011](../adr/0011-model-assumptions-and-scale.fr.md)). | ✅ |
@@ -83,9 +83,10 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Liaison acoustique** | La liaison sous l'eau (par le son) entre l'essaim et le porte-drones. Elle est lente et peut se couper. | 🔜 |
 | **Modem acoustique** | L'appareil avec lequel chaque drone envoie sa position par le son (toutes les 10 s, portée d'environ 1 km, avec des messages perdus). Boids utilise ces positions annoncées. | 🔜 |
 | **Score** | La **probabilité de réussite** d'une configuration de flotte : la part des scénarios réussis dans le jeu de scénarios commun. Exemple : « réussit dans 460 scénarios sur 500 » = 92 %. Le backend s'en sert pour comparer les configurations ([fiche problème](problem-find-a-wreck.fr.md)). | 🔜 |
+| **Scénario** | Un cas du jeu commun : où se trouve l'épave (ou pas d'épave) et sa seed. Le même scénario donne toujours le même run. | ✅ (`Scenario`) |
 | **Jeu de scénarios commun** | La liste des scénarios sur lesquels chaque configuration de flotte est simulée : l'épave en position A, B, C… (réparties dans la zone de recherche), plus des scénarios sans épave. Chaque scénario a sa seed. Toutes les configurations passent sur les mêmes scénarios, pour une comparaison juste. | 🔜 |
 | **Part de scénarios sans épave** | La part du jeu de scénarios où l'épave n'est pas dans la zone de recherche. L'opérateur la règle dans la mission selon son doute (20 % par défaut). | 🔜 |
-| **Temps limite** | L'heure à laquelle la mission doit être finie (énergie des drones, météo). Le dépasser, c'est un échec. | 🔜 |
+| **Temps limite** | L'heure à laquelle la mission doit être finie (énergie des drones, météo). Le dépasser, c'est un échec. | ✅ (`EndConditions`, runs en lot) |
 | **Temps estimé** | La durée prévue d'une mission : le temps sous lequel 9 scénarios réussis sur 10 se terminent. Le dépasser rend la mission en retard, pas en échec. | 🔜 |
 | **Seuil de couverture** | La couverture à atteindre pour démontrer que l'épave n'est pas dans la zone de recherche. Choisi par l'opérateur (95 % par défaut). | 🔜 |
 

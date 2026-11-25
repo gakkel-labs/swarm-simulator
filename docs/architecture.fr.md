@@ -72,8 +72,10 @@ JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 fr.gakkel.swarmsimulator.swarmserver
 ├── config         # Settings : lit variables d'env → application.properties → défauts, une fois au démarrage
 ├── domain         # Agent, AgentType, World, Vector3D, LossRiskLevel, Predator (démo seulement), PredatorConfig,
-│                  # Motion (position + vitesse), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules
-├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician,
+│                  # Motion (position + vitesse), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules,
+│                  # Scenario, EndConditions, SimulationEvent (événements de domaine)
+├── simulation     # Simulation (le moteur), DemoOptions, WorldFactory, SimulationLoop, SimulationService,
+│                  # SimulationConstants, FlockingDiagnostician,
 │                  # DiagnosticsConfig, CohesionMetric (dispersion sur fenêtre glissante), CohesionCsvExporter
 └── server         # SwarmServer (main), SwarmServerBootstrap (assemblage), SwarmObserverImpl,
                    # SimulationControlImpl, PingServiceImpl, WorldStateBuilder, CoordinateConversions
@@ -82,6 +84,22 @@ fr.gakkel.swarmsimulator.swarmserver
 Le **prédateur** n'existe que dans la démo en direct. Dans le moteur, les drones sont perdus par
 le **risque de perte** (`LossRiskLevel`, voir l'[ADR-0012](adr/0012-loss-risk-replaces-the-predator.fr.md) et le
 [glossaire](produit/glossaire.fr.md)).
+
+### Moteur : événements et fin d'un run
+
+`Simulation.step()` renvoie ce qui s'est passé pendant le pas, sous forme d'événements de domaine
+(`SimulationEvent`) : `TargetDetected`, `DroneLost` (risque de perte ou prédateur de la démo),
+`DroneRespawned`, `RunEnded`. Le moteur n'écrit aucun log : la boucle en direct logue les
+événements, et le score (#82) les comptera.
+
+Le même moteur tourne de deux façons ([ADR-0013](adr/0013-simulation-events-and-end-of-a-run.fr.md)) :
+
+| | Démo en direct (Unity) | Run en lot (score, optimiseur) |
+|---|---|---|
+| Épave | posée par un clic, pendant le run | fixée par le `Scenario`, ou aucune |
+| Fin | jamais (`EndConditions.never()`) | épave détectée, temps limite atteint, ou plus aucun drone |
+| Options de démo | prédateur et réapparition (`DemoOptions` lu dans les réglages) | aucune (`DemoOptions.none()`) |
+| Diagnostics d'essaim, CSV | dans `SimulationLoop` | pas lancés |
 
 ### Backend : règle de dépendance
 
@@ -262,19 +280,22 @@ Détails : [ADR-0007 : repères](adr/0007-coordinate-frames.fr.md).
 sequenceDiagram
     participant Exec as exécuteur sim-loop
     participant Loop as SimulationLoop
+    participant Sim as Simulation
     participant Rules as BoidsRules
     participant World as World
     participant Prédateur as Predator (prédateur)
 
     loop toutes les 33 ms
         Exec->>Loop: tick()
-        Loop->>World: copie de la liste des drones
-        Loop->>Rules: steer(drone, voisins, monde) pour chaque drone
-        Rules-->>Loop: somme des 7 règles
-        Loop->>World: déplace chaque drone (vitesse max, obstacles, parois)
-        Loop->>Prédateur: mise à jour, essaie d'attraper un drone (retour après 5 s)
-        Loop->>World: vérifie la détection de la cible (rayon capteur 10 m)
-        Loop->>Loop: mesure de cohésion, CSV chaque seconde, diagnostic toutes les 5 s
+        Loop->>Sim: step(1/30 s)
+        Sim->>World: copie de la liste des drones
+        Sim->>Rules: steer(drone, voisins, monde) pour chaque drone
+        Rules-->>Sim: somme des 7 règles
+        Sim->>World: déplace chaque drone (vitesse max, obstacles, parois)
+        Sim->>Prédateur: mise à jour, essaie d'attraper un drone (retour après 5 s)
+        Sim->>World: vérifie la détection de la cible (rayon capteur 10 m)
+        Sim-->>Loop: événements du pas (cible détectée, drone perdu...)
+        Loop->>Loop: logue les événements, mesure de cohésion, CSV chaque seconde, diagnostic toutes les 5 s
     end
 ```
 

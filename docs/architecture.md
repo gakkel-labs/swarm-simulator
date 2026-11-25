@@ -72,8 +72,10 @@ JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 fr.gakkel.swarmsimulator.swarmserver
 ├── config         # Settings: reads env vars → application.properties → defaults, once at start
 ├── domain         # Agent, AgentType, World, Vector3D, LossRiskLevel, Predator (demo only), PredatorConfig,
-│                  # Motion (position + velocity), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules
-├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician,
+│                  # Motion (position + velocity), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules,
+│                  # Scenario, EndConditions, SimulationEvent (domain events)
+├── simulation     # Simulation (the engine), DemoOptions, WorldFactory, SimulationLoop, SimulationService,
+│                  # SimulationConstants, FlockingDiagnostician,
 │                  # DiagnosticsConfig, CohesionMetric (sliding-window spread), CohesionCsvExporter
 └── server         # SwarmServer (main), SwarmServerBootstrap (wiring), SwarmObserverImpl,
                    # SimulationControlImpl, PingServiceImpl, WorldStateBuilder, CoordinateConversions
@@ -82,6 +84,21 @@ fr.gakkel.swarmsimulator.swarmserver
 The **predator** only exists in the live demo. In the engine, drones are lost through the
 **loss risk** (`LossRiskLevel`, see [ADR-0012](adr/0012-loss-risk-replaces-the-predator.md) and the
 [glossary](produit/glossaire.md)).
+
+### Engine — events and end of a run
+
+`Simulation.step()` returns what happened in the step, as domain events (`SimulationEvent`):
+`TargetDetected`, `DroneLost` (loss risk or demo predator), `DroneRespawned`, `RunEnded`. The
+engine writes no log: the live loop logs the events, and the score (#82) will count them.
+
+The same engine runs in two ways ([ADR-0013](adr/0013-simulation-events-and-end-of-a-run.md)):
+
+| | Live demo (Unity) | Batch run (score, optimizer) |
+|---|---|---|
+| Wreck | placed by a click, during the run | set by the `Scenario`, or none |
+| End | never (`EndConditions.never()`) | wreck detected, limit time, or no drone left |
+| Demo options | predator and respawn (`DemoOptions` from the settings) | none (`DemoOptions.none()`) |
+| Flocking diagnostics, CSV | in `SimulationLoop` | not run |
 
 ### Backend — dependency rule
 
@@ -263,19 +280,22 @@ Details: [ADR-0007 — coordinate frames](adr/0007-coordinate-frames.md).
 sequenceDiagram
     participant Exec as sim-loop executor
     participant Loop as SimulationLoop
+    participant Sim as Simulation
     participant Rules as BoidsRules
     participant World as World
     participant Predator as Predator (demo only)
 
     loop every 33 ms
         Exec->>Loop: tick()
-        Loop->>World: copy the drone list
-        Loop->>Rules: steer(drone, neighbours, world) for each drone
-        Rules-->>Loop: sum of the 7 rules
-        Loop->>World: move each drone (speed limit, obstacles, walls)
-        Loop->>Predator: update, try to catch a drone (respawn after 5 s)
-        Loop->>World: check target detection (sensor radius 10 m)
-        Loop->>Loop: cohesion metric, CSV every 1 s, diagnostics every 5 s
+        Loop->>Sim: step(1/30 s)
+        Sim->>World: copy the drone list
+        Sim->>Rules: steer(drone, neighbours, world) for each drone
+        Rules-->>Sim: sum of the 7 rules
+        Sim->>World: move each drone (speed limit, obstacles, walls)
+        Sim->>Predator: update, try to catch a drone (respawn after 5 s)
+        Sim->>World: check target detection (sensor radius 10 m)
+        Sim-->>Loop: events of the step (target detected, drone lost...)
+        Loop->>Loop: log the events, cohesion metric, CSV every 1 s, diagnostics every 5 s
     end
 ```
 

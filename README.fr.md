@@ -211,7 +211,7 @@ threads, catalogue des messages).
   reviennent pas ; le prédateur reste pour la démo en direct seulement (proposée).
 - [ADR-0013](docs/adr/0013-simulation-events-and-end-of-a-run.fr.md) : **Des événements et une fin
   pour chaque run** : le moteur renvoie ce qui s'est passé (cible détectée, drone perdu...) au lieu
-  de l'écrire dans les logs ; un run en lot pose son épave au départ et s'arrête à la détection, au
+  de l'écrire dans les logs ; une simulation de scoring pose son épave au départ et s'arrête à la détection, au
   temps limite ou quand il n'y a plus de drone ; prédateur et réapparition sont des options de
   démo (proposée).
 
@@ -232,9 +232,9 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Nombre de drones dans l'essaim, si `SWARM_FLEET` n'est pas donné |
 | `SWARM_FLEET` | `swarm.fleet` | (vide) | Modèles de drones et leur nombre, par exemple `side-scan-drone:6,fast-drone:4` |
 | `SWARM_DRONE_CATALOG` | `swarm.drone-catalog` | `classpath:drone-catalog-demo.json` | Le [catalogue de drones](docs/drone-catalog.fr.md) : un chemin de fichier, ou `classpath:` pour un fichier du jar |
-| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | Taille Est–Ouest de la zone de recherche (m) |
-| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Colonne d'eau, de la surface au fond (m) |
-| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Taille Nord–Sud de la zone de recherche (m) |
+| `SWARM_DEMO_SEARCH_AREA_WIDTH` | `swarm.demo.search-area.width` | `100` | Démo en direct : taille de la zone de recherche vers l'Est (m) |
+| `SWARM_DEMO_SEARCH_AREA_LENGTH` | `swarm.demo.search-area.length` | `50` | Démo en direct : taille de la zone de recherche vers le Nord (m) |
+| `SWARM_DEMO_SEABED_DEPTH` | `swarm.demo.seabed.depth` | `100` | Démo en direct : profondeur du fond plat (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | Graine aléatoire (`random` en tire une et l'écrit dans les logs) |
 | `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Vitesse du prédateur (m/s), plus lent que les drones |
 | `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance à laquelle le prédateur attrape un drone (m) |
@@ -245,6 +245,42 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 
 La liste complète, avec les valeurs par défaut, est commentée dans
 [`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
+
+Les anciennes clés `SWARM_WORLD_*` / `swarm.world.*` ont été renommées : si l'une d'elles est
+encore là, le serveur refuse de démarrer et donne le nouveau nom.
+
+### Noter une configuration de flotte (scoring)
+
+Une **simulation**, c'est un passage du moteur, avec une graine. Un **scoring** lance plusieurs
+simulations d'une même configuration de flotte sur une même mission, chacune avec sa graine,
+côte à côte et sans affichage. Chaque simulation a un **profil** : `demo` pour la démo en direct
+(pas de 1/30 s, temps réel, Unity) et `scoring` (pas de 1 s, aussi vite que possible). Le moteur
+et ses règles sont les mêmes dans les deux cas
+([ADR-0011](docs/adr/0011-model-assumptions-and-scale.fr.md)).
+
+```bash
+SWARM_SCORING_SEARCH_AREA_WIDTH=7000 SWARM_SCORING_SEARCH_AREA_LENGTH=7000 SWARM_SCORING_SEABED_DEPTH=1000 SWARM_SCORING_FLEET=side-scan-drone:10 mvn -pl swarm-server exec:java -Dexec.mainClass="fr.gakkel.swarmsimulator.swarmserver.scoring.ScoringCommand"
+```
+
+La zone de recherche, la profondeur du fond et la flotte n'ont **pas de valeur par défaut** : un
+score calculé sur des valeurs que personne n'a choisies serait trompeur. S'il en manque une, le
+scoring s'arrête et donne le nom de la clé.
+
+| Variable | Propriété | Défaut | Sens |
+|----------|-----------|--------|------|
+| `SWARM_SCORING_SEARCH_AREA_WIDTH` | `swarm.scoring.search-area.width` | **obligatoire** | Taille de la zone de recherche vers l'Est (m) |
+| `SWARM_SCORING_SEARCH_AREA_LENGTH` | `swarm.scoring.search-area.length` | **obligatoire** | Taille de la zone de recherche vers le Nord (m) |
+| `SWARM_SCORING_SEABED_DEPTH` | `swarm.scoring.seabed.depth` | **obligatoire** | Profondeur du fond plat (m) |
+| `SWARM_SCORING_FLEET` | `swarm.scoring.fleet` | **obligatoire** | Modèles de drones et nombre de chacun, par exemple `side-scan-drone:10` |
+| `SWARM_SCORING_SIMULATION_COUNT` | `swarm.scoring.simulation-count` | `300` | Nombre de simulations |
+| `SWARM_SCORING_DRONE_CATALOG` | `swarm.scoring.drone-catalog` | `classpath:drone-catalog-scoring.json` | Le catalogue de drones avec les valeurs de l'ADR-0011 |
+| `SWARM_SCORING_WRECK` | `swarm.scoring.wreck` | (pas d'épave) | Où l'épave repose sur le fond : `est,nord` en mètres depuis le coin sud-ouest |
+
+La graine, le risque de perte et les poids Boids utilisent les mêmes clés que la démo en direct.
+Chaque simulation s'arrête à la fin de la plus courte endurance de la flotte, ou plus tôt si
+l'épave est détectée ou s'il ne reste plus de drone. Pour l'instant, la commande affiche dans les
+logs comment les simulations se sont terminées ; le score lui-même (probabilité de succès de la
+mission) arrive avec #82.
 
 À propos de la graine : la même graine donne les mêmes positions de départ et les mêmes
 tirages aléatoires. Mais la simulation tourne encore sur l'horloge réelle (par exemple

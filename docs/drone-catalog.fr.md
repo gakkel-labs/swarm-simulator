@@ -36,7 +36,7 @@ un adaptateur base de données pourra prendre sa place sans changer le domaine n
 | Fichier | Valeurs | Utilisé par |
 |---|---|---|
 | `swarm-server/src/main/resources/drone-catalog-demo.json` | la démo en direct : 5 m/s, rayon de détection 10 m (sans nadir) | le serveur par défaut : la démo Unity reste la même qu'avant |
-| `swarm-server/src/main/resources/drone-catalog-batch.json` | ADR-0011 : 1,5 m/s, sonar latéral 50 m de chaque côté, 16 h | le score et l'optimiseur, quand le profil `batch` existera (#177) |
+| `swarm-server/src/main/resources/drone-catalog-scoring.json` | ADR-0011 : 1,5 m/s, sonar latéral 50 m de chaque côté, 16 h | les simulations d'un scoring (profil `scoring`, #177), puis l'optimiseur |
 
 Les deux fichiers utilisent **les mêmes noms de modèles** : une configuration de flotte s'écrit de
 la même façon dans les deux profils.

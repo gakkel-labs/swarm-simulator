@@ -142,7 +142,9 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 | **Poste de contrôle** | L'application web de l'opérateur, où la mission est définie (dépôt `mission-console`). L'opérateur peut y créer une mission seul, de bout en bout, sans passer par la simulation. | 🔜 |
 | **Vue détaillée / vue simple** | Les deux aspects de la vue 3D. La vue détaillée montre des modèles 3D et un vrai fond marin, pour présenter le projet ; la vue simple montre des formes simples, pour lire le comportement de l'essaim. La touche V bascule de l'une à l'autre ([ADR-0006](../adr/0006-detailed-and-simple-view.fr.md)). | ✅ |
 | **Rejouer** (replay) | Revoir une mission terminée dans la vue 3D, pour voir comment les drones se sont déplacés et ce qui s'est passé. | 🔜 |
-| **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. C'est une aide pour l'opérateur, pas une étape obligatoire. | ✅ |
+| **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. C'est une aide pour l'opérateur, pas une étape obligatoire. Dans le code, une simulation est un passage du moteur avec une graine. | ✅ |
+| **Profil de simulation** | La façon de faire tourner une simulation : `demo` (petite zone de recherche, temps réel, affichée dans la vue 3D) ou `scoring` (zone de recherche à taille réelle, pas de 1 s, aussi vite que possible, sans affichage). Même moteur, mêmes règles. | ✅ (`SimulationProfile`) |
+| **Scoring** | Plusieurs simulations d'une configuration de flotte sur une mission, chacune avec sa graine, lancées côte à côte. Le score est calculé à partir de leurs résultats. | ✅ (`Scoring`) |
 | **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `SPECIALIST` (drone spécialisé, type seulement réservé), `CARRIER` (porte-drones). | ✅ |
 | **Tick** | Un pas de la simulation. Le backend calcule 30 ticks par seconde. | ✅ |
 | **WorldState** | Une « photo » de la simulation à un instant : drones, obstacles, prédateur de démo, cible. Le backend en envoie 20 par seconde. | ✅ |

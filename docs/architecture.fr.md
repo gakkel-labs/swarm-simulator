@@ -70,13 +70,16 @@ JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 
 ```
 fr.gakkel.swarmsimulator.swarmserver
-├── config         # Settings : lit variables d'env → application.properties → défauts, une fois au démarrage
+├── config         # Settings (serveur), ScoringSettings (lu au lancement d'un scoring) : variables d'env →
+│                  # application.properties → défauts
 ├── domain         # Agent, AgentType, World, Vector3D, LossRiskLevel, Predator (démo seulement), PredatorConfig,
 │                  # Motion (position + vitesse), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules,
-│                  # Scenario, EndConditions, SimulationEvent (événements de domaine)
-├── simulation     # Simulation (le moteur), DemoOptions, WorldFactory, SimulationLoop, SimulationService,
+│                  # Scenario, EndConditions, SimulationEvent (événements de domaine), SearchArea, Mission
+├── simulation     # Simulation (le moteur), SimulationProfile, SimulationResult, Scoring, DemoOptions,
+│                  # WorldFactory, SimulationLoop, SimulationService,
 │                  # SimulationConstants, FlockingDiagnostician,
 │                  # DiagnosticsConfig, CohesionMetric (dispersion sur fenêtre glissante), CohesionCsvExporter
+├── scoring        # ParallelScoring (simulations côte à côte, sur leurs propres threads), ScoringCommand (main)
 └── server         # SwarmServer (main), SwarmServerBootstrap (assemblage), SwarmObserverImpl,
                    # SimulationControlImpl, PingServiceImpl, WorldStateBuilder, CoordinateConversions
 ```
@@ -94,18 +97,19 @@ le **risque de perte** (`LossRiskLevel`, voir l'[ADR-0012](adr/0012-loss-risk-re
 
 Le même moteur tourne de deux façons ([ADR-0013](adr/0013-simulation-events-and-end-of-a-run.fr.md)) :
 
-| | Démo en direct (Unity) | Run en lot (score, optimiseur) |
+| | Démo en direct (Unity), profil `demo` | Simulation de scoring (score, optimiseur), profil `scoring` |
 |---|---|---|
 | Épave | posée par un clic, pendant le run | fixée par le `Scenario`, ou aucune |
 | Fin | jamais (`EndConditions.never()`) | épave détectée, temps limite atteint, ou plus aucun drone |
-| Options de démo | prédateur et réapparition (`DemoOptions` lu dans les réglages) | aucune (`DemoOptions.none()`) |
+| Options de démo | prédateur, réapparition et trois obstacles (`DemoOptions` lu dans les réglages) | aucune (`DemoOptions.none()`) : fond plat et dégagé |
 | Diagnostics d'essaim, CSV | dans `SimulationLoop` | pas lancés |
 
 ### Backend : règle de dépendance
 
 Le domaine est du Java pur, au centre. Le moteur de simulation n'utilise que le domaine.
 Les adaptateurs, qui parlent au monde extérieur, restent autour : `server` (gRPC et le contrat
-généré) et `config` (fichiers JSON, variables d'environnement). Les flèches pointent toujours
+généré), `config` (fichiers JSON, variables d'environnement) et `scoring` (les threads qui font
+tourner les simulations d'un scoring, et sa commande). Les flèches pointent toujours
 vers l'intérieur.
 
 ```mermaid
@@ -116,6 +120,9 @@ flowchart TB
     SERVER -->|assemblage au démarrage| CONFIG
     CONFIG --> DOMAIN
     SIMULATION --> DOMAIN
+    SCORING[scoring<br/>threads, commande] --> SIMULATION
+    SCORING --> CONFIG
+    SCORING --> DOMAIN
 ```
 
 Un test ArchUnit vérifie cette règle à chaque `mvn verify` (donc dans la CI) :
@@ -123,11 +130,11 @@ Un test ArchUnit vérifie cette règle à chaque `mvn verify` (donc dans la CI) 
 Ses règles sont regroupées par thème (domaine, moteur, adaptateurs) :
 
 - `domain` ne dépend d'aucun autre package du serveur ;
-- `simulation` ne dépend ni de `server` ni de `config` ;
+- `simulation` ne dépend ni de `server`, ni de `config`, ni de `scoring` ;
 - `domain` et `simulation` n'utilisent ni gRPC, ni Protobuf, ni Spring, ni threads
   (`Thread`, tout `Executor`, `Executors`, `CompletableFuture`) ;
 - seul `server` utilise les classes générées du contrat ;
-- `config` ne dépend pas de `server` (`server` utilise `config` seulement pour assembler le serveur au démarrage) ;
+- `config` ne dépend ni de `server` ni de `scoring` (ils utilisent `config` pour s'assembler au démarrage) ;
 - il n'y a pas de cycle entre les packages.
 
 Exception connue : `SimulationLoop` (l'horloge en direct qui cadence la simulation pour Unity)

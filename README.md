@@ -207,7 +207,7 @@ message catalogue).
   predator stays for the live demo only (proposed).
 - [ADR-0013](docs/adr/0013-simulation-events-and-end-of-a-run.md) — **Events and an end for each
   run**: the engine returns what happened (target detected, drone lost...) instead of logging it;
-  a batch run sets its wreck at the start and stops at detection, limit time or with no drone left;
+  a scoring simulation sets its wreck at the start and stops at detection, limit time or with no drone left;
   predator and respawn are demo options (proposed).
 
 ### Configuration
@@ -227,9 +227,9 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_AGENT_COUNT` | `swarm.agent-count` | `20` | Number of drones in the swarm, when `SWARM_FLEET` is not set |
 | `SWARM_FLEET` | `swarm.fleet` | (unset) | Drone models and counts, for example `side-scan-drone:6,fast-drone:4` |
 | `SWARM_DRONE_CATALOG` | `swarm.drone-catalog` | `classpath:drone-catalog-demo.json` | The [drone catalog](docs/drone-catalog.md): a file path, or `classpath:` for a file in the jar |
-| `SWARM_WORLD_WIDTH` | `swarm.world.width` | `100` | East–West size of the search area (m) |
-| `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Water column, surface to seabed (m) |
-| `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | North–South size of the search area (m) |
+| `SWARM_DEMO_SEARCH_AREA_WIDTH` | `swarm.demo.search-area.width` | `100` | Live demo: size of the search area towards the East (m) |
+| `SWARM_DEMO_SEARCH_AREA_LENGTH` | `swarm.demo.search-area.length` | `50` | Live demo: size of the search area towards the North (m) |
+| `SWARM_DEMO_SEABED_DEPTH` | `swarm.demo.seabed.depth` | `100` | Live demo: depth of the flat seabed (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | RNG seed (`random` draws one and logs it) |
 | `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Predator speed (m/s), slower than the drones |
 | `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance at which the predator catches a drone (m) |
@@ -240,6 +240,39 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 
 The full list, with defaults, is commented in
 [`swarm-server/src/main/resources/application.properties`](swarm-server/src/main/resources/application.properties).
+
+The old `SWARM_WORLD_*` / `swarm.world.*` keys were renamed: using one stops the start and gives
+the new name.
+
+### Scoring a fleet configuration
+
+A **simulation** is one run of the engine, with one seed. A **scoring** runs many simulations of
+one fleet configuration on one mission, each with its own seed, side by side, with no display.
+Each simulation has a **profile**: `demo` for the live demo (1/30 s steps, real time, Unity) and
+`scoring` (1 s steps, as fast as possible). The engine and its rules are the same in both
+([ADR-0011](docs/adr/0011-model-assumptions-and-scale.md)).
+
+```bash
+SWARM_SCORING_SEARCH_AREA_WIDTH=7000 SWARM_SCORING_SEARCH_AREA_LENGTH=7000 SWARM_SCORING_SEABED_DEPTH=1000 SWARM_SCORING_FLEET=side-scan-drone:10 mvn -pl swarm-server exec:java -Dexec.mainClass="fr.gakkel.swarmsimulator.swarmserver.scoring.ScoringCommand"
+```
+
+The search area, the seabed depth and the fleet have **no default value**: a score computed on
+values nobody chose would mislead. A missing one stops the scoring and names the key.
+
+| Variable | Property | Default | Meaning |
+|----------|----------|---------|---------|
+| `SWARM_SCORING_SEARCH_AREA_WIDTH` | `swarm.scoring.search-area.width` | **required** | Size of the search area towards the East (m) |
+| `SWARM_SCORING_SEARCH_AREA_LENGTH` | `swarm.scoring.search-area.length` | **required** | Size of the search area towards the North (m) |
+| `SWARM_SCORING_SEABED_DEPTH` | `swarm.scoring.seabed.depth` | **required** | Depth of the flat seabed (m) |
+| `SWARM_SCORING_FLEET` | `swarm.scoring.fleet` | **required** | Drone models and counts, for example `side-scan-drone:10` |
+| `SWARM_SCORING_SIMULATION_COUNT` | `swarm.scoring.simulation-count` | `300` | Number of simulations |
+| `SWARM_SCORING_DRONE_CATALOG` | `swarm.scoring.drone-catalog` | `classpath:drone-catalog-scoring.json` | The drone catalog with the values of ADR-0011 |
+| `SWARM_SCORING_WRECK` | `swarm.scoring.wreck` | (no wreck) | Where the wreck lies on the seabed: `east,north` in metres from the south-west corner |
+
+The seed, the loss risk and the Boids weights are the same keys as for the live demo. Each
+simulation ends at the shortest endurance of the fleet, or earlier when the wreck is detected or
+no drone is left. For now the command logs how the simulations ended; the score itself
+(mission success probability) comes with #82.
 
 About the seed: the same seed gives the same starting positions and the same random
 choices. The simulation still runs on the real clock (for example the respawn delay

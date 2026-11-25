@@ -46,6 +46,15 @@ class ParallelScoringTest {
     }
 
     @Test
+    void simulate_withProgress_reportsEachEndedSimulationOnceUpToTheTotal() {
+        List<Integer> doneCounts = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+        new ParallelScoring(3).simulate(SCORING, 6, doneCounts::add);
+
+        assertThat(doneCounts).containsExactlyInAnyOrder(1, 2, 3, 4, 5, 6);
+    }
+
+    @Test
     void simulate_givesOneResultPerSimulation() {
         assertThat(new ParallelScoring(2).simulate(SCORING, 3)).hasSize(3);
     }

@@ -48,8 +48,15 @@ public final class ScoringCommand {
                 format(scoring.limitTimeSeconds() / 3600), threadCount, settings.seed());
 
         long startNanos = System.nanoTime();
-        List<SimulationResult> results =
-                new ParallelScoring(threadCount).simulate(scoring, settings.simulationCount());
+        ProgressDisplay progress = new ProgressDisplay(settings.simulationCount(), System.out);
+        progress.start();
+        List<SimulationResult> results;
+        try {
+            results = new ParallelScoring(threadCount).simulate(scoring,
+                    settings.simulationCount(), progress::simulationDone);
+        } finally {
+            progress.finish();
+        }
         double computationSeconds = (System.nanoTime() - startNanos) / 1e9;
 
         LOG.info("Scoring done in {} s - simulations ended by: {}", format(computationSeconds),

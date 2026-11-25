@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
 
 /**
  * Runs the simulations of a scoring side by side, on a few threads of their own. It lives
@@ -45,14 +46,29 @@ public final class ParallelScoring {
      * @throws IllegalStateException if a simulation failed (its error is the cause)
      */
     public List<SimulationResult> simulate(Scoring scoring, int simulationCount) {
+        return simulate(scoring, simulationCount, doneSoFar -> { });
+    }
+
+    /**
+     * Same as {@link #simulate(Scoring, int)}, and calls {@code onSimulationDone} with the number
+     * of simulations ended so far each time one ends. It is called from the simulation threads:
+     * keep it short.
+     */
+    public List<SimulationResult> simulate(Scoring scoring, int simulationCount,
+                                           IntConsumer onSimulationDone) {
         if (simulationCount < 1) {
             throw new IllegalArgumentException(
                     "simulation count must be >= 1, got " + simulationCount);
         }
+        AtomicInteger doneCount = new AtomicInteger();
         List<Callable<SimulationResult>> simulations = new ArrayList<>(simulationCount);
         for (int index = 0; index < simulationCount; index++) {
             int simulationIndex = index;
-            simulations.add(() -> scoring.simulate(simulationIndex));
+            simulations.add(() -> {
+                SimulationResult result = scoring.simulate(simulationIndex);
+                onSimulationDone.accept(doneCount.incrementAndGet());
+                return result;
+            });
         }
         AtomicInteger threadNumber = new AtomicInteger();
         ExecutorService executor = Executors.newFixedThreadPool(threadCount, runnable -> {

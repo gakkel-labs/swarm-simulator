@@ -29,7 +29,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Mission phases** | The key moments of a mission for the operator: **Prepare**, **Launch**, **Detect**, **Confirm**, **Intervene**, **Close**. | 🔜 |
 | **GO / NO-GO** | The decision to launch, or not, depending on the weather and sea traffic. | 🔜 |
 | **Weather window** | The period when the weather allows the drones to be launched and recovered. | 🔜 |
-| **Loss risk** | The probability of losing a drone during the mission. Drones are mostly lost through faults (leak, battery, navigation), worse where nobody can recover them. The operator picks a level for the search area: none, low, medium, high, extreme (0%, 0.2%, 2%, 5%, 15% loss per 24 h of diving). A simulation result gives the **lost drones**. See [ADR-0012](../adr/0012-loss-risk-replaces-the-predator.md). | ✅ (*LossRiskLevel*) |
+| **Loss risk** | The probability of losing a drone during the mission. Drones are mostly lost through faults (leak, battery, navigation), worse where nobody can recover them. The operator picks a level for the search area: none, low, medium, high, extreme (0%, 0.2%, 2%, 5%, 15% loss per 24 h of diving). A simulation result gives the **lost drones**. See [ADR-0012](../adr/0012-loss-risk-replaces-the-predator.md) and [the studies](../loss-risk-research.md). | ✅ (*LossRiskLevel*) |
 | **AIS** | The system that gives the position of nearby ships. The operator checks it before launch. | 🔜 |
 | **Save / open a mission** | The operator can save a mission and open it again later, to reuse or change it. | 🔜 |
 | **Advance preparation** | Preparing a mission at the base, before leaving: the operator plans the mission ahead and decides which drones and equipment to load. | 🔜 |

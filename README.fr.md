@@ -234,7 +234,7 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Vitesse du prédateur (m/s), plus lent que les drones |
 | `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance à laquelle le prédateur attrape un drone (m) |
 | `SWARM_PREDATOR_ENABLED` | `swarm.predator.enabled` | `true` | Affiche le prédateur de la démo en direct (`false` pour le cacher) |
-| `SWARM_LOSS_RISK_LEVEL` | `swarm.loss-risk.level` | `none` | Risque de perte : `none`, `low`, `medium`, `high`, `extreme` (0 %, 0,2 %, 2 %, 5 %, 15 % pour 24 h de plongée). Un drone perdu ne revient pas |
+| `SWARM_LOSS_RISK_LEVEL` | `swarm.loss-risk.level` | `none` | [Risque de perte](docs/loss-risk-research.fr.md) : `none`, `low`, `medium`, `high`, `extreme` (0 %, 0,2 %, 2 %, 5 %, 15 % pour 24 h de plongée). Un drone perdu ne revient pas |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (par règle) | Poids et rayons des règles Boids |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (par seuil) | Seuils des diagnostics |
 

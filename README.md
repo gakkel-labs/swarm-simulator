@@ -230,7 +230,7 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Predator speed (m/s), slower than the drones |
 | `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance at which the predator catches a drone (m) |
 | `SWARM_PREDATOR_ENABLED` | `swarm.predator.enabled` | `true` | Shows the predator of the live demo (`false` to hide it) |
-| `SWARM_LOSS_RISK_LEVEL` | `swarm.loss-risk.level` | `none` | Loss risk: `none`, `low`, `medium`, `high`, `extreme` (0%, 0.2%, 2%, 5%, 15% per 24 h of diving). A lost drone does not come back |
+| `SWARM_LOSS_RISK_LEVEL` | `swarm.loss-risk.level` | `none` | [Loss risk](docs/loss-risk-research.md): `none`, `low`, `medium`, `high`, `extreme` (0%, 0.2%, 2%, 5%, 15% per 24 h of diving). A lost drone does not come back |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (per rule) | Boids weights and radii |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (per threshold) | Diagnostics thresholds |
 

@@ -25,6 +25,9 @@ Avant de coder, nous avons lu les études publiées sur les pertes de drones sou
 - Une étude polaire donne 0,18 % pour une mission de 24 h par les pannes internes seules, et
   4,4 %, 13,2 % et 35 % en bonnes, moyennes et mauvaises conditions polaires ([JMSE, 2023](https://www.mdpi.com/2077-1312/11/10/1976)).
 
+Le détail des études, et le recoupement de chaque niveau avec elles, est dans
+[docs/loss-risk-research.fr.md](../loss-risk-research.fr.md).
+
 Un prédateur avec une vitesse et un rayon de capture ne modélise pas cela. Mais il rend bien
 dans la vue en direct, et il explique pourquoi un drone disparaît.
 

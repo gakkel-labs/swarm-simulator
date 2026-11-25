@@ -23,6 +23,9 @@ Before coding, we looked at published studies of underwater drone losses:
 - A polar study gives 0.18 % per 24 h mission from internal faults alone, and 4.4 %, 13.2 %
   and 35 % in good, moderate and bad polar conditions ([JMSE, 2023](https://www.mdpi.com/2077-1312/11/10/1976)).
 
+The studies in detail, and how each level is checked against them, are in
+[docs/loss-risk-research.md](../loss-risk-research.md).
+
 A predator with a speed and a catch radius does not model this. But it looks good in the live
 view, and it explains why a drone disappears.
 

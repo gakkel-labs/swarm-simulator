@@ -6,6 +6,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.DroneCatalog;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationEvent.EndReason;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.Scoring;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.ScoringSummary;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationResult;
 
 import org.slf4j.Logger;
@@ -19,7 +20,8 @@ import java.util.Map;
 /**
  * The command of Step 2: scores one fleet configuration on one mission, with no display. It
  * uses the same engine and the same {@link ParallelScoring} as the server will (the web call
- * comes with #175). The score itself comes with #82: for now it logs how the simulations ended.
+ * comes with #175). The score itself comes with #82: for now it logs how the simulations ended and a
+ * {@link ScoringSummary}.
  *
  * <p>The mission comes from {@code SWARM_SCORING_*} settings; there is no default search area,
  * seabed depth or fleet (see {@link ScoringSettings}).
@@ -52,6 +54,7 @@ public final class ScoringCommand {
 
         LOG.info("Scoring done in {} s - simulations ended by: {}", format(computationSeconds),
                 countByEndReason(results));
+        LOG.info("Scoring summary - {}", ScoringSummary.of(results).describe());
     }
 
     static Map<EndReason, Long> countByEndReason(List<SimulationResult> results) {

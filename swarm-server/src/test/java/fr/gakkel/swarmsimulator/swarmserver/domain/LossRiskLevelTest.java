@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LossRiskLevelTest {
 
     private static final double SECONDS_PER_DAY = 24 * 3600;
+    private static final double ONE_STEP_SECONDS = 1.0 / 30; // the simulation runs at 30 steps per second
 
     @Nested
     class LossProbabilityPerDay {
@@ -56,7 +57,7 @@ class LossRiskLevelTest {
 
         @Test
         void oneSimulationStep_isTinyButNotZero() {
-            double probability = LossRiskLevel.LOW.lossProbabilityDuring(1.0 / 30);
+            double probability = LossRiskLevel.LOW.lossProbabilityDuring(ONE_STEP_SECONDS);
 
             assertTrue(probability > 0, "the risk must not vanish in a short step");
             assertTrue(probability < 1e-7, "got " + probability);
@@ -71,6 +72,12 @@ class LossRiskLevelTest {
         void negativeDuration_throwsIllegalArgumentException() {
             assertThrows(IllegalArgumentException.class,
                     () -> LossRiskLevel.LOW.lossProbabilityDuring(-1.0));
+        }
+
+        @Test
+        void notANumberDuration_throwsIllegalArgumentException() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> LossRiskLevel.LOW.lossProbabilityDuring(Double.NaN));
         }
     }
 

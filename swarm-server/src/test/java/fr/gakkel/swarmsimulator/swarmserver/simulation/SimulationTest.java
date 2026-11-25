@@ -34,7 +34,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimulationTest {
 
     private static final BoidsConfig CONFIG = BoidsConfig.builder().build();
-    private static final double STEP_SECONDS = 1.0 / 30;
+    private static final int STEPS_PER_SECOND = 30;
+    private static final double STEP_SECONDS = 1.0 / STEPS_PER_SECOND;
+    private static final int TEN_SECONDS_OF_STEPS = 10 * STEPS_PER_SECOND;
+    private static final int ONE_MINUTE_OF_STEPS = 60 * STEPS_PER_SECOND;
     private static final DroneSpecification DEMO_DRONE = TestDrones.DEMO_DETECTION_DRONE;
     private static final double SENSOR_RANGE_METERS =
             DEMO_DRONE.searchSensor().maxRangeMeters();
@@ -342,7 +345,7 @@ class SimulationTest {
 
         private static final double ONE_HOUR_SECONDS = 3600;
         private static final int TEN_DAYS_OF_HOURS = 240;
-        // So long that every drone is lost at any level above NONE: e^(-rate x 1e9 s) is 0.
+        // So long that every drone is lost at EXTREME: e^(-rate x 1e9 s) is exactly 0 as a double.
         private static final double FOREVER_SECONDS = 1e9;
 
         private static Simulation createWithLossRisk(LossRiskLevel level, int droneCount,
@@ -407,12 +410,12 @@ class SimulationTest {
         void lostDrone_neverComesBackEvenWithTheDemoPredator() {
             FleetConfiguration fleet = FleetConfiguration.ofOneModel(DEMO_DRONE, 10,
                     new SearchPatternSettings.Boids(CONFIG));
-            Simulation simulation = Simulation.create(fleet, 100, 100, 50, LossRiskLevel.LOW,
-                    Optional.of(PredatorConfig.defaults()), 42L);
+            Simulation simulation = Simulation.create(fleet, 100, 100, 50,
+                    LossRiskLevel.EXTREME, Optional.of(PredatorConfig.defaults()), 42L);
             simulation.step(FOREVER_SECONDS);
             assertEquals(0, simulation.world().agentCount(), "every drone is lost");
 
-            runSteps(simulation, 300); // 10 s: longer than the predator respawn delay
+            runSteps(simulation, TEN_SECONDS_OF_STEPS); // longer than the predator respawn delay
 
             assertEquals(0, simulation.world().agentCount());
             assertEquals(10, simulation.lostDroneIds().size());
@@ -423,7 +426,7 @@ class SimulationTest {
             World world = new World(100, 100, 50);
             SearchPattern standStill = (anyDrone, anyWorld) -> Vector3D.ZERO;
             Simulation simulation = new Simulation(world, standStill, new Random(1L),
-                    LossRiskLevel.LOW, new Random(3L));
+                    LossRiskLevel.EXTREME, new Random(3L));
             Vector3D targetPosition = new Vector3D(50, -50, 25);
             Target target = new Target(targetPosition, simulation.clock());
             world.setTarget(target);
@@ -461,7 +464,7 @@ class SimulationTest {
         void withoutPredator_noDroneIsEatenInOneMinute() {
             Simulation simulation = Simulation.create(FLEET, 100, 100, 50, LossRiskLevel.NONE, 42L);
 
-            runSteps(simulation, 60 * 30);
+            runSteps(simulation, ONE_MINUTE_OF_STEPS);
 
             assertEquals(10, simulation.world().agentCount());
         }

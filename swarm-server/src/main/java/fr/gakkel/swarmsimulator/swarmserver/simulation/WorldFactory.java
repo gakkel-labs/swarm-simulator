@@ -15,9 +15,8 @@ import java.util.UUID;
 
 /**
  * Builds the starting world of a simulation: drones, obstacles and, for the live demo only, the
- * predator. Every random value
- * (ids, positions, speeds) comes from the generator it is given, so the same seed always gives
- * the same world.
+ * predator. Every random value (ids, positions, speeds) comes from the generator it is given, so
+ * the same seed always gives the same world.
  */
 public final class WorldFactory {
 

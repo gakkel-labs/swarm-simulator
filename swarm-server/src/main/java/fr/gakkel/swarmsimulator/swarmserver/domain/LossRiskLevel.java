@@ -42,8 +42,10 @@ public enum LossRiskLevel {
      * precise.
      */
     public double lossProbabilityDuring(double seconds) {
-        if (seconds < 0) {
-            throw new IllegalArgumentException("duration must not be negative, got " + seconds);
+        // Written as !(seconds >= 0) so that NaN is refused too.
+        if (!(seconds >= 0)) {
+            throw new IllegalArgumentException(
+                    "duration must be zero or positive, got " + seconds);
         }
         return -Math.expm1(-lossRatePerSecond * seconds);
     }

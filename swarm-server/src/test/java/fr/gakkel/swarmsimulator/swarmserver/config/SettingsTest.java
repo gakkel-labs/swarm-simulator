@@ -10,6 +10,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.UnknownDroneModelException;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.DemoOptions;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import org.junit.jupiter.api.Test;
 
@@ -266,7 +267,7 @@ class SettingsTest {
         Settings settings = load(Map.of("SWARM_PREDATOR_ENABLED", "false",
                 "SWARM_PREDATOR_SPEED", "fast"), new Properties());
 
-        assertTrue(settings.demoPredator().isEmpty());
+        assertEquals(DemoOptions.none(), settings.demoOptions());
     }
 
     @Test
@@ -284,11 +285,15 @@ class SettingsTest {
     }
 
     @Test
-    void demoPredator_givesThePredatorOnlyWhenItIsOn() {
-        assertEquals(Optional.of(PredatorConfig.defaults()),
-                load(Map.of(), new Properties()).demoPredator());
-        assertTrue(load(Map.of("SWARM_PREDATOR_ENABLED", "false"), new Properties())
-                .demoPredator().isEmpty());
+    void demoOptions_predatorOn_givesThePredatorAndTheRespawnOfTheLiveDemo() {
+        assertEquals(DemoOptions.withPredator(PredatorConfig.defaults()),
+                load(Map.of(), new Properties()).demoOptions());
+    }
+
+    @Test
+    void demoOptions_predatorOff_givesNoDemoOption() {
+        assertEquals(DemoOptions.none(),
+                load(Map.of("SWARM_PREDATOR_ENABLED", "false"), new Properties()).demoOptions());
     }
 
     @Test

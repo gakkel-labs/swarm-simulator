@@ -209,6 +209,11 @@ threads, catalogue des messages).
 - [ADR-0012](docs/adr/0012-loss-risk-replaces-the-predator.fr.md) : **Un risque de perte au lieu
   du prédateur** : l'opérateur choisit un niveau (aucun à extrême), les drones perdus ne
   reviennent pas ; le prédateur reste pour la démo en direct seulement (proposée).
+- [ADR-0013](docs/adr/0013-simulation-events-and-end-of-a-run.fr.md) : **Des événements et une fin
+  pour chaque run** : le moteur renvoie ce qui s'est passé (cible détectée, drone perdu...) au lieu
+  de l'écrire dans les logs ; un run en lot pose son épave au départ et s'arrête à la détection, au
+  temps limite ou quand il n'y a plus de drone ; prédateur et réapparition sont des options de
+  démo (proposée).
 
 ### Configuration
 

@@ -6,6 +6,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneSpecification;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
+import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
@@ -24,6 +25,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -32,7 +34,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimulationTest {
 
     private static final BoidsConfig CONFIG = BoidsConfig.builder().build();
-    private static final double STEP_SECONDS = 1.0 / 30;
+    private static final int STEPS_PER_SECOND = 30;
+    private static final double STEP_SECONDS = 1.0 / STEPS_PER_SECOND;
+    private static final int TEN_SECONDS_OF_STEPS = 10 * STEPS_PER_SECOND;
+    private static final int ONE_MINUTE_OF_STEPS = 60 * STEPS_PER_SECOND;
     private static final DroneSpecification DEMO_DRONE = TestDrones.DEMO_DETECTION_DRONE;
     private static final double SENSOR_RANGE_METERS =
             DEMO_DRONE.searchSensor().maxRangeMeters();
@@ -107,7 +112,8 @@ class SimulationTest {
         private static Simulation createSeededSimulation(long seed) {
             FleetConfiguration fleet = FleetConfiguration.ofOneModel(DEMO_DRONE, 20,
                     new SearchPatternSettings.Boids(CONFIG));
-            return Simulation.create(fleet, 100, 100, 50, PredatorConfig.defaults(), seed);
+            return Simulation.create(fleet, 100, 100, 50, LossRiskLevel.NONE,
+                    Optional.of(PredatorConfig.defaults()), seed);
         }
 
         /** What a run leaves: each drone id with its position, in id order. */
@@ -138,9 +144,11 @@ class SimulationTest {
                     new DroneGroup(TestDrones.detectionDrone("fast-b", 2.5, 30.0), 4)),
                     new SearchPatternSettings.Boids(CONFIG));
             Simulation firstRun =
-                    Simulation.create(mixedFleet, 100, 100, 50, PredatorConfig.defaults(), 42L);
+                    Simulation.create(mixedFleet, 100, 100, 50, LossRiskLevel.NONE,
+                            Optional.of(PredatorConfig.defaults()), 42L);
             Simulation secondRun =
-                    Simulation.create(mixedFleet, 100, 100, 50, PredatorConfig.defaults(), 42L);
+                    Simulation.create(mixedFleet, 100, 100, 50, LossRiskLevel.NONE,
+                            Optional.of(PredatorConfig.defaults()), 42L);
 
             runSteps(firstRun, THIRTY_SECONDS_OF_STEPS);
             runSteps(secondRun, THIRTY_SECONDS_OF_STEPS);
@@ -329,6 +337,136 @@ class SimulationTest {
             runSteps(simulation, 155); // a few steps past the 5 s delay
 
             assertEquals(1, world.agentCount());
+        }
+    }
+
+    @Nested
+    class LossRisk {
+
+        private static final double ONE_HOUR_SECONDS = 3600;
+        private static final int TEN_DAYS_OF_HOURS = 240;
+        // So long that every drone is lost at EXTREME: e^(-rate x 1e9 s) is exactly 0 as a double.
+        private static final double FOREVER_SECONDS = 1e9;
+
+        private static Simulation createWithLossRisk(LossRiskLevel level, int droneCount,
+                                                     long seed) {
+            FleetConfiguration fleet = FleetConfiguration.ofOneModel(DEMO_DRONE, droneCount,
+                    new SearchPatternSettings.Boids(CONFIG));
+            return Simulation.create(fleet, 100, 100, 50, level, seed);
+        }
+
+        private static void runHours(Simulation simulation, int hourCount) {
+            for (int hour = 0; hour < hourCount; hour++) {
+                simulation.step(ONE_HOUR_SECONDS);
+            }
+        }
+
+        @Test
+        void none_losesNoDroneEvenAfterTenDays() {
+            Simulation simulation = createWithLossRisk(LossRiskLevel.NONE, 20, 42L);
+
+            runHours(simulation, TEN_DAYS_OF_HOURS);
+
+            assertEquals(20, simulation.world().agentCount());
+            assertTrue(simulation.lostDroneIds().isEmpty());
+        }
+
+        @Test
+        void extreme_losesSomeDronesInTenDaysAndListsThem() {
+            Simulation simulation = createWithLossRisk(LossRiskLevel.EXTREME, 100, 42L);
+
+            runHours(simulation, TEN_DAYS_OF_HOURS);
+
+            int lostCount = simulation.lostDroneIds().size();
+            // About 80 expected (survival 0.85^10 = 0.2); the seed makes it exact, not the range.
+            assertTrue(lostCount > 50 && lostCount < 100, "lost " + lostCount);
+            assertEquals(100 - lostCount, simulation.world().agentCount());
+        }
+
+        @Test
+        void higherLevel_losesMoreDronesWithTheSameSeed() {
+            Simulation lowRisk = createWithLossRisk(LossRiskLevel.LOW, 100, 42L);
+            Simulation extremeRisk = createWithLossRisk(LossRiskLevel.EXTREME, 100, 42L);
+
+            runHours(lowRisk, TEN_DAYS_OF_HOURS);
+            runHours(extremeRisk, TEN_DAYS_OF_HOURS);
+
+            assertTrue(extremeRisk.lostDroneIds().size() > lowRisk.lostDroneIds().size());
+        }
+
+        @Test
+        void sameSeedTwice_losesTheSameDronesAtTheSameTime() {
+            Simulation firstRun = createWithLossRisk(LossRiskLevel.HIGH, 50, 7L);
+            Simulation secondRun = createWithLossRisk(LossRiskLevel.HIGH, 50, 7L);
+
+            runHours(firstRun, TEN_DAYS_OF_HOURS);
+            runHours(secondRun, TEN_DAYS_OF_HOURS);
+
+            assertFalse(firstRun.lostDroneIds().isEmpty());
+            assertEquals(firstRun.lostDroneIds(), secondRun.lostDroneIds());
+        }
+
+        @Test
+        void lostDrone_neverComesBackEvenWithTheDemoPredator() {
+            FleetConfiguration fleet = FleetConfiguration.ofOneModel(DEMO_DRONE, 10,
+                    new SearchPatternSettings.Boids(CONFIG));
+            Simulation simulation = Simulation.create(fleet, 100, 100, 50,
+                    LossRiskLevel.EXTREME, Optional.of(PredatorConfig.defaults()), 42L);
+            simulation.step(FOREVER_SECONDS);
+            assertEquals(0, simulation.world().agentCount(), "every drone is lost");
+
+            runSteps(simulation, TEN_SECONDS_OF_STEPS); // longer than the predator respawn delay
+
+            assertEquals(0, simulation.world().agentCount());
+            assertEquals(10, simulation.lostDroneIds().size());
+        }
+
+        @Test
+        void droneLostInTheSameStep_doesNotFindTheTarget() {
+            World world = new World(100, 100, 50);
+            SearchPattern standStill = (anyDrone, anyWorld) -> Vector3D.ZERO;
+            Simulation simulation = new Simulation(world, standStill, new Random(1L),
+                    LossRiskLevel.EXTREME, new Random(3L));
+            Vector3D targetPosition = new Vector3D(50, -50, 25);
+            Target target = new Target(targetPosition, simulation.clock());
+            world.setTarget(target);
+            world.addAgent(createAgent(targetPosition));
+
+            simulation.step(FOREVER_SECONDS);
+
+            assertEquals(0, world.agentCount(), "the drone is lost in this step");
+            assertFalse(target.isFound(), "a lost drone cannot report the target");
+        }
+    }
+
+    @Nested
+    class DemoPredator {
+
+        private static final FleetConfiguration FLEET = FleetConfiguration.ofOneModel(DEMO_DRONE,
+                10, new SearchPatternSettings.Boids(CONFIG));
+
+        @Test
+        void createWithoutPredator_hasNoPredator() {
+            Simulation simulation = Simulation.create(FLEET, 100, 100, 50, LossRiskLevel.NONE, 42L);
+
+            assertNull(simulation.world().predator());
+        }
+
+        @Test
+        void createWithPredator_hasThePredatorWithItsSettings() {
+            Simulation simulation = Simulation.create(FLEET, 100, 100, 50, LossRiskLevel.NONE,
+                    Optional.of(PredatorConfig.defaults()), 42L);
+
+            assertNotNull(simulation.world().predator());
+        }
+
+        @Test
+        void withoutPredator_noDroneIsEatenInOneMinute() {
+            Simulation simulation = Simulation.create(FLEET, 100, 100, 50, LossRiskLevel.NONE, 42L);
+
+            runSteps(simulation, ONE_MINUTE_OF_STEPS);
+
+            assertEquals(10, simulation.world().agentCount());
         }
     }
 

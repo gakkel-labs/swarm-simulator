@@ -41,11 +41,11 @@ More about the operator: [`docs/produit/persona-operateur.md`](docs/produit/pers
 Step 1 (a nice Unity scene) is done. Today the repository contains **the swarm part only**:
 
 - A **Java backend** simulates a swarm of 20 drones in 3D. The drones move as a group
-  (Reynolds' Boids rules), avoid obstacles, stay inside the search area and flee a danger
+  (Reynolds' Boids rules), avoid obstacles, stay inside the search area and flee a predator
   that hunts them.
 - A **Unity viewer** connects to the backend and shows the swarm live, above a real seabed
   (bathymetry of the Gakkel Ridge). The **detailed view** shows 3D models (drones, a shark for
-  the danger, a wreck, hydrothermal chimneys); the **simple view** (V key) shows plain shapes.
+  the predator, a wreck, hydrothermal chimneys); the **simple view** (V key) shows plain shapes.
   Three cameras: overview, follow one drone, free.
 - In the viewer, a **left-click places a target** (the "wreck"). The first drone that
   passes within 10 m of it detects it: the drone blinks and the screen shows which drone
@@ -72,7 +72,7 @@ neighbours and follows three simple rules.
 From these local rules, a group behaviour emerges. This suits a drone swarm well: no
 central brain, so losing one drone does not stop the others, and the swarm stays
 together without heavy communication. Gakkel adds a few rules on top: avoid obstacles,
-stay inside the search area, flee a danger, and a little random wandering (off by default).
+stay inside the search area, flee a predator, and a little random wandering (off by default).
 
 Details, diagrams and formulas: [`docs/01-boids-rules.md`](docs/01-boids-rules.md).
 
@@ -132,7 +132,7 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
 ### 3. Expected result
 
 - Drones appear above the seabed and move as a group.
-- A danger (a shark, or a red sphere in the simple view) chases them; nearby drones flee.
+- A predator (a shark, or a red sphere in the simple view) chases them; nearby drones flee.
 - Left-click in the scene to place the target. When a drone passes close to it, the
   drone blinks and the screen shows "Found by … in …s".
 - Keys: **V** detailed / simple view, **B** seabed rocks, **F** follow camera, **N** next
@@ -154,7 +154,7 @@ simulation state; Unity only displays it.
 flowchart LR
     subgraph Backend["Backend Java (swarm-server)"]
         SIM[SimulationLoop<br/>30 Hz tick]
-        WORLD[(World<br/>drones, obstacles,<br/>danger, target)]
+        WORLD[(World<br/>drones, obstacles,<br/>predator, target)]
         BCAST[SwarmObserverImpl<br/>broadcaster 20 Hz]
         CTRL[SimulationControlImpl<br/>PlaceTarget RPC]
         SIM -->|writes| WORLD
@@ -202,6 +202,9 @@ message catalogue).
 - [ADR-0011](docs/adr/0011-model-assumptions-and-scale.md) — **A realistic scale for the score**:
   a 7 x 7 km search area, a drone specification, a side-scan sonar, neighbours from the acoustic
   modem; the Unity demo keeps a small world (proposed).
+- [ADR-0012](docs/adr/0012-loss-risk-replaces-the-predator.md) — **A loss risk instead of the
+  predator**: the operator picks a level (none to extreme), lost drones do not come back; the
+  predator stays for the live demo only (proposed).
 
 ### Configuration
 
@@ -224,8 +227,10 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Water column, surface to seabed (m) |
 | `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | North–South size of the search area (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | RNG seed (`random` draws one and logs it) |
-| `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Danger speed (m/s), slower than the drones |
-| `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance at which the danger catches a drone (m) |
+| `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Predator speed (m/s), slower than the drones |
+| `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance at which the predator catches a drone (m) |
+| `SWARM_PREDATOR_ENABLED` | `swarm.predator.enabled` | `true` | Shows the predator of the live demo (`false` to hide it) |
+| `SWARM_LOSS_RISK_LEVEL` | `swarm.loss-risk.level` | `none` | [Loss risk](docs/loss-risk-research.md): `none`, `low`, `medium`, `high`, `extreme` (0%, 0.2%, 2%, 5%, 15% per 24 h of diving). A lost drone does not come back |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (per rule) | Boids weights and radii |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (per threshold) | Diagnostics thresholds |
 
@@ -234,7 +239,7 @@ The full list, with defaults, is commented in
 
 About the seed: the same seed gives the same starting positions and the same random
 choices. The simulation still runs on the real clock (for example the respawn delay
-after the danger), so two runs can drift apart over time. A simulation clock with a
+after the predator), so two runs can drift apart over time. A simulation clock with a
 `step(dt)` engine is planned before the optimizer (Step 2).
 
 ### Repository layout

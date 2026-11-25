@@ -29,6 +29,7 @@ More about the user: [`persona-operateur.md`](persona-operateur.md).
 | **Mission phases** | The key moments of a mission for the operator: **Prepare**, **Launch**, **Detect**, **Confirm**, **Intervene**, **Close**. | 🔜 |
 | **GO / NO-GO** | The decision to launch, or not, depending on the weather and sea traffic. | 🔜 |
 | **Weather window** | The period when the weather allows the drones to be launched and recovered. | 🔜 |
+| **Loss risk** | The probability of losing a drone during the mission. Drones are mostly lost through faults (leak, battery, navigation), worse where nobody can recover them. The operator picks a level for the search area: none, low, medium, high, extreme (0%, 0.2%, 2%, 5%, 15% loss per 24 h of diving). A simulation result gives the **lost drones**. See [ADR-0012](../adr/0012-loss-risk-replaces-the-predator.md) and [the studies](../loss-risk-research.md). | ✅ (*LossRiskLevel*) |
 | **AIS** | The system that gives the position of nearby ships. The operator checks it before launch. | 🔜 |
 | **Save / open a mission** | The operator can save a mission and open it again later, to reuse or change it. | 🔜 |
 | **Advance preparation** | Preparing a mission at the base, before leaving: the operator plans the mission ahead and decides which drones and equipment to load. | 🔜 |
@@ -126,7 +127,7 @@ line B                  #######      #######  drone at 50 m
 | **Cohesion** | Rule: stay close to the group. | ✅ |
 | **Obstacle** | Something in the search area that drones must avoid (a sphere in the simulation). | ✅ |
 | **Boundary** | The edges of the search area (in the simulation, the edges of the world). Drones are pushed back when they get too close. | ✅ |
-| **Danger** | Something the drones must flee or keep away from, because it can hurt or block them: a surface ship, a drifting fishing net, a large animal, a no-go area. Used to test how the swarm reacts. It can be switched ON or OFF in the simulation. | ✅ (*predator*, renamed soon) |
+| **Predator** | An animal that chases the drones, **only in the live demo**: it makes the scene lively and shows why a drone disappears. It is not a mission concept: batch runs never have one. On by default in the live view; it can be switched off. | ✅ (*Predator*) |
 | **Wander** | A little random movement so the swarm does not look mechanical. | ✅ |
 
 Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
@@ -143,7 +144,7 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 | **Simulation** | A computer run that imitates the mission, to test it before going to sea. It helps the operator; it is not a required step. | ✅ |
 | **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `SPECIALIST` (specialised drone, type only reserved), `CARRIER` (drone carrier). | ✅ |
 | **Tick** | One step of the simulation. The backend computes 30 ticks per second. | ✅ |
-| **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, danger, target. The backend sends one 20 times per second. | ✅ |
+| **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, demo predator, target. The backend sends one 20 times per second. | ✅ |
 | **gRPC stream** | The connection that carries the WorldState from the backend to the viewer, non-stop. | ✅ |
 | **Seed** | A number that sets the random choices. The same seed gives the same starting positions. | ✅ |
 | **Simulation clock** | A time that belongs to the simulation, not to the computer. It will make runs repeatable and faster than real time. | 🔜 |

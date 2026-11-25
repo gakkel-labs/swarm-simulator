@@ -29,6 +29,7 @@ Plus d'infos sur l'utilisateur : [`persona-operateur.fr.md`](persona-operateur.f
 | **Moments de la mission** | Les moments clés pour l'opérateur : **Préparer**, **Lancer**, **Détecter**, **Confirmer**, **Intervenir**, **Clôturer**. | 🔜 |
 | **GO / NO-GO** | La décision de lancer ou non, selon la météo et le trafic maritime. | 🔜 |
 | **Fenêtre météo** | La période où la météo permet de mettre à l'eau et de récupérer les drones. | 🔜 |
+| **Risque de perte** | La probabilité de perdre un drone pendant la mission. Les drones sont surtout perdus par des pannes (fuite, batterie, navigation), plus graves là où on ne peut pas les récupérer. L'opérateur choisit un niveau pour la zone de recherche : aucun, faible, moyen, élevé, extrême (0 %, 0,2 %, 2 %, 5 %, 15 % de perte pour 24 h de plongée). Le résultat d'une simulation donne les **drones perdus**. Voir [ADR-0012](../adr/0012-loss-risk-replaces-the-predator.fr.md) et [les études](../loss-risk-research.fr.md). | ✅ (*LossRiskLevel*) |
 | **AIS** | Le système qui donne la position des navires proches. L'opérateur le consulte avant le lancement. | 🔜 |
 | **Enregistrer / ouvrir une mission** | L'opérateur peut enregistrer une mission et l'ouvrir plus tard, pour la réutiliser ou la modifier. | 🔜 |
 | **Préparation en amont** | Préparer une mission à la base, avant de partir : l'opérateur planifie la mission à l'avance et décide quels drones et quel matériel embarquer. | 🔜 |
@@ -126,7 +127,7 @@ ligne B                 #######      #######  drone à 50 m
 | **Cohésion** | Règle : rester près du groupe. | ✅ |
 | **Obstacle** | Quelque chose dans la zone de recherche que les drones doivent éviter (une sphère dans la simulation). | ✅ |
 | **Limites** | Les bords de la zone de recherche (dans la simulation, les bords du monde). Les drones sont repoussés quand ils s'en approchent trop. | ✅ |
-| **Danger** | Quelque chose que les drones doivent fuir ou éviter, parce qu'il peut les abîmer ou les bloquer : un navire en surface, un filet de pêche dérivant, un gros animal, une zone interdite. Sert à tester la réaction de l'essaim. On peut l'activer ou le désactiver dans la simulation. | ✅ (*predator*, bientôt renommé) |
+| **Prédateur** | Un animal qui chasse les drones, **seulement dans la démo** en direct : il rend la scène vivante et montre pourquoi un drone disparaît. Ce n'est pas une notion de mission : les lots de simulations n'en ont jamais. Activé par défaut dans la vue en direct, on peut le désactiver. | ✅ (*Predator*) |
 | **Errance** | Un petit mouvement aléatoire pour que l'essaim n'ait pas l'air mécanique. | ✅ |
 
 Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
@@ -143,7 +144,7 @@ Détails et formules : [`../01-boids-rules.fr.md`](../01-boids-rules.fr.md).
 | **Simulation** | Un calcul sur ordinateur qui imite la mission, pour la tester avant d'aller en mer. C'est une aide pour l'opérateur, pas une étape obligatoire. | ✅ |
 | **Agent** | Le nom d'un drone dans le code de la simulation. Son type dit son rôle : `EXPLORER` (drone de détection), `SPECIALIST` (drone spécialisé, type seulement réservé), `CARRIER` (porte-drones). | ✅ |
 | **Tick** | Un pas de la simulation. Le backend calcule 30 ticks par seconde. | ✅ |
-| **WorldState** | Une « photo » de la simulation à un instant : drones, obstacles, danger, cible. Le backend en envoie 20 par seconde. | ✅ |
+| **WorldState** | Une « photo » de la simulation à un instant : drones, obstacles, prédateur de démo, cible. Le backend en envoie 20 par seconde. | ✅ |
 | **Flux gRPC** | La connexion qui transporte les WorldState du backend vers la vue 3D, en continu. | ✅ |
 | **Seed** (graine) | Un nombre qui fixe les tirages aléatoires. La même seed donne les mêmes positions de départ. | ✅ |
 | **Horloge de simulation** | Un temps propre à la simulation, pas celui de l'ordinateur. Elle rendra les essais répétables et plus rapides que le temps réel. | 🔜 |

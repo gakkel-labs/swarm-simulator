@@ -11,14 +11,14 @@
 
 Every tick, each drone (a **boid**) applies **Reynolds' 3 rules** (separation, alignment,
 cohesion) and **4 rules added by Gakkel** for its environment: stay inside the search area,
-avoid obstacles, flee the danger, and wander a little. Each rule gives a vector. The vectors are
+avoid obstacles, flee the predator, and wander a little. Each rule gives a vector. The vectors are
 weighted, summed, then applied to the velocity.
 
 **Key principle:** a drone only sees its **close neighbours**, within one perception radius
 (`perceptionRadius`). No global knowledge, no leader. The group behaviour comes from these
 simple local rules.
 
-> In the code, a drone is an `Agent` and the danger is a `Predator` (old name, to be renamed).
+> In the code, a drone is an `Agent`. The predator (`Predator`) only exists in the live demo: batch runs have none, and drones are lost there through the [loss risk](adr/0012-loss-risk-replaces-the-predator.md).
 > All rules are in [`BoidsRules.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/domain/BoidsRules.java).
 
 | # | Rule | Code | Reynolds? | Output |
@@ -28,7 +28,7 @@ simple local rules.
 | 3 | Cohesion | `cohesion` | yes | unit vector |
 | 4 | Boundary repulsion | `boundaryRepulsion` | no | unit vector |
 | 5 | Obstacle avoidance | `obstacleAvoidance` | no | **not normalized** |
-| 6 | Danger flee | `predatorFlee` | no | **not normalized** |
+| 6 | Predator flee | `predatorFlee` | no | **not normalized** |
 | 7 | Wander | `wander` | no | unit vector (off by default) |
 
 ---
@@ -43,7 +43,7 @@ flowchart LR
     P --> C[3 Cohesion<br/>stay grouped]
     A --> B[4 Boundary<br/>avoid edges]
     A --> O[5 Obstacles<br/>go around]
-    A --> F[6 Danger<br/>flee]
+    A --> F[6 Predator<br/>flee]
     A --> W[7 Wander<br/>random]
     S -->|× w_sep| SUM((Σ))
     AL -->|× w_align| SUM
@@ -57,7 +57,7 @@ flowchart LR
 ```
 
 Only rules 1 to 3 use the neighbour list. Rules 4 to 7 look at the world (walls, obstacles,
-danger) or at nothing (wander).
+predator) or at nothing (wander).
 
 ---
 
@@ -168,26 +168,26 @@ removes the part of its velocity that goes inwards (`resolveObstacleCollision`).
 
 ---
 
-## 8. Rule 6 — Danger flee *(added by Gakkel)*
+## 8. Rule 6 — Predator flee *(added by Gakkel)*
 
-**Goal:** flee the danger when it comes close. The danger is one moving object, not a
+**Goal:** flee the predator when it comes close. The predator is one moving object, not a
 neighbour, so it is handled apart from the neighbour list.
 
-**Principle:** inside `threatFleeRadius`, the danger pushes the drone away with a strength of
+**Principle:** inside `threatFleeRadius`, the predator pushes the drone away with a strength of
 **1/d**. The result is **not normalized**: with `threatFleeWeight = 200`, the flee wins over all
-the other rules when the danger is a few metres away. Outside the radius, the force is zero.
+the other rules when the predator is a few metres away. Outside the radius, the force is zero.
 
 ```text
-function predatorFlee(agent, danger):
-    away = agent.position - danger.position
+function predatorFlee(agent, predator):
+    away = agent.position - predator.position
     d = |away|
     if d > threatFleeRadius or d < ε: return (0, 0, 0)
     return away / d²                            # = unit(away) / d, NOT normalized
 ```
 
-The danger itself (`Predator`) goes straight to the nearest drone at 3 m/s (by default). If it gets closer
+The predator itself (`Predator`) goes straight to the nearest drone at 3 m/s (by default). If it gets closer
 than 1.5 m, it catches the drone: the drone is removed, then comes back 5 s later, at least 30 m
-away from the danger.
+away from the predator.
 
 ---
 
@@ -210,7 +210,7 @@ steer = w_sep      · separation(agent, neighbours)
       + w_coh      · cohesion(agent, neighbours)
       + w_boundary · boundaryRepulsion(agent, world)
       + w_obstacle · obstacleAvoidance(agent, obstacles)
-      + w_flee     · predatorFlee(agent, danger)      # only if there is a danger
+      + w_flee     · predatorFlee(agent, predator)      # only if there is a predator
       + w_wander   · wander()
 
 v = clamp(v + steer · dt, maxSpeed)                     # the only limit
@@ -235,7 +235,7 @@ digits. This is why the world keeps its drones **sorted by id**.
 - Time comes from the simulation clock (`SimulationClock`), never from the computer's clock.
 
 The test `SimulationTest.Reproducibility` checks these rules: the same seed run twice gives
-strictly equal positions and velocities after 30 s, danger included.
+strictly equal positions and velocities after 30 s, predator included.
 
 ---
 
@@ -254,16 +254,16 @@ Default values (`BoidsConfig`). Each one can be changed at start with an environ
 | `boundaryRepulsionWeight`  | `2.0`             | Weight of boundary repulsion                                    | Drones turn away from walls earlier          |
 | `obstacleAvoidanceRadius`  | `8.0` m           | Gap to a sphere surface below which it pushes                   | Drones go around obstacles from further away |
 | `obstacleAvoidanceWeight`  | `4.0`             | Weight of obstacle avoidance                                    | Wider turns around obstacles                 |
-| `threatFleeRadius`         | `15.0` m          | Distance at which a drone flees the danger                      | Wider panic zone                             |
-| `threatFleeWeight`         | `200.0`           | Weight of the danger flee                                       | Stronger panic response                      |
+| `threatFleeRadius`         | `15.0` m          | Distance at which a drone flees the predator                      | Wider panic zone                             |
+| `threatFleeWeight`         | `200.0`           | Weight of the predator flee                                       | Stronger panic response                      |
 | `wanderWeight`             | `0.0`             | Weight of wander (0 = off)                                      | More random, less mechanical                 |
 | `dt` *(simulation loop)*   | `1/30 s ≈ 33 ms`  | Time step (30 Hz)                                               | Larger steps → less stable                   |
 
-The danger has its own settings: speed 3 m/s (`SWARM_PREDATOR_SPEED`) and catch radius 1.5 m
+The predator has its own settings: speed 3 m/s (`SWARM_PREDATOR_SPEED`) and catch radius 1.5 m
 (`SWARM_PREDATOR_EAT_RADIUS`), both in `PredatorConfig`. The speed limit (5 m/s) and
 the detection radius (10 m) of a drone are not Boids settings: they come from its drone
 specification in the [drone catalog](drone-catalog.md) (#176). Other fixed values (in the code,
-not configurable yet): respawn after 5 s at least 30 m from the danger (`Simulation`). The 5 s are simulation time, not real time.
+not configurable yet): respawn after 5 s at least 30 m from the predator (`Simulation`). The 5 s are simulation time, not real time.
 
 **Rules of thumb:**
 - `w_sep` a little higher than `w_align` and `w_coh` → no collisions, the swarm still holds.
@@ -320,7 +320,7 @@ on the velocity.
 
 ### 13.4 Four rules added
 
-Boundary repulsion, obstacle avoidance, danger flee and wander are not in the 3-rule model.
+Boundary repulsion, obstacle avoidance, predator flee and wander are not in the 3-rule model.
 The `steer(agent, neighbours)` method without `world` (package-private) keeps the pure
 3-rule sum for unit tests.
 
@@ -329,7 +329,7 @@ The `steer(agent, neighbours)` method without `world` (package-private) keeps th
 | Rule output | `desired − velocity`, clamped | unit direction (rules 1–4, 7) | Each rule tested on its own |
 | Radii | 2 | 1 (`perceptionRadius`) | One parameter to tune |
 | MAX_FORCE | yes | no; `maxSpeed` only | Unit vectors are already bounded |
-| Environment | not handled | 4 added rules | Walls, obstacles, danger, wander |
+| Environment | not handled | 4 added rules | Walls, obstacles, predator, wander |
 
 ---
 

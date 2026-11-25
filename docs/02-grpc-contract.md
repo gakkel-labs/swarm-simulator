@@ -135,11 +135,11 @@ message PredatorState {
 }
 ```
 
-Snapshot of the **danger** at the broadcast instant. `Predator` is the old code name of the danger (see the [glossary](produit/glossaire.md)); the message keeps its name in `v1` so the contract does not break.
+Snapshot of the **predator** at the broadcast instant. The predator only exists in the live demo, to make the scene lively (see the [glossary](produit/glossaire.md) and [ADR-0012](adr/0012-loss-risk-replaces-the-predator.md)).
 
-- `id` — UUID of the danger, stable for the whole run. Clients should key by `id` for stateful rendering.
-- `position_xyz` — danger center, meters, NED. Same coordinate frame as `AgentState.position_xyz`.
-- `velocity_mps` — instantaneous velocity, m/s, NED. Its magnitude is the danger speed, set with `SWARM_PREDATOR_SPEED` (default 3.0 m/s, slower than the drones so they can escape). The catch distance is set with `SWARM_PREDATOR_EAT_RADIUS` (default 1.5 m).
+- `id` — UUID of the predator, stable for the whole run. Clients should key by `id` for stateful rendering.
+- `position_xyz` — predator center, meters, NED. Same coordinate frame as `AgentState.position_xyz`.
+- `velocity_mps` — instantaneous velocity, m/s, NED. Its magnitude is the predator speed, set with `SWARM_PREDATOR_SPEED` (default 3.0 m/s, slower than the drones so they can escape). The catch distance is set with `SWARM_PREDATOR_EAT_RADIUS` (default 1.5 m).
 
 No orientation field — visual heading is derived client-side from `velocity_mps`.
 
@@ -163,7 +163,7 @@ Full snapshot of the simulated world at instant `timestamp_unix_ms`.
 - `timestamp_unix_ms` — server wall clock at the moment the frame was built (`System.currentTimeMillis()`). See §5.3.
 - `agents` — every agent in the world. Order is **not** guaranteed; clients must key by `id`.
 - `obstacles` — every obstacle in the world. Empty list is legal.
-- `predators` — every danger in the world. Contains exactly **1 entry** today. Empty list is legal (no danger). Clients must handle an empty list gracefully — hide the danger GameObject when the list becomes empty.
+- `predators` — every predator in the world. Contains **1 entry** when the demo predator is on (`SWARM_PREDATOR_ENABLED=true`, the default) and is **empty** when it is off. Clients must handle an empty list gracefully — hide the predator GameObject when the list becomes empty.
 - `search_status` — present only when a target has been placed via `PlaceTarget`. Absent until then (proto3 default).
 - `sensor_radius_m` — detection radius shared by all agents in metres. Clients use this to size the detection-zone overlay.
 - `cohesion_spread_m` — mean position spread (standard deviation from centroid) smoothed over the last 30 ticks (~1 s). Zero until the first tick completes. Used by the Unity HUD and exported to `metrics/cohesion-*.csv`.
@@ -368,7 +368,7 @@ The contract is intentionally minimal so future iterations slot in without break
 
 | Future need                           | Likely extension                                                                |
 | ------------------------------------- | ------------------------------------------------------------------------------- |
-| Danger                                | ✅ **Done** — `repeated PredatorState predators = 4` on `WorldState`. The danger chases the drones; Unity draws it as a shark (detailed view) or a red sphere (simple view), see `PredatorRenderer.cs`. |
+| Predator                                | ✅ **Done** — `repeated PredatorState predators = 4` on `WorldState`. The predator chases the drones; Unity draws it as a shark (detailed view) or a red sphere (simple view), see `PredatorRenderer.cs`. |
 | Drone carrier and specialised drones  | Existing `AgentType` enum already covers `CARRIER` / `SPECIALIST`               |
 | Commands to the fleet (Step 6)        | **New** service, separate RPC — keep the observer read-only                     |
 | Fleet configurations and scores (Step 2–3) | New messages or a new service; the observer stays as it is                 |

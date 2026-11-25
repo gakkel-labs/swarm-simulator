@@ -3,11 +3,13 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneSpecification;
+import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -75,6 +77,22 @@ class WorldFactoryTest {
     @Test
     void createWorld_demoDrones_hasPredator() {
         assertNotNull(demoWorld().predator());
+    }
+
+    @Test
+    void createWorld_withoutPredator_hasNoPredatorAndTheSameDrones() {
+        World withPredator = WorldFactory.createWorld(TestDrones.demoDrones(20), 100, 100, 50,
+                Optional.of(PredatorConfig.defaults()), new Random(42L));
+        World withoutPredator = WorldFactory.createWorld(TestDrones.demoDrones(20), 100, 100, 50,
+                Optional.empty(), new Random(42L));
+
+        assertNull(withoutPredator.predator());
+        // The predator is drawn after the drones: switching it off does not move them.
+        assertEquals(dronePositions(withPredator), dronePositions(withoutPredator));
+    }
+
+    private static List<String> dronePositions(World world) {
+        return world.agents().stream().map(agent -> agent.id() + " " + agent.position()).toList();
     }
 
     private static World demoWorld() {

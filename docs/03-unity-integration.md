@@ -136,7 +136,7 @@ Called by the dispatcher on the main thread. Freely modifies GameObjects:
 ```csharp
 private void OnWorldStateReceived(WorldState ws)
 {
-    visualizer?.Apply(ws);                      // moves the drones, the danger, the obstacles
+    visualizer?.Apply(ws);                      // moves the drones, the predator, the obstacles
     targetRenderer?.Apply(ws.SearchStatus);     // shows the target and the detection
 }
 ```

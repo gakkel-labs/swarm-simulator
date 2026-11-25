@@ -5,6 +5,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.DroneCatalog;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneSpecification;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
+import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
@@ -15,11 +16,13 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -235,6 +238,57 @@ class SettingsTest {
                 () -> load(Map.of("SWARM_PREDATOR_SPEED", "0"), new Properties()));
 
         assertTrue(exception.getMessage().contains("SWARM_PREDATOR_SPEED"));
+    }
+
+    @Test
+    void predator_isOnByDefaultForTheLiveDemo() {
+        assertTrue(load(Map.of(), new Properties()).predatorEnabled());
+    }
+
+    @Test
+    void predator_canBeSwitchedOff() {
+        assertFalse(load(Map.of("SWARM_PREDATOR_ENABLED", "false"), new Properties())
+                .predatorEnabled());
+        assertFalse(load(Map.of(), props("swarm.predator.enabled", "false")).predatorEnabled());
+    }
+
+    @Test
+    void predator_enabledNotTrueOrFalse_throwsWithTheVariableName() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> load(Map.of("SWARM_PREDATOR_ENABLED", "maybe"), new Properties()));
+
+        assertEquals("SWARM_PREDATOR_ENABLED='maybe' must be true or false",
+                exception.getMessage());
+    }
+
+    @Test
+    void demoPredator_givesThePredatorOnlyWhenItIsOn() {
+        assertEquals(Optional.of(PredatorConfig.defaults()),
+                load(Map.of(), new Properties()).demoPredator());
+        assertTrue(load(Map.of("SWARM_PREDATOR_ENABLED", "false"), new Properties())
+                .demoPredator().isEmpty());
+    }
+
+    @Test
+    void lossRisk_isNoneByDefaultSoTheLiveViewLosesNoDrone() {
+        assertEquals(LossRiskLevel.NONE, load(Map.of(), new Properties()).lossRisk());
+    }
+
+    @Test
+    void lossRisk_isReadFromTheEnvironmentOrTheProperties() {
+        assertEquals(LossRiskLevel.HIGH,
+                load(Map.of("SWARM_LOSS_RISK_LEVEL", "high"), new Properties()).lossRisk());
+        assertEquals(LossRiskLevel.LOW,
+                load(Map.of(), props("swarm.loss-risk.level", "low")).lossRisk());
+    }
+
+    @Test
+    void lossRisk_unknownLevel_throwsWithTheVariableName() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> load(Map.of("SWARM_LOSS_RISK_LEVEL", "huge"), new Properties()));
+
+        assertTrue(exception.getMessage().startsWith("SWARM_LOSS_RISK_LEVEL: "),
+                exception.getMessage());
     }
 
     @Test

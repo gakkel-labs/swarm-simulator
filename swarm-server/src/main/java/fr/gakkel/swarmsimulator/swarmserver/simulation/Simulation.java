@@ -3,6 +3,7 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
+import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
@@ -21,7 +22,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 /**
  * The simulation engine: {@link #step} moves the world forward by a given duration of
@@ -40,45 +43,74 @@ public final class Simulation {
     // Distinct salts so the random streams derived from the one master seed don't share state.
     private static final long RESPAWN_SEED_SALT = 0x9E3779B97F4A7C15L;
     private static final long SEARCH_PATTERN_SEED_SALT = 0xC2B2AE3D27D4EB4FL;
+    private static final long LOSS_RISK_SEED_SALT = 0x165667B19E3779F9L;
 
-    /** A drone eaten by the predator, waiting to come back into the search area. */
+    /** A drone eaten by the demo predator, waiting to come back into the search area. */
     private record PendingRespawn(Agent agent, double dueAtSeconds) {}
 
     private final World world;
     private final SearchPattern searchPattern;
     private final Random respawnRandom;
+    private final LossRiskLevel lossRisk;
+    private final Random lossRandom;
     private final SimulationClock clock = new SimulationClock();
     private final List<PendingRespawn> pendingRespawns = new ArrayList<>();
+    private final List<UUID> lostDroneIds = new ArrayList<>();
 
     /**
-     * {@code searchPattern} says where each drone wants to go; the simulation then applies the
-     * same physics to every pattern: the cruise speed of each drone (from its specification),
-     * obstacles and walls. {@code respawnRandom} places the drones that come back after the
-     * predator ate them.
+     * A simulation without loss risk. {@code searchPattern} says where each drone wants to go;
+     * the simulation then applies the same physics to every pattern: the cruise speed of each
+     * drone (from its specification), obstacles and walls. {@code respawnRandom} places the
+     * drones that come back after the demo predator ate them.
      */
     public Simulation(World world, SearchPattern searchPattern, Random respawnRandom) {
+        this(world, searchPattern, respawnRandom, LossRiskLevel.NONE, new Random(0L));
+    }
+
+    /**
+     * A simulation where each drone may be lost while it dives, at the rate of {@code lossRisk}.
+     * {@code lossRandom} draws which drones are lost.
+     */
+    public Simulation(World world, SearchPattern searchPattern, Random respawnRandom,
+                      LossRiskLevel lossRisk, Random lossRandom) {
         this.world = Objects.requireNonNull(world, "world");
         this.searchPattern = Objects.requireNonNull(searchPattern, "searchPattern");
         this.respawnRandom = Objects.requireNonNull(respawnRandom, "respawnRandom");
+        this.lossRisk = Objects.requireNonNull(lossRisk, "lossRisk");
+        this.lossRandom = Objects.requireNonNull(lossRandom, "lossRandom");
+    }
+
+    /**
+     * A simulation without the demo predator, as batch runs will use: see
+     * {@link #create(FleetConfiguration, double, double, double, LossRiskLevel, Optional, long)}.
+     */
+    public static Simulation create(FleetConfiguration fleet, double width, double height,
+                                    double depth, LossRiskLevel lossRisk, long masterSeed) {
+        return create(fleet, width, height, depth, lossRisk, Optional.empty(), masterSeed);
     }
 
     /**
      * Builds a world and its simulation from a fleet configuration and one master seed.
      * Everything random in the run comes from that seed: drone ids and start positions, respawn
-     * places and the random part of the search pattern. The generators belong to this simulation
-     * only: never share them with another simulation or thread.
+     * places, the random part of the search pattern and the lost drones. The generators belong
+     * to this simulation only: never share them with another simulation or thread.
+     *
+     * @param demoPredator the predator of the live demo, or empty for none. Batch runs never
+     *                     have one: the predator is not a mission concept (ADR-0012).
      */
     public static Simulation create(FleetConfiguration fleet, double width, double height,
-                                    double depth, PredatorConfig predator, long masterSeed) {
-        World world = WorldFactory.createWorld(fleet.droneGroups(), width, height, depth, predator,
-                new Random(masterSeed));
+                                    double depth, LossRiskLevel lossRisk,
+                                    Optional<PredatorConfig> demoPredator, long masterSeed) {
+        World world = WorldFactory.createWorld(fleet.droneGroups(), width, height, depth,
+                demoPredator, new Random(masterSeed));
         Random searchPatternRandom = new Random(masterSeed ^ SEARCH_PATTERN_SEED_SALT);
         // A factory: the configuration only names the pattern and its settings, and each run
         // gets a new pattern object with its own random generator.
         return switch (fleet.searchPattern()) {
             case SearchPatternSettings.Boids boids -> new Simulation(world,
                     new BoidsSearchPattern(boids.config(), searchPatternRandom),
-                    new Random(masterSeed ^ RESPAWN_SEED_SALT));
+                    new Random(masterSeed ^ RESPAWN_SEED_SALT), lossRisk,
+                    new Random(masterSeed ^ LOSS_RISK_SEED_SALT));
         };
     }
 
@@ -90,10 +122,15 @@ public final class Simulation {
         return clock;
     }
 
+    /** The drones lost to the loss risk, in the order they were lost. They never come back. */
+    public List<UUID> lostDroneIds() {
+        return List.copyOf(lostDroneIds);
+    }
+
     /**
      * Moves the world forward by {@code stepSeconds} of simulation time. The order inside a step:
-     * drones move, the clock advances, the predator hunts, the target is checked, then the
-     * drones whose respawn delay is over come back.
+     * drones move, the clock advances, some drones may be lost (loss risk), the demo predator
+     * hunts, the target is checked, then the drones whose respawn delay is over come back.
      */
     public void step(double stepSeconds) {
         // Checked first so a bad step changes nothing in the world.
@@ -103,8 +140,9 @@ public final class Simulation {
         List<Agent> agents = List.copyOf(world.agents());
         moveDrones(agents, stepSeconds);
         clock.advance(stepSeconds);
+        loseDronesAtRisk(stepSeconds);
         huntWithPredator(stepSeconds);
-        // Only the drones still in the world: a drone eaten in this step cannot report the target.
+        // Only the drones still in the world: a drone lost in this step cannot report the target.
         checkTargetDetection(world.agents());
         respawnDronesWhoseDelayIsOver();
     }
@@ -136,6 +174,20 @@ public final class Simulation {
             newVelocity = constrainVelocityToWalls(newPosition, newVelocity, world);
             newPosition = world.clamp(newPosition);
             agent.update(newPosition, newVelocity);
+        }
+    }
+
+    // One draw per drone, in the sorted order of the world, so the same seed loses the same
+    // drones. With no risk there is no draw at all: the run is the same as before #130.
+    private void loseDronesAtRisk(double stepSeconds) {
+        if (lossRisk == LossRiskLevel.NONE) return;
+        double lossProbability = lossRisk.lossProbabilityDuring(stepSeconds);
+        for (Agent agent : List.copyOf(world.agents())) {
+            if (lossRandom.nextDouble() < lossProbability) {
+                world.removeAgent(agent);
+                lostDroneIds.add(agent.id());
+                LOG.info("drone {} lost (loss risk {})", agent.id(), lossRisk);
+            }
         }
     }
 

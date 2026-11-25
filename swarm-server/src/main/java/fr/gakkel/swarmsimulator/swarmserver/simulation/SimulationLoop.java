@@ -3,6 +3,7 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
+import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -13,6 +14,7 @@ import org.slf4j.MDC;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -168,11 +170,12 @@ public class SimulationLoop {
      * {@link WorldFactory} or the per-stream RNGs directly.
      */
     public static Wiring wire(FleetConfiguration fleet, double width, double height, double depth,
-                              DiagnosticsConfig diagnostics, PredatorConfig predator,
-                              long masterSeed, ScheduledExecutorService executor,
+                              DiagnosticsConfig diagnostics, LossRiskLevel lossRisk,
+                              Optional<PredatorConfig> demoPredator, long masterSeed,
+                              ScheduledExecutorService executor,
                               CohesionCsvExporter csvExporter) {
-        Simulation simulation = Simulation.create(fleet, width, height, depth, predator,
-                masterSeed);
+        Simulation simulation = Simulation.create(fleet, width, height, depth, lossRisk,
+                demoPredator, masterSeed);
         SimulationLoop loop = new SimulationLoop(simulation,
                 fleet.fastestCruiseSpeedMetersPerSecond(), diagnostics, executor, csvExporter);
         return new Wiring(simulation.world(), simulation, loop);

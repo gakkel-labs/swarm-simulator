@@ -9,11 +9,13 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
 /**
- * Builds the starting world of a simulation: drones, obstacles and danger. Every random value
+ * Builds the starting world of a simulation: drones, obstacles and, for the live demo only, the
+ * predator. Every random value
  * (ids, positions, speeds) comes from the generator it is given, so the same seed always gives
  * the same world.
  */
@@ -36,13 +38,15 @@ public final class WorldFactory {
     // (50,-50,25)/(25,-70,25)/(75,-30,25), radii (8/5/6) and predator (5,-5,5) exactly.
     static World createWorld(List<DroneGroup> droneGroups, double width, double height,
                              double depth, Random rng) {
-        return createWorld(droneGroups, width, height, depth, PredatorConfig.defaults(), rng);
+        return createWorld(droneGroups, width, height, depth, Optional.of(PredatorConfig.defaults()),
+                rng);
     }
 
     // Drones are created group by group, in the order of the fleet configuration: the same
-    // configuration and seed always give the same random draws, so the same world.
+    // configuration and seed always give the same random draws, so the same world. The demo
+    // predator is drawn last, so switching it off does not move the drones.
     static World createWorld(List<DroneGroup> droneGroups, double width, double height,
-                             double depth, PredatorConfig predatorConfig, Random rng) {
+                             double depth, Optional<PredatorConfig> demoPredator, Random rng) {
         World world = new World(width, height, depth);
         for (DroneGroup group : droneGroups) {
             for (int i = 0; i < group.count(); i++) {
@@ -54,9 +58,11 @@ public final class WorldFactory {
         world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0 * radiusScale));
         world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
         world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
-        Vector3D predatorStart = new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth);
-        world.setPredator(
-                new Predator(seededId(rng), predatorStart, Vector3D.ZERO, predatorConfig));
+        demoPredator.ifPresent(predatorConfig -> {
+            Vector3D predatorStart = new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth);
+            world.setPredator(
+                    new Predator(seededId(rng), predatorStart, Vector3D.ZERO, predatorConfig));
+        });
         return world;
     }
 

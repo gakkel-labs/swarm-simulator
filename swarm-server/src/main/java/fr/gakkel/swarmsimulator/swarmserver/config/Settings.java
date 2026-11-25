@@ -4,6 +4,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneCatalog;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
+import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
@@ -45,6 +46,8 @@ public record Settings(
         BoidsConfig boids,
         DiagnosticsConfig diagnostics,
         PredatorConfig predator,
+        boolean predatorEnabled,
+        LossRiskLevel lossRisk,
         String droneCatalogLocation,
         List<RequestedDrones> requestedFleet) {
 
@@ -97,6 +100,14 @@ public record Settings(
         return new FleetConfiguration(groups, searchPattern);
     }
 
+    /**
+     * The predator of the live demo, or empty when it is switched off. It is only for the demo:
+     * batch runs never use it (ADR-0012).
+     */
+    public Optional<PredatorConfig> demoPredator() {
+        return predatorEnabled ? Optional.of(predator) : Optional.empty();
+    }
+
     /** Loads settings from the process environment and the {@code application.properties} classpath resource. */
     public static Settings load() {
         return load(System.getenv(), loadClasspathProperties());
@@ -117,6 +128,9 @@ public record Settings(
         BoidsConfig boids = resolveBoids(env, props);
         DiagnosticsConfig diagnostics = resolveDiagnostics(env, props);
         PredatorConfig predator = resolvePredator(env, props);
+        boolean predatorEnabled = booleanValue(env, props, "SWARM_PREDATOR_ENABLED",
+                "swarm.predator.enabled", true);
+        LossRiskLevel lossRisk = resolveLossRisk(env, props);
         String droneCatalogLocation = raw(env, props, "SWARM_DRONE_CATALOG", "swarm.drone-catalog")
                 .orElse(DEFAULT_DRONE_CATALOG);
         List<RequestedDrones> requestedFleet = raw(env, props, "SWARM_FLEET", "swarm.fleet")
@@ -124,12 +138,14 @@ public record Settings(
                 .orElse(List.of());
 
         LOG.info("Settings - port={} | agents={} | fleet={} | drone catalog={} | world={}x{}x{} "
-                        + "| seed={}", port, agentCount,
+                        + "| seed={} | loss risk={} | demo predator={}", port, agentCount,
                 requestedFleet.isEmpty() ? "default model" : requestedFleet, droneCatalogLocation,
-                worldWidth, worldHeight, worldDepth, seed);
+                worldWidth, worldHeight, worldDepth, seed, lossRisk,
+                predatorEnabled ? "on" : "off");
 
         return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed,
-                boids, diagnostics, predator, droneCatalogLocation, requestedFleet);
+                boids, diagnostics, predator, predatorEnabled, lossRisk, droneCatalogLocation,
+                requestedFleet);
     }
 
     /** Reads {@code model:count,model:count}; spaces around the parts are allowed. */
@@ -199,6 +215,19 @@ public record Settings(
         }
     }
 
+    private static LossRiskLevel resolveLossRisk(Map<String, String> env, Properties props) {
+        Optional<String> raw = raw(env, props, "SWARM_LOSS_RISK_LEVEL", "swarm.loss-risk.level");
+        if (raw.isEmpty()) {
+            return LossRiskLevel.NONE;
+        }
+        try {
+            return LossRiskLevel.fromSetting(raw.get());
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("SWARM_LOSS_RISK_LEVEL: " + exception.getMessage(),
+                    exception);
+        }
+    }
+
     /**
      * Resolves the master RNG seed. Accepts a number for reproducible runs, {@code random}/{@code none}
      * for a freshly drawn seed (logged so the run can be replayed), or falls back to
@@ -246,6 +275,16 @@ public record Settings(
         String fromProps = props.getProperty(propKey);
         if (fromProps != null && !fromProps.isBlank()) return Optional.of(fromProps.trim());
         return Optional.empty();
+    }
+
+    // Only "true" or "false": a typo such as "ture" must not silently switch a feature off.
+    private static boolean booleanValue(Map<String, String> env, Properties props, String envKey,
+                                        String propKey, boolean def) {
+        return raw(env, props, envKey, propKey).map(value -> {
+            if (value.equalsIgnoreCase("true")) return true;
+            if (value.equalsIgnoreCase("false")) return false;
+            throw new IllegalArgumentException(envKey + "='" + value + "' must be true or false");
+        }).orElse(def);
     }
 
     private static int intValue(Map<String, String> env, Properties props, String envKey, String propKey, int def) {

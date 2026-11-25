@@ -623,7 +623,8 @@ namespace Gakkel.Swarm.Unity
         }
 
         // Called with the first WorldState: the seabed is placed from the search area size sent by
-        // the server, so changing SWARM_WORLD_* keeps the swarm above the seabed with no Unity change.
+        // the server, so changing SWARM_DEMO_SEARCH_AREA_* or SWARM_DEMO_SEABED_DEPTH keeps the
+        // swarm above the seabed with no Unity change.
         // Checked on every WorldState: a new mission (or a restarted server) can change the size.
         private void PlaceSeabedForSearchArea(Vec3 searchAreaSizeNed)
         {

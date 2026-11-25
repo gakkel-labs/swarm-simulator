@@ -41,7 +41,7 @@ public sealed interface SimulationEvent {
     /**
      * A drone left the world. With the cause {@link LossCause#DEMO_PREDATOR} it may come back
      * later ({@link DroneRespawned}): count the losses for good with
-     * {@code Simulation.lostDroneIds()}. Batch runs have no predator.
+     * {@code Simulation.lostDroneIds()}. Scoring simulations have no predator.
      */
     record DroneLost(UUID droneId, LossCause cause, double atSeconds) implements SimulationEvent {
 

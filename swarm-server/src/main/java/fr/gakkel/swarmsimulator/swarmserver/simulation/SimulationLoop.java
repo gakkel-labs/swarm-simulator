@@ -3,11 +3,10 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.EndConditions;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
-import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Mission;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Scenario;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationEvent;
-import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
@@ -26,7 +25,8 @@ public class SimulationLoop {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulationLoop.class);
     public static final int  TICK_RATE_HZ          = 30;
-    private static final double DT = 1.0 / TICK_RATE_HZ;
+    // The step of the live demo is part of its simulation profile (#177).
+    private static final double DT = SimulationProfile.DEMO.stepSeconds();
     // 1000 / 30 = 33ms period → actual rate ~30.3Hz (integer division); acceptable for diagnostics
     private static final int LOG_INTERVAL_TICKS = 5 * TICK_RATE_HZ;
 
@@ -208,14 +208,13 @@ public class SimulationLoop {
      * the entire run is reproducible. This is the public assembly entry point — callers never touch
      * {@link WorldFactory} or the per-stream RNGs directly.
      */
-    public static Wiring wire(FleetConfiguration fleet, double width, double height, double depth,
-                              DiagnosticsConfig diagnostics, LossRiskLevel lossRisk,
-                              DemoOptions demo, long masterSeed,
+    public static Wiring wire(FleetConfiguration fleet, Mission mission,
+                              DiagnosticsConfig diagnostics, DemoOptions demo, long masterSeed,
                               ScheduledExecutorService executor,
                               CohesionCsvExporter csvExporter) {
         // The live demo has no wreck at the start (the operator places the target with a click)
         // and never ends.
-        Simulation simulation = Simulation.create(fleet, width, height, depth, lossRisk,
+        Simulation simulation = Simulation.create(fleet, mission,
                 Scenario.withoutWreck(masterSeed), EndConditions.never(), demo);
         SimulationLoop loop = new SimulationLoop(simulation,
                 fleet.fastestCruiseSpeedMetersPerSecond(), diagnostics, executor, csvExporter);

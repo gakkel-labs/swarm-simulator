@@ -5,7 +5,9 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.DroneCatalog;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Mission;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchArea;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DemoOptions;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
@@ -41,9 +43,8 @@ import java.util.function.IntConsumer;
 public record Settings(
         int port,
         int agentCount,
-        double worldWidth,
-        double worldHeight,
-        double worldDepth,
+        SearchArea demoSearchArea,
+        double demoSeabedDepthMeters,
         long seed,
         BoidsConfig boids,
         DiagnosticsConfig diagnostics,
@@ -73,13 +74,16 @@ public record Settings(
             + "side-scan-drone:6,fast-drone:4)";
 
     public Settings {
-        // World dimensions are also validated by the World constructor, but agent count has no other
+        // The search area checks its own sizes, but agent count has no other
         // guard: 0 (or negative) would silently produce NaN cohesion metrics on an empty swarm.
         if (agentCount < 1) {
             throw new IllegalArgumentException("agent count must be >= 1 (got " + agentCount + ")");
         }
         Objects.requireNonNull(predator, "predator");
         Objects.requireNonNull(lossRisk, "lossRisk");
+        // A Mission checks the search area and the seabed depth: a bad value stops the start
+        // here, before the drone catalog is read.
+        new Mission(demoSearchArea, demoSeabedDepthMeters, lossRisk);
         requestedFleet = List.copyOf(requestedFleet);
     }
 
@@ -105,12 +109,20 @@ public record Settings(
     }
 
     /**
+     * The mission of the live demo: its small search area, its flat seabed and the loss risk.
+     * Its numbers are never used for a score (ADR-0011).
+     */
+    public Mission demoMission() {
+        return new Mission(demoSearchArea, demoSeabedDepthMeters, lossRisk);
+    }
+
+    /**
      * The options of the live demo: the predator and the respawn of the drones it eats, or no
-     * option when the predator is switched off. They are only for the demo: batch runs use
+     * option when the predator is switched off. They are only for the demo: scoring simulations use
      * {@link DemoOptions#none()} (ADR-0012).
      */
     public DemoOptions demoOptions() {
-        return predatorEnabled ? DemoOptions.withPredator(predator) : DemoOptions.none();
+        return predatorEnabled ? DemoOptions.withPredator(predator) : DemoOptions.withoutPredator();
     }
 
     /** Loads settings from the process environment and the {@code application.properties} classpath resource. */
@@ -125,9 +137,16 @@ public record Settings(
     static Settings load(Map<String, String> env, Properties props) {
         int port = intValue(env, props, "SWARM_PORT", "swarm.port", DEFAULT_PORT);
         int agentCount = intValue(env, props, "SWARM_AGENT_COUNT", "swarm.agent-count", SimulationConstants.DEFAULT_AGENT_COUNT);
-        double worldWidth = doubleValue(env, props, "SWARM_WORLD_WIDTH", "swarm.world.width", SimulationConstants.DEFAULT_WORLD_WIDTH);
-        double worldHeight = doubleValue(env, props, "SWARM_WORLD_HEIGHT", "swarm.world.height", SimulationConstants.DEFAULT_WORLD_HEIGHT);
-        double worldDepth = doubleValue(env, props, "SWARM_WORLD_DEPTH", "swarm.world.depth", SimulationConstants.DEFAULT_WORLD_DEPTH);
+        refuseRenamedWorldKeys(env, props);
+        SearchArea demoSearchArea = new SearchArea(
+                doubleValue(env, props, "SWARM_DEMO_SEARCH_AREA_WIDTH",
+                        "swarm.demo.search-area.width",
+                        SimulationConstants.DEMO_SEARCH_AREA.widthEastMeters()),
+                doubleValue(env, props, "SWARM_DEMO_SEARCH_AREA_LENGTH",
+                        "swarm.demo.search-area.length",
+                        SimulationConstants.DEMO_SEARCH_AREA.lengthNorthMeters()));
+        double demoSeabedDepth = doubleValue(env, props, "SWARM_DEMO_SEABED_DEPTH",
+                "swarm.demo.seabed.depth", SimulationConstants.DEMO_SEABED_DEPTH);
         long seed = resolveSeed(env, props);
 
         BoidsConfig boids = resolveBoids(env, props);
@@ -142,27 +161,51 @@ public record Settings(
         String droneCatalogLocation = raw(env, props, "SWARM_DRONE_CATALOG", "swarm.drone-catalog")
                 .orElse(DEFAULT_DRONE_CATALOG);
         List<RequestedDrones> requestedFleet = raw(env, props, "SWARM_FLEET", "swarm.fleet")
-                .map(Settings::parseFleet)
+                .map(value -> parseFleet(value, "SWARM_FLEET"))
                 .orElse(List.of());
 
-        LOG.info("Settings - port={} | agents={} | fleet={} | drone catalog={} | world={}x{}x{} "
+        LOG.info("Settings - port={} | agents={} | fleet={} | drone catalog={} | demo search area={} | demo seabed={} m "
                         + "| seed={} | loss risk={} | demo predator={}", port, agentCount,
                 requestedFleet.isEmpty() ? "default model" : requestedFleet, droneCatalogLocation,
-                worldWidth, worldHeight, worldDepth, seed, lossRisk,
+                demoSearchArea, demoSeabedDepth, seed, lossRisk,
                 predatorEnabled ? "on" : "off");
 
-        return new Settings(port, agentCount, worldWidth, worldHeight, worldDepth, seed,
+        return new Settings(port, agentCount, demoSearchArea, demoSeabedDepth, seed,
                 boids, diagnostics, predator, predatorEnabled, lossRisk, droneCatalogLocation,
                 requestedFleet);
     }
 
-    /** Reads {@code model:count,model:count}; spaces around the parts are allowed. */
-    private static List<RequestedDrones> parseFleet(String value) {
+    /**
+     * The world keys were renamed in #177. A renamed key left in a file must not be ignored
+     * without a word: the demo would not be the one asked for.
+     */
+    private static void refuseRenamedWorldKeys(Map<String, String> env, Properties props) {
+        String[][] renamedKeys = {
+            {"SWARM_WORLD_WIDTH", "swarm.world.width", "SWARM_DEMO_SEARCH_AREA_WIDTH",
+                "swarm.demo.search-area.width"},
+            {"SWARM_WORLD_DEPTH", "swarm.world.depth", "SWARM_DEMO_SEARCH_AREA_LENGTH",
+                "swarm.demo.search-area.length"},
+            {"SWARM_WORLD_HEIGHT", "swarm.world.height", "SWARM_DEMO_SEABED_DEPTH",
+                "swarm.demo.seabed.depth"},
+        };
+        for (String[] keys : renamedKeys) {
+            if (raw(env, props, keys[0], keys[1]).isPresent()) {
+                throw new IllegalArgumentException(keys[0] + " / " + keys[1] + " was renamed: use "
+                        + keys[2] + " / " + keys[3] + " (#177)");
+            }
+        }
+    }
+
+    /**
+     * Reads {@code model:count,model:count}; spaces around the parts are allowed.
+     * {@code key} names the setting in the error messages.
+     */
+    static List<RequestedDrones> parseFleet(String value, String key) {
         List<RequestedDrones> fleet = new ArrayList<>();
         for (String part : value.split(",")) {
             String[] modelAndCount = part.trim().split(":");
             if (modelAndCount.length != 2 || modelAndCount[0].isBlank()) {
-                throw new IllegalArgumentException("SWARM_FLEET='" + value + "': each part must be "
+                throw new IllegalArgumentException(key + "='" + value + "': each part must be "
                         + FLEET_FORMAT);
             }
             String count = modelAndCount[1].trim();
@@ -170,11 +213,11 @@ public record Settings(
             try {
                 parsedCount = Integer.parseInt(count);
             } catch (NumberFormatException exception) {
-                throw new IllegalArgumentException("SWARM_FLEET='" + value + "': count '" + count
+                throw new IllegalArgumentException(key + "='" + value + "': count '" + count
                         + "' is not a whole number; expected " + FLEET_FORMAT);
             }
             if (parsedCount < 1) {
-                throw new IllegalArgumentException("SWARM_FLEET='" + value + "': count of '"
+                throw new IllegalArgumentException(key + "='" + value + "': count of '"
                         + modelAndCount[0].trim() + "' must be >= 1, got " + parsedCount);
             }
             fleet.add(new RequestedDrones(modelAndCount[0].trim(), parsedCount));
@@ -182,7 +225,7 @@ public record Settings(
         return fleet;
     }
 
-    private static BoidsConfig resolveBoids(Map<String, String> env, Properties props) {
+    static BoidsConfig resolveBoids(Map<String, String> env, Properties props) {
         BoidsConfig.Builder b = BoidsConfig.builder();
         applyDouble(env, props, "SWARM_BOIDS_PERCEPTION_RADIUS",        "swarm.boids.perception-radius",        b::perceptionRadius);
         applyDouble(env, props, "SWARM_BOIDS_SEPARATION_WEIGHT",        "swarm.boids.separation-weight",        b::separationWeight);
@@ -223,7 +266,7 @@ public record Settings(
         }
     }
 
-    private static LossRiskLevel resolveLossRisk(Map<String, String> env, Properties props) {
+    static LossRiskLevel resolveLossRisk(Map<String, String> env, Properties props) {
         Optional<String> raw = raw(env, props, "SWARM_LOSS_RISK_LEVEL", "swarm.loss-risk.level");
         if (raw.isEmpty()) {
             return LossRiskLevel.NONE;
@@ -241,7 +284,7 @@ public record Settings(
      * for a freshly drawn seed (logged so the run can be replayed), or falls back to
      * {@link SimulationConstants#DEFAULT_SEED}.
      */
-    private static long resolveSeed(Map<String, String> env, Properties props) {
+    static long resolveSeed(Map<String, String> env, Properties props) {
         Optional<String> raw = raw(env, props, "SWARM_SEED", "swarm.seed");
         if (raw.isEmpty()) {
             LOG.info("Seed: {} (default)", SimulationConstants.DEFAULT_SEED);
@@ -263,7 +306,7 @@ public record Settings(
         }
     }
 
-    private static Properties loadClasspathProperties() {
+    static Properties loadClasspathProperties() {
         Properties props = new Properties();
         try (InputStream in = Settings.class.getClassLoader().getResourceAsStream(PROPERTIES_RESOURCE)) {
             if (in != null) {
@@ -277,7 +320,7 @@ public record Settings(
 
     // ---- typed resolution helpers (env → props → default), with clear errors on malformed input ----
 
-    private static Optional<String> raw(Map<String, String> env, Properties props, String envKey, String propKey) {
+    static Optional<String> raw(Map<String, String> env, Properties props, String envKey, String propKey) {
         String fromEnv = env.get(envKey);
         if (fromEnv != null && !fromEnv.isBlank()) return Optional.of(fromEnv.trim());
         String fromProps = props.getProperty(propKey);
@@ -299,11 +342,11 @@ public record Settings(
         }).orElse(def);
     }
 
-    private static int intValue(Map<String, String> env, Properties props, String envKey, String propKey, int def) {
+    static int intValue(Map<String, String> env, Properties props, String envKey, String propKey, int def) {
         return raw(env, props, envKey, propKey).map(s -> parseInt(s, envKey)).orElse(def);
     }
 
-    private static double doubleValue(Map<String, String> env, Properties props, String envKey, String propKey, double def) {
+    static double doubleValue(Map<String, String> env, Properties props, String envKey, String propKey, double def) {
         return raw(env, props, envKey, propKey).map(s -> parseDouble(s, envKey)).orElse(def);
     }
 

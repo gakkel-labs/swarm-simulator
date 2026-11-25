@@ -1,5 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.domain;
 
+import java.time.Duration;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -59,6 +61,17 @@ public record FleetConfiguration(List<DroneGroup> droneGroups,
         return droneGroups.stream()
                 .mapToDouble(group -> group.specification().searchSensor().maxRangeMeters())
                 .max()
+                .orElseThrow();
+    }
+
+    /**
+     * The endurance of the model that must come back up first: the fleet cannot search longer
+     * than this without losing drones.
+     */
+    public Duration shortestEndurance() {
+        return droneGroups.stream()
+                .map(group -> group.specification().endurance())
+                .min(Comparator.naturalOrder())
                 .orElseThrow();
     }
 }

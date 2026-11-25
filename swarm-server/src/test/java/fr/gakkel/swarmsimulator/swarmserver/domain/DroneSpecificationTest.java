@@ -11,20 +11,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DroneSpecificationTest {
 
-    private static final DroneSpecification BATCH = TestDrones.batchDetectionDrone();
+    private static final DroneSpecification SCORING_DRONE = TestDrones.scoringDetectionDrone();
 
     @Test
     void equals_sameValues_returnsTrue() {
         // A value object: two specifications with the same values are the same specification.
-        DroneSpecification first = TestDrones.batchDetectionDrone();
-        DroneSpecification second = TestDrones.batchDetectionDrone();
+        DroneSpecification first = TestDrones.scoringDetectionDrone();
+        DroneSpecification second = TestDrones.scoringDetectionDrone();
 
         assertThat(first).isEqualTo(second);
     }
 
     @Test
-    void cruiseSpeedMetersPerSecond_batchDrone_readsTheMovementLimits() {
-        double cruiseSpeed = BATCH.cruiseSpeedMetersPerSecond();
+    void cruiseSpeedMetersPerSecond_scoringDrone_readsTheMovementLimits() {
+        double cruiseSpeed = SCORING_DRONE.cruiseSpeedMetersPerSecond();
 
         assertThat(cruiseSpeed).isEqualTo(1.5);
     }
@@ -60,20 +60,20 @@ class DroneSpecificationTest {
     @Test
     void constructor_noSearchSensor_throwsNullPointerException() {
         assertThatThrownBy(() -> new DroneSpecification("side-scan-drone", AgentType.EXPLORER,
-                BATCH.movement(), BATCH.endurance(), null, BATCH.navigationSensors(),
-                BATCH.acousticModem()))
+                SCORING_DRONE.movement(), SCORING_DRONE.endurance(), null, SCORING_DRONE.navigationSensors(),
+                SCORING_DRONE.acousticModem()))
                 .isInstanceOf(NullPointerException.class);
     }
 
     private static DroneSpecification withModel(String model) {
-        return new DroneSpecification(model, AgentType.EXPLORER, BATCH.movement(),
-                BATCH.endurance(), BATCH.searchSensor(), BATCH.navigationSensors(),
-                BATCH.acousticModem());
+        return new DroneSpecification(model, AgentType.EXPLORER, SCORING_DRONE.movement(),
+                SCORING_DRONE.endurance(), SCORING_DRONE.searchSensor(), SCORING_DRONE.navigationSensors(),
+                SCORING_DRONE.acousticModem());
     }
 
     private static DroneSpecification withEndurance(Duration endurance) {
-        return new DroneSpecification("side-scan-drone", AgentType.EXPLORER, BATCH.movement(),
-                endurance, BATCH.searchSensor(), BATCH.navigationSensors(),
-                BATCH.acousticModem());
+        return new DroneSpecification("side-scan-drone", AgentType.EXPLORER, SCORING_DRONE.movement(),
+                endurance, SCORING_DRONE.searchSensor(), SCORING_DRONE.navigationSensors(),
+                SCORING_DRONE.acousticModem());
     }
 }

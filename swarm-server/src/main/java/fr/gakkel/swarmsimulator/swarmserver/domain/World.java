@@ -29,6 +29,20 @@ public final class World {
         this.obstacles = new CopyOnWriteArrayList<>();
     }
 
+    /**
+     * The world of a search area over a flat seabed. Inside the world, {@link #width} is the East
+     * size, {@link #height} the water column (surface to seabed) and {@link #depth} the North size
+     * (ADR-0007; these names are in the tech debt).
+     */
+    public World(SearchArea searchArea, double seabedDepthMeters) {
+        this(searchArea.widthEastMeters(), seabedDepthMeters, searchArea.lengthNorthMeters());
+    }
+
+    /** The search area seen from above. */
+    public SearchArea searchArea() {
+        return new SearchArea(width, depth);
+    }
+
     public double width () { return width; }
     public double height() { return height; }
     public double depth() { return depth; }

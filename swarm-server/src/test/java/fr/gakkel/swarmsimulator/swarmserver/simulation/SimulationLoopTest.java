@@ -4,6 +4,8 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
+import fr.gakkel.swarmsimulator.swarmserver.domain.EndConditions;
+import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
@@ -52,6 +54,19 @@ class SimulationLoopTest {
         for (int tick = 0; tick < SimulationLoop.TICK_RATE_HZ; tick++) liveLoop.tick();
 
         assertEquals(1.0, simulation.clock().elapsedSeconds(), 1e-9);
+    }
+
+    @Test
+    void tick_runAlreadyOver_doesNotStepAgainAndDoesNotThrow() {
+        Simulation simulation = new Simulation(world, (anyDrone, anyWorld) -> Vector3D.ZERO,
+                new Random(1L), LossRiskLevel.NONE, new Random(3L), false,
+                EndConditions.missionEnd(1.0));
+        simulation.step(1.0);
+        var liveLoop = new SimulationLoop(simulation, REFERENCE_SPEED, DIAGNOSTICS,
+                mock(ScheduledExecutorService.class), null);
+
+        assertDoesNotThrow(liveLoop::tick);
+        assertEquals(1.0, simulation.clock().elapsedSeconds());
     }
 
     @Nested

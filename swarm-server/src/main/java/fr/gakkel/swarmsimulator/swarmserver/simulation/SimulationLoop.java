@@ -1,10 +1,14 @@
 package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
+import fr.gakkel.swarmsimulator.swarmserver.domain.EndConditions;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
-import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Scenario;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SimulationEvent;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Target;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
@@ -13,8 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -98,9 +102,12 @@ public class SimulationLoop {
     }
 
     void tick() {
+        // A run that has ended (only a mission run can) stays as it is: stepping again would throw on
+        // every tick.
+        if (simulation.isOver()) return;
         MDC.put("simulation_tick", String.valueOf(tickCount));
         try {
-            simulation.step(DT);
+            logEvents(simulation.step(DT));
 
             List<Agent> agents = List.copyOf(world.agents());
             // An empty swarm (all drones eaten) has no centroid: skip it instead of recording NaN.
@@ -123,6 +130,38 @@ public class SimulationLoop {
         } finally {
             MDC.remove("simulation_tick");
         }
+    }
+
+    // The engine only returns what happened; the live loop is the one that writes it in the log.
+    private void logEvents(List<SimulationEvent> events) {
+        for (SimulationEvent event : events) {
+            String simulationTime = String.format(Locale.ROOT, "%.1f", event.atSeconds());
+            switch (event) {
+                case SimulationEvent.TargetDetected detected -> logTargetDetected(detected,
+                        simulationTime);
+                case SimulationEvent.DroneLost lost -> {
+                    String what = lost.cause() == SimulationEvent.LossCause.DEMO_PREDATOR
+                            ? "eaten by the predator" : "lost (loss risk)";
+                    LOG.info("drone {} {} at {}s of simulation", lost.droneId(), what,
+                            simulationTime);
+                }
+                case SimulationEvent.DroneRespawned respawned -> LOG.info(
+                        "drone {} respawned at {}s of simulation", respawned.droneId(),
+                        simulationTime);
+                case SimulationEvent.RunEnded ended -> LOG.info(
+                        "run ended at {}s of simulation: {}", simulationTime, ended.reason());
+            }
+        }
+    }
+
+    // The operator wants the search time: since the target was placed, not since the start.
+    private void logTargetDetected(SimulationEvent.TargetDetected detected,
+                                   String simulationTime) {
+        Target target = world.target();
+        String searchTime = target == null ? "?"
+                : String.format(Locale.ROOT, "%.1f", target.foundAtElapsedS());
+        LOG.info("Target found by drone {} in {}s (at {}s of simulation)", detected.droneId(),
+                searchTime, simulationTime);
     }
 
     static Vector3D computeCentroid(List<Agent> agents) {
@@ -171,11 +210,13 @@ public class SimulationLoop {
      */
     public static Wiring wire(FleetConfiguration fleet, double width, double height, double depth,
                               DiagnosticsConfig diagnostics, LossRiskLevel lossRisk,
-                              Optional<PredatorConfig> demoPredator, long masterSeed,
+                              DemoOptions demo, long masterSeed,
                               ScheduledExecutorService executor,
                               CohesionCsvExporter csvExporter) {
+        // The live demo has no wreck at the start (the operator places the target with a click)
+        // and never ends.
         Simulation simulation = Simulation.create(fleet, width, height, depth, lossRisk,
-                demoPredator, masterSeed);
+                Scenario.withoutWreck(masterSeed), EndConditions.never(), demo);
         SimulationLoop loop = new SimulationLoop(simulation,
                 fleet.fastestCruiseSpeedMetersPerSecond(), diagnostics, executor, csvExporter);
         return new Wiring(simulation.world(), simulation, loop);

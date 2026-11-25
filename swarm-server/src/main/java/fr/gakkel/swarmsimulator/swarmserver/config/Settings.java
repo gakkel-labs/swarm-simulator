@@ -7,6 +7,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
+import fr.gakkel.swarmsimulator.swarmserver.simulation.DemoOptions;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationConstants;
 
@@ -104,11 +105,12 @@ public record Settings(
     }
 
     /**
-     * The predator of the live demo, or empty when it is switched off. It is only for the demo:
-     * batch runs never use it (ADR-0012).
+     * The options of the live demo: the predator and the respawn of the drones it eats, or no
+     * option when the predator is switched off. They are only for the demo: batch runs use
+     * {@link DemoOptions#none()} (ADR-0012).
      */
-    public Optional<PredatorConfig> demoPredator() {
-        return predatorEnabled ? Optional.of(predator) : Optional.empty();
+    public DemoOptions demoOptions() {
+        return predatorEnabled ? DemoOptions.withPredator(predator) : DemoOptions.none();
     }
 
     /** Loads settings from the process environment and the {@code application.properties} classpath resource. */

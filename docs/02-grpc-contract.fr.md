@@ -1,4 +1,4 @@
-# Contrat gRPC — SwarmObserver v1
+# Contrat gRPC : SwarmObserver v1
 
 [English](02-grpc-contract.md)
 
@@ -13,12 +13,12 @@ Le serveur expose trois services gRPC. Le principal, `SwarmObserver`, suit un mo
 
 - Un client ouvre **une** souscription longue durée via `SubscribeWorldState`.
 - Le serveur pousse un snapshot `WorldState` à **20 Hz** tant que le stream reste ouvert.
-- Le client n'envoie jamais de seconde requête sur le même stream — il consomme, ou annule.
+- Le client n'envoie jamais de seconde requête sur le même stream : il consomme ou il annule.
 
 Les deux autres services sont de petits appels unaires : `SimulationControl.PlaceTarget` (l'opérateur place la cible, §4.4) et `PingService.SendPing` (vérifier que le serveur répond). Pas d'authentification : le serveur tourne en local et fait confiance à tout ce qui arrive sur `localhost:50051`.
 
 **Pourquoi server-streaming et pas du polling unaire ?**
-Une visualisation à 20 Hz en RPC unaires, c'est 20 round-trips par seconde par client (≈ 60 ms d'overhead TCP+HTTP/2 par seconde). Un seul RPC server-streaming ouvre un seul stream HTTP/2 et le réutilise pour toutes les frames — latence plus faible, CPU plus faible, pas de scheduler côté client.
+Une visualisation à 20 Hz en RPC unaires, c'est 20 round-trips par seconde par client (≈ 60 ms d'overhead TCP+HTTP/2 par seconde). Un seul RPC server-streaming ouvre un seul stream HTTP/2 et le réutilise pour toutes les frames, ce qui réduit la latence et le CPU, sans scheduler côté client.
 
 ---
 
@@ -61,7 +61,7 @@ sequenceDiagram
 
 ## 3. Messages
 
-Tous les messages sont en proto3. Les numéros de champ sont stables — jamais de renumérotation ou de réaffectation, uniquement de l'ajout.
+Tous les messages sont en proto3. Les numéros de champ sont stables : on ne renumérote ni ne réaffecte jamais un champ, on en ajoute seulement.
 
 ### 3.1 `Vec3`
 
@@ -73,7 +73,7 @@ message Vec3 {
 }
 ```
 
-Vecteur 3D en **mètres**, repère **NED** (cf. §5.1). Utilisé pour les positions comme pour les vitesses — le contexte est donné par le nom du champ parent (`position_xyz` vs `velocity_mps`).
+Vecteur 3D en **mètres**, repère **NED** (cf. §5.1). Utilisé pour les positions comme pour les vitesses ; le nom du champ parent donne le contexte (`position_xyz` vs `velocity_mps`).
 
 `float` (32 bits) suffit : les positions sont bornées par un monde de 100 × 100 × 50 m, une précision sub-millimétrique est du gâchis pour une visualisation à l'écran.
 
@@ -88,7 +88,7 @@ enum AgentType {
 }
 ```
 
-Rôle d'un drone dans la flotte (voir le [glossaire](produit/glossaire.fr.md)). Le membre `UNSPECIFIED = 0` est la valeur par défaut imposée par proto3 — la recevoir indique soit un bug serveur, soit une asymétrie de compatibilité (un rôle futur que le client ne connaît pas). Les clients doivent afficher les valeurs inconnues avec un fallback plutôt que de planter.
+Rôle d'un drone dans la flotte (voir le [glossaire](produit/glossaire.fr.md)). Le membre `UNSPECIFIED = 0` est la valeur par défaut imposée par proto3. La recevoir indique soit un bug serveur, soit une asymétrie de compatibilité (un rôle futur que le client ne connaît pas). Les clients doivent afficher les valeurs inconnues avec un fallback plutôt que de planter.
 
 Les trois rôles correspondent 1 pour 1 à l'enum du domaine `fr.gakkel.swarmsimulator.swarmserver.domain.AgentType` : `EXPLORER` = drone de détection, `SPECIALIST` = drone spécialisé, `CARRIER` = porte-drones. Aujourd'hui tous les drones sont `EXPLORER` ; les deux autres types sont réservés et n'ont pas encore de comportement.
 
@@ -105,12 +105,12 @@ message AgentState {
 
 Snapshot d'un agent à l'instant du broadcast.
 
-- `id` — UUID RFC 4122 **sous forme string** (ex. `"6f5a...c3d2"`). Stable pour la durée de vie de l'agent ; les clients peuvent l'utiliser comme clé de dictionnaire pour du rendu stateful (trails, sélection, etc.).
-- `type` — cf. §3.2.
-- `position_xyz` — centre de l'agent, mètres, NED.
-- `velocity_mps` — vitesse instantanée, m/s, NED. La magnitude est bornée par `BoidsConfig.maxSpeed` (défaut 5.0 m/s).
+- `id` : UUID RFC 4122 **sous forme string** (ex. `"6f5a...c3d2"`). Stable pour la durée de vie de l'agent ; les clients peuvent l'utiliser comme clé de dictionnaire pour du rendu stateful (trails, sélection, etc.).
+- `type` : cf. §3.2.
+- `position_xyz` : centre de l'agent, mètres, NED.
+- `velocity_mps` : vitesse instantanée, m/s, NED. La magnitude est bornée par `BoidsConfig.maxSpeed` (défaut 5.0 m/s).
 
-Pas de champ d'orientation — les drones sont des masses ponctuelles (boids) aujourd'hui. Le cap visuel est dérivé côté client à partir de `velocity_mps`.
+Pas de champ d'orientation : les drones sont des masses ponctuelles (boids) aujourd'hui. Le cap visuel est dérivé côté client à partir de `velocity_mps`.
 
 ### 3.4 `Obstacle`
 
@@ -121,7 +121,7 @@ message Obstacle {
 }
 ```
 
-Obstacle sphérique statique. Renvoyé à chaque frame même s'il est immuable aujourd'hui — ça garde le protocole simple (pas de RPC "world geometry" séparé) et laisse la porte ouverte à des obstacles dynamiques plus tard.
+Obstacle sphérique statique. Renvoyé à chaque frame même s'il est immuable aujourd'hui. Ça garde le protocole simple (pas de RPC "world geometry" séparé) et laisse la porte ouverte à des obstacles dynamiques plus tard.
 
 Les obstacles n'ont pas d'`id`. Les clients doivent les re-keyer par `(position, radius)`, ou simplement reconstruire la liste visuelle à chaque frame.
 
@@ -137,11 +137,11 @@ message PredatorState {
 
 Photo du **prédateur** à l'instant de la diffusion. Le prédateur n'existe que dans la démo en direct, pour rendre la scène vivante (voir le [glossaire](produit/glossaire.fr.md) et l'[ADR-0012](adr/0012-loss-risk-replaces-the-predator.fr.md)).
 
-- `id` — UUID du prédateur, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état.
-- `position_xyz` — centre du prédateur, mètres, NED. Même repère que `AgentState.position_xyz`.
-- `velocity_mps` — vitesse instantanée, m/s, NED. Sa norme est la vitesse du prédateur, réglée par `SWARM_PREDATOR_SPEED` (3,0 m/s par défaut, plus lent que les drones pour qu'ils puissent s'échapper). La distance de capture se règle par `SWARM_PREDATOR_EAT_RADIUS` (1,5 m par défaut).
+- `id` : UUID du prédateur, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état.
+- `position_xyz` : centre du prédateur, mètres, NED. Même repère que `AgentState.position_xyz`.
+- `velocity_mps` : vitesse instantanée, m/s, NED. Sa norme est la vitesse du prédateur, réglée par `SWARM_PREDATOR_SPEED` (3,0 m/s par défaut, plus lent que les drones pour qu'ils puissent s'échapper). La distance de capture se règle par `SWARM_PREDATOR_EAT_RADIUS` (1,5 m par défaut).
 
-Pas de champ d'orientation — le cap visuel est déduit côté client depuis `velocity_mps`.
+Pas de champ d'orientation : le cap visuel est déduit côté client depuis `velocity_mps`.
 
 ### 3.6 `WorldState`
 
@@ -160,16 +160,16 @@ message WorldState {
 
 Snapshot complet du monde simulé à l'instant `timestamp_unix_ms`.
 
-- `timestamp_unix_ms` — horloge wall-clock du serveur au moment où la frame est construite (`System.currentTimeMillis()`). Cf. §5.3.
-- `agents` — tous les agents du monde. L'ordre **n'est pas** garanti ; les clients doivent indexer par `id`.
-- `obstacles` — tous les obstacles du monde. Une liste vide est légale.
-- `predators` — tous les prédateurs du monde. Contient **1 entrée** quand le prédateur de démo est activé (`SWARM_PREDATOR_ENABLED=true`, par défaut) et est **vide** quand il est désactivé. Les clients doivent gérer une liste vide — cacher le GameObject du prédateur si la liste devient vide.
-- `search_status` — présent uniquement quand une cible a été placée via `PlaceTarget`. Absent jusqu'à ce moment (valeur par défaut proto3).
-- `sensor_radius_m` — rayon de détection partagé par tous les agents, en mètres. Les clients l'utilisent pour dimensionner l'overlay de zone de détection.
-- `cohesion_spread_m` — dispersion moyenne des positions (écart-type par rapport au centroïde) lissée sur les 30 derniers ticks (~1 s). Zéro jusqu'au premier tick. Utilisé par le HUD Unity et exporté dans `metrics/cohesion-*.csv`.
-- `search_area_size_m` — taille de la zone de recherche en mètres, axes NED : `x` = étendue vers le nord, `y` = vers l'est, `z` = vers le bas jusqu'au fond. La zone va de `(0, 0, 0)` à la surface jusqu'à ce coin. Tout à zéro avec un ancien serveur : le client garde alors sa taille par défaut. Un `PlaceTarget` hors de cette boîte est refusé avec `INVALID_ARGUMENT`.
+- `timestamp_unix_ms` : horloge wall-clock du serveur au moment où la frame est construite (`System.currentTimeMillis()`). Cf. §5.3.
+- `agents` : tous les agents du monde. L'ordre **n'est pas** garanti ; les clients doivent indexer par `id`.
+- `obstacles` : tous les obstacles du monde. Une liste vide est légale.
+- `predators` : tous les prédateurs du monde. Contient **1 entrée** quand le prédateur de démo est activé (`SWARM_PREDATOR_ENABLED=true`, par défaut) et est **vide** quand il est désactivé. Les clients doivent gérer une liste vide : cacher le GameObject du prédateur si la liste devient vide.
+- `search_status` : présent uniquement quand une cible a été placée via `PlaceTarget`. Absent jusqu'à ce moment (valeur par défaut proto3).
+- `sensor_radius_m` : rayon de détection partagé par tous les agents, en mètres. Les clients l'utilisent pour dimensionner l'overlay de zone de détection.
+- `cohesion_spread_m` : dispersion moyenne des positions (écart-type par rapport au centroïde) lissée sur les 30 derniers ticks (~1 s). Zéro jusqu'au premier tick. Utilisé par le HUD Unity et exporté dans `metrics/cohesion-*.csv`.
+- `search_area_size_m` : taille de la zone de recherche en mètres, sur les axes NED, avec `x` = étendue vers le nord, `y` = vers l'est, `z` = vers le bas jusqu'au fond. La zone va de `(0, 0, 0)` à la surface jusqu'à ce coin. Tout à zéro avec un ancien serveur : le client garde alors sa taille par défaut. Un `PlaceTarget` hors de cette boîte est refusé avec `INVALID_ARGUMENT`.
 
-Chaque frame est **auto-suffisante** — pas de diff, pas de delta. Un client qui se connecte en cours de simulation reçoit un état complet dès sa première frame.
+Chaque frame est **auto-suffisante** : pas de diff, pas de delta. Un client qui se connecte en cours de simulation reçoit un état complet dès sa première frame.
 
 ### 3.7 `SubscribeRequest`
 
@@ -186,7 +186,7 @@ Envoyée **une seule fois** par le client à l'ouverture du stream. Le seul cham
 [swarm-grpc] client 'unity-editor' disconnected — 0 remaining
 ```
 
-Le serveur ne valide pas, ne déduplique pas, et n'impose pas l'unicité de `client_id` — c'est purement un outil de diagnostic opérateur.
+Le serveur ne valide pas `client_id`, ne le déduplique pas et n'impose pas son unicité : ce champ sert seulement au diagnostic de l'opérateur.
 
 ### 3.8 `SearchStatus` et `TargetFoundEvent`
 
@@ -206,15 +206,15 @@ message TargetFoundEvent {
 
 L'état de la recherche, porté par `WorldState.search_status`.
 
-- `target_position` — là où l'opérateur a placé la cible, mètres, NED.
-- `elapsed_sim_s` — secondes depuis le placement de la cible. Aujourd'hui, suit l'horloge du serveur.
-- `found_event` — rempli par le premier drone qui passe à moins de `sensor_radius_m` (10 m) de
+- `target_position` : là où l'opérateur a placé la cible, mètres, NED.
+- `elapsed_sim_s` : secondes depuis le placement de la cible. Aujourd'hui, suit l'horloge du serveur.
+- `found_event` : rempli par le premier drone qui passe à moins de `sensor_radius_m` (10 m) de
   la cible. Il ne change plus ensuite : seule la première détection compte. Un nouveau
   `PlaceTarget` remplace la cible et relance la recherche.
 
 ---
 
-## 4. RPC — `SubscribeWorldState`
+## 4. RPC : `SubscribeWorldState`
 
 ```proto
 service SwarmObserver {
@@ -227,8 +227,8 @@ service SwarmObserver {
 | Cardinalité           | **Server streaming** (1 requête → N réponses)                        |
 | Input                 | `SubscribeRequest` (envoyé une fois à l'ouverture)                    |
 | Output                | `stream WorldState`                                                   |
-| Cadence cible         | **20 Hz** (1 frame toutes les 50 ms — `STREAM_RATE_HZ`)               |
-| Frames auto-suffisantes | Oui — pas de delta, pas de diff                                     |
+| Cadence cible         | **20 Hz** (1 frame toutes les 50 ms, `STREAM_RATE_HZ`)               |
+| Frames auto-suffisantes | Oui : pas de delta, pas de diff                                     |
 | Fin du stream         | À l'initiative du client ; le serveur ne ferme qu'à l'arrêt           |
 | Backpressure          | Frames droppées silencieusement si `onNext` échoue (cf. §4.3)         |
 
@@ -238,7 +238,7 @@ Le broadcaster serveur tourne sur un `ScheduledExecutorService` dédié (thread 
 
 1. Construire un seul `WorldState` à partir du `World` courant (une allocation par tick, partagée entre subscribers).
 2. Pour chaque subscriber, vérifier `isCancelled()` ; si oui, le retirer du set.
-3. Sinon, appeler `onNext(state)`. Les exceptions sont attrapées — le subscriber est retiré du set et loggé.
+3. Sinon, appeler `onNext(state)`. Les exceptions sont attrapées : le subscriber est retiré du set et l'erreur est loggée.
 
 Pas de heartbeat ni de frame keepalive séparée de `WorldState`. La cadence à 20 Hz est suffisamment dense pour que le keepalive HTTP/2 par défaut de gRPC suffise.
 
@@ -251,13 +251,13 @@ Pas de heartbeat ni de frame keepalive séparée de `WorldState`. La cadence à 
 | `CANCELLED` levé côté client                   | Le client lui-même a annulé (timeout, sortie scène)     |
 | `INTERNAL` levé en cours de stream             | Exception côté serveur dans `buildWorldState`           |
 
-Les clients doivent traiter tout statut terminal comme **fin de session** et réémettre `SubscribeWorldState` pour récupérer — le protocole est volontairement idempotent.
+Les clients doivent traiter tout statut terminal comme **fin de session** et réémettre `SubscribeWorldState` pour récupérer. Le protocole est volontairement idempotent.
 
 ### 4.3 Backpressure
 
 Le diffuseur respecte le contrôle de flux de gRPC : avant chaque frame, il vérifie `isReady()` pour chaque client. Un client lent qui n'est pas prêt saute cette frame au lieu d'accumuler des frames dans la mémoire du serveur. C'est sans risque, car chaque frame contient tout le monde (§3.6). Si `onNext` lève quand même une exception, le client est retiré et l'erreur est écrite dans les logs.
 
-### 4.4 Autres RPC — `PlaceTarget` et `SendPing`
+### 4.4 Autres RPC : `PlaceTarget` et `SendPing`
 
 ```proto
 service SimulationControl {
@@ -278,7 +278,7 @@ message PlaceTargetResponse {}
 
 ## 5. Conventions
 
-### 5.1 Repère — NED (mètres)
+### 5.1 Repère : NED (mètres)
 
 Toutes les valeurs `Vec3` sont exprimées dans le repère **NED** (North / East / Down) main droite, **en mètres** :
 
@@ -311,20 +311,20 @@ unity.z =  proto.x     // Nord → Unity Z
 
 L'unité fait partie du **nom du champ**, pas du commentaire. Un champ sans suffixe d'unité (ex. `id`, `type`) porte une valeur non-physique.
 
-### 5.3 Timestamp — unix ms (int64)
+### 5.3 Timestamp : unix ms (int64)
 
 `WorldState.timestamp_unix_ms` est l'horloge wall-clock du serveur au moment de la construction de la frame, en **millisecondes depuis l'epoch Unix (1970-01-01 UTC)**, en `int64`.
 
 - Source serveur : `System.currentTimeMillis()`.
-- Résolution : 1 ms — suffisant pour une cadence à 20 Hz (période 50 ms).
+- Résolution : 1 ms, ce qui suffit pour une cadence à 20 Hz (période 50 ms).
 - Pas monotone à travers les sauts NTP ; les clients ne doivent pas dériver `dt` en différençant des timestamps successifs (utiliser la cadence connue de 50 ms à la place).
 - `google.protobuf.Timestamp` a été écarté : int64-ms est 2× plus petit sur le wire, plus facile à logger, et sans perte jusqu'en l'an 292 277 026.
 
-### 5.4 Identité — UUID en string
+### 5.4 Identité : UUID en string
 
 L'identité d'un agent est un UUID encodé en string (RFC 4122). Trade-off vs `bytes(16)` :
 - **+** Lisible humainement dans les logs et la sortie de `grpcurl` / gRPC reflection.
-- **−** 36 octets vs 16 — ≈ 1,7 Kio/s d'overhead à 20 Hz × 20 agents. Négligeable pour le MVP.
+- **−** 36 octets au lieu de 16, soit ≈ 1,7 Kio/s d'overhead à 20 Hz × 20 agents. Négligeable pour le MVP.
 
 Si ce surcoût devient gênant plus tard (par ex. 200 drones), le champ peut migrer vers `bytes id_bin = 5` à côté de la string existante pour une release, puis la string peut être dépréciée.
 
@@ -334,7 +334,7 @@ Si ce surcoût devient gênant plus tard (par ex. 200 drones), le champ peut mig
 - **Package Java** : `io.gakkel.swarm.contracts.v1` (`java_multiple_files = true` pour qu'un message = un `.java`).
 - **Namespace C#** : `Gakkel.Swarm.Contracts.V1`.
 - **Nommage des champs** : `snake_case` en proto (convention proto3) ; les générateurs produisent du `camelCase` / `PascalCase` idiomatique côté langage cible.
-- **Membres d'enum** : préfixés par le nom de l'enum (`AGENT_TYPE_EXPLORER`, pas `EXPLORER`) selon le [Google API style guide](https://protobuf.dev/programming-guides/style/#enums) — évite les collisions C++ et clarifie les logs.
+- **Membres d'enum** : préfixés par le nom de l'enum (`AGENT_TYPE_EXPLORER`, pas `EXPLORER`) selon le [Google API style guide](https://protobuf.dev/programming-guides/style/#enums). Ça évite les collisions C++ et rend les logs plus clairs.
 - **Changements breaking** : jamais de suppression ni de renumérotation. Marquer les champs obsolètes avec `reserved` et bumper la version du package en cas de suppression d'un message.
 
 ---
@@ -368,9 +368,9 @@ Le contrat est volontairement minimal pour que les itérations futures s'insère
 
 | Besoin futur                            | Extension probable                                                              |
 | --------------------------------------- | ------------------------------------------------------------------------------- |
-| Prédateur                                  | ✅ **Fait** — `repeated PredatorState predators = 4` sur `WorldState`. Le prédateur chasse les drones ; Unity le dessine en requin (vue détaillée) ou en sphère rouge (vue simple), voir `PredatorRenderer.cs`. |
+| Prédateur                                  | ✅ **Fait** : `repeated PredatorState predators = 4` sur `WorldState`. Le prédateur chasse les drones ; Unity le dessine en requin (vue détaillée) ou en sphère rouge (vue simple), voir `PredatorRenderer.cs`. |
 | Porte-drones et drones spécialisés      | L'enum `AgentType` couvre déjà `CARRIER` / `SPECIALIST`                         |
-| Commandes vers la flotte (étape 6)      | **Nouveau** service, RPC séparé — garder l'observer en lecture seule            |
+| Commandes vers la flotte (étape 6)      | **Nouveau** service, RPC séparé, pour garder l'observer en lecture seule          |
 | Configurations de flotte et scores (étapes 2–3) | Nouveaux messages ou nouveau service ; l'observer ne change pas        |
 | Rejeu (étape 3)                         | Les mêmes frames `WorldState`, lues depuis un fichier au lieu de la boucle en direct |
 | Télémétrie par agent (batterie, santé)  | Nouveaux champs `optional` sur `AgentState` (proto3 `optional` est wire-compatible) |

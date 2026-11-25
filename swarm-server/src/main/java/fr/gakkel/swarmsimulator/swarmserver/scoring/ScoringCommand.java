@@ -38,7 +38,7 @@ public final class ScoringCommand {
         Scoring scoring = new Scoring(fleet, settings.mission(), settings.wreckPosition(),
                 settings.seed());
         int threadCount = ParallelScoring.defaultThreadCount();
-        LOG.info("Scoring - {} simulations | {} drones | search area {} ({} km²) | seabed {} m "
+        LOG.info("Scoring - {} simulations | {} drones | search area {} ({} km2) | seabed {} m "
                         + "| step {} s | limit time {} h | {} threads | seed {}",
                 settings.simulationCount(), fleet.droneCount(), settings.mission().searchArea(),
                 format(settings.mission().searchArea().areaSquareKilometers()),

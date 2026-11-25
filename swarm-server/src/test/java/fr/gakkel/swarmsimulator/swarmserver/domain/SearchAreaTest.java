@@ -26,6 +26,16 @@ class SearchAreaTest {
         assertThat(area).isCloseTo(49.0, within(1e-9));
     }
 
+    @Test
+    void toString_wholeMeters_readsLikeTheOperatorWritesIt() {
+        assertThat(new SearchArea(7000, 5000)).hasToString("7000 x 5000 m");
+    }
+
+    @Test
+    void toString_partOfAMeter_keepsTheDecimals() {
+        assertThat(new SearchArea(100.5, 50)).hasToString("100.5 x 50 m");
+    }
+
     @Nested
     class Constructor {
 

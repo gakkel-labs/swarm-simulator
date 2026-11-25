@@ -23,6 +23,17 @@ public record SearchArea(double widthEastMeters, double lengthNorthMeters) {
         return widthEastMeters * lengthNorthMeters / SQUARE_METERS_PER_SQUARE_KILOMETER;
     }
 
+    /** For logs and messages: "7000 x 5000 m" (East x North). */
+    @Override
+    public String toString() {
+        return meters(widthEastMeters) + " x " + meters(lengthNorthMeters) + " m";
+    }
+
+    // 7000.0 is written 7000, and 100.5 stays 100.5.
+    private static String meters(double value) {
+        return value == Math.rint(value) ? Long.toString((long) value) : Double.toString(value);
+    }
+
     // "!(x > 0)" also rejects NaN, which fails every comparison.
     private static void requirePositiveAndFinite(double meters, String name) {
         if (!(meters > 0) || Double.isInfinite(meters)) {

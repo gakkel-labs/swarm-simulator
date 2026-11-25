@@ -1,4 +1,4 @@
-# Gakkel — simulateur d'essaim
+# Gakkel : simulateur d'essaim
 
 > Un système de mission pour drones, qui commence par la recherche d'une épave.
 > Ce dépôt contient le backend de simulation (Java) et la vue 3D (Unity).
@@ -82,12 +82,12 @@ Détails, schémas et formules : [`docs/01-boids-rules.fr.md`](docs/01-boids-rul
 ## Où va le projet
 
 Les prochaines étapes sont suivies dans les jalons (milestones) GitHub :
-[Step 1 — Belle scène Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/5),
-[Step 2 — Trouver la meilleure configuration de flotte](https://github.com/gakkel-labs/swarm-simulator/milestone/6),
-[Step 3 — Saisir la mission sur le web](https://github.com/gakkel-labs/swarm-simulator/milestone/8),
-[Step 4 — Rejouer la meilleure configuration dans Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/7),
-[Step 5 — Modifier les recommandations et relancer](https://github.com/gakkel-labs/swarm-simulator/milestone/9),
-[Step 6 — Suivre la mission](https://github.com/gakkel-labs/swarm-simulator/milestone/10).
+[Step 1 : Belle scène Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/5),
+[Step 2 : Trouver la meilleure configuration de flotte](https://github.com/gakkel-labs/swarm-simulator/milestone/6),
+[Step 3 : Saisir la mission sur le web](https://github.com/gakkel-labs/swarm-simulator/milestone/8),
+[Step 4 : Rejouer la meilleure configuration dans Unity](https://github.com/gakkel-labs/swarm-simulator/milestone/7),
+[Step 5 : Modifier les recommandations et relancer](https://github.com/gakkel-labs/swarm-simulator/milestone/9),
+[Step 6 : Suivre la mission](https://github.com/gakkel-labs/swarm-simulator/milestone/10).
 
 Le poste de contrôle de l'opérateur (application web) a son propre dépôt :
 [mission-console](https://github.com/gakkel-labs/mission-console). Les rôles sont :
@@ -181,32 +181,32 @@ flowchart LR
 Pour aller plus loin : [`docs/architecture.fr.md`](docs/architecture.fr.md) (repères,
 threads, catalogue des messages).
 
-### Pourquoi ces choix — ADR
+### Pourquoi ces choix : ADR
 
-- [ADR-0001](docs/adr/0001-grpc-streaming.fr.md) — **gRPC server-streaming** pour
+- [ADR-0001](docs/adr/0001-grpc-streaming.fr.md) : **gRPC server-streaming** pour
   pousser le WorldState à 20 Hz (plutôt que du polling ou des WebSockets).
-- [ADR-0002](docs/adr/0002-no-spring-boot-for-mvp.fr.md) — **Pas de Spring Boot** pour
+- [ADR-0002](docs/adr/0002-no-spring-boot-for-mvp.fr.md) : **Pas de Spring Boot** pour
   le MVP ; `main()` + `ScheduledExecutorService` + `ServerBuilder` suffisent.
-- [ADR-0003](docs/adr/0003-minimal-3d-assets.fr.md) — **Assets 3D minimalistes**
+- [ADR-0003](docs/adr/0003-minimal-3d-assets.fr.md) : **Assets 3D minimalistes**
   (capsules grises, primitives) pour la première version.
-- [ADR-0004](docs/adr/0004-target-placement-operator-triggered.fr.md) — **Cible placée
+- [ADR-0004](docs/adr/0004-target-placement-operator-triggered.fr.md) : **Cible placée
   par l'opérateur** (clic), branchable plus tard sur une automatisation.
-- [ADR-0005](docs/adr/0005-mission-console-replaces-fleet-dashboard.fr.md) —
+- [ADR-0005](docs/adr/0005-mission-console-replaces-fleet-dashboard.fr.md) :
   **mission-console** remplace l'ancien projet fleet-dashboard.
-- [ADR-0006](docs/adr/0006-detailed-and-simple-view.fr.md) — **Vue détaillée et vue simple** :
+- [ADR-0006](docs/adr/0006-detailed-and-simple-view.fr.md), **Vue détaillée et vue simple** :
   modèles 3D pour une démo, formes simples pour l'opérateur (touche V).
-- [ADR-0007](docs/adr/0007-coordinate-frames.fr.md) — **Repères** : le backend garde ses
+- [ADR-0007](docs/adr/0007-coordinate-frames.fr.md), **Repères** : le backend garde ses
   propres axes, le réseau est en NED, Unity convertit de son côté.
-- [ADR-0008](docs/adr/0008-shared-world-concurrency.fr.md) — **Partager le World sans verrou**
+- [ADR-0008](docs/adr/0008-shared-world-concurrency.fr.md) : **Partager le World sans verrou**
   entre le thread de simulation et le thread de diffusion.
-- [ADR-0009](docs/adr/0009-storage-and-offline-operation.fr.md) — **Une seule base PostgreSQL tenue
+- [ADR-0009](docs/adr/0009-storage-and-offline-operation.fr.md) : **Une seule base PostgreSQL tenue
   par le backend**, et une installation qui marche hors ligne sur un poste à bord (proposée).
-- [ADR-0010](docs/adr/0010-sorted-drone-list.fr.md) — **Garder les drones triés par id** pour que
+- [ADR-0010](docs/adr/0010-sorted-drone-list.fr.md) : **Garder les drones triés par id** pour que
   la même graine donne le même résultat, et ne pas optimiser pour l'instant (proposée).
-- [ADR-0011](docs/adr/0011-model-assumptions-and-scale.fr.md) — **Une échelle réaliste pour le score** :
+- [ADR-0011](docs/adr/0011-model-assumptions-and-scale.fr.md), **Une échelle réaliste pour le score** :
   zone de recherche de 7 x 7 km, fiche technique du drone, sonar latéral, voisins par modem
   acoustique ; la démo Unity garde un petit monde (proposée).
-- [ADR-0012](docs/adr/0012-loss-risk-replaces-the-predator.fr.md) — **Un risque de perte au lieu
+- [ADR-0012](docs/adr/0012-loss-risk-replaces-the-predator.fr.md) : **Un risque de perte au lieu
   du prédateur** : l'opérateur choisit un niveau (aucun à extrême), les drones perdus ne
   reviennent pas ; le prédateur reste pour la démo en direct seulement (proposée).
 
@@ -254,14 +254,14 @@ l'optimiseur (étape 2).
 | `contracts/`     | Fichiers `.proto` + stubs Java générés (package `gakkel.swarm.v1`) |
 | `swarm-server/`  | Serveur gRPC, modèle métier, boucle de simulation Boids, tests unitaires |
 | `tests/`         | Module des tests d'intégration de bout en bout (vide pour l'instant) |
-| `unity-client/`  | Projet Unity 6 (6000.4.6f1) / URP — vue 3D                   |
+| `unity-client/`  | Projet Unity 6 (6000.4.6f1) / URP : vue 3D                   |
 | `docs/`          | Produit, architecture, ADR, notes détaillées, dette technique |
 
 ### Stack
 
-- **Backend** — Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
-- **Vue** — Unity 6 (6000.4.6f1, URP), client gRPC C#.
-- **Tests** — JUnit 5, Mockito, AssertJ (environ 200 tests unitaires et 3 tests de bout en bout dans `tests/`, lancés par la CI
+- **Backend** : Java 21, Maven 3.9+, grpc-java, protobuf, SLF4J + Logback.
+- **Vue** : Unity 6 (6000.4.6f1, URP), client gRPC C#.
+- **Tests** : JUnit 5, Mockito, AssertJ (environ 200 tests unitaires et 3 tests de bout en bout dans `tests/`, lancés par la CI
   à chaque push).
 
 ### Tests
@@ -276,23 +276,23 @@ mvn verify
 
 ### Pour aller plus loin
 
-- [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md) — le persona de l'opérateur.
-- [`docs/produit/glossaire.fr.md`](docs/produit/glossaire.fr.md) — le glossaire (les mots du projet).
-- [`docs/architecture.fr.md`](docs/architecture.fr.md) — flux backend ↔ Unity, threads,
+- [`docs/produit/persona-operateur.fr.md`](docs/produit/persona-operateur.fr.md) : le persona de l'opérateur.
+- [`docs/produit/glossaire.fr.md`](docs/produit/glossaire.fr.md) : le glossaire (les mots du projet).
+- [`docs/architecture.fr.md`](docs/architecture.fr.md) : flux backend ↔ Unity, threads,
   changement de repère.
-- [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) — les règles Boids.
-- [`docs/02-grpc-contract.fr.md`](docs/02-grpc-contract.fr.md) — référence du protocole.
-- [`docs/03-unity-integration.fr.md`](docs/03-unity-integration.fr.md) — pont gRPC
+- [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md) : les règles Boids.
+- [`docs/02-grpc-contract.fr.md`](docs/02-grpc-contract.fr.md) : référence du protocole.
+- [`docs/03-unity-integration.fr.md`](docs/03-unity-integration.fr.md) : pont gRPC
   thread-safe dans Unity, caméras et touches.
-- [`docs/04-seabed-bathymetry.fr.md`](docs/04-seabed-bathymetry.fr.md) — le vrai fond marin et ses données.
-- [`docs/tech-debt/`](docs/tech-debt/) — instantanés de dette technique.
-- [`CONTRIBUTING.fr.md`](CONTRIBUTING.fr.md) — comment contribuer.
+- [`docs/04-seabed-bathymetry.fr.md`](docs/04-seabed-bathymetry.fr.md) : le vrai fond marin et ses données.
+- [`docs/tech-debt/`](docs/tech-debt/) : instantanés de dette technique.
+- [`CONTRIBUTING.fr.md`](CONTRIBUTING.fr.md) : comment contribuer.
 
 ---
 
 ## Crédits
 
-- Craig W. Reynolds — *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
+- Craig W. Reynolds : *Flocks, Herds, and Schools: A Distributed Behavioral Model* (1987).
 - Bathymétrie du fond marin : IBCAO 5.2 (Jakobsson et al., 2024, [doi:10.1038/s41597-024-04278-w](https://doi.org/10.1038/s41597-024-04278-w)),
   incluse dans GEBCO Compilation Group (2026) GEBCO 2026 Grid
   (doi : [10.5285/4f68d5c7-45eb-f999e063-7086abc036fa](https://doi.org/10.5285/4f68d5c7-45eb-f999e063-7086abc036fa)),
@@ -300,7 +300,7 @@ mvn verify
 
 ## Licence
 
-[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) — voir [`LICENSE`](LICENSE).
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) : voir [`LICENSE`](LICENSE).
 Copyright (c) 2026 Bourse Alexandre.
 
 Vous pouvez utiliser, copier et modifier ce projet pour tout usage **non commercial**

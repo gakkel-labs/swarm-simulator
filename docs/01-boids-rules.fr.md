@@ -1,9 +1,9 @@
-# Boids — les 3 règles de Reynolds et les 4 règles ajoutées par Gakkel
+# Boids : les 3 règles de Reynolds et les 4 règles ajoutées par Gakkel
 
 [English](01-boids-rules.md)
 
 > Le cœur de la simulation : comment chaque drone décide où aller.
-> Référence : **Reynolds, C. W. (1987)** — *« Flocks, herds, and schools: A distributed behavioral model »*, SIGGRAPH '87, p. 25–34.
+> Référence : **Reynolds, C. W. (1987)** : *« Flocks, herds, and schools: A distributed behavioral model »*, SIGGRAPH '87, p. 25–34.
 
 ---
 
@@ -61,7 +61,7 @@ Seules les règles 1 à 3 utilisent la liste des voisins. Les règles 4 à 7 reg
 
 ---
 
-## 3. Règle 1 — Séparation
+## 3. Règle 1 : Séparation
 
 **But :** ne pas trop s'approcher de ses voisins.
 
@@ -85,7 +85,7 @@ fonction separation(agent, voisins):
 
 ---
 
-## 4. Règle 2 — Alignement
+## 4. Règle 2 : Alignement
 
 **But :** aller dans la même direction que ses voisins.
 
@@ -100,7 +100,7 @@ fonction alignment(voisins):
 
 ---
 
-## 5. Règle 3 — Cohésion
+## 5. Règle 3 : Cohésion
 
 **But :** rester près du groupe.
 
@@ -115,7 +115,7 @@ fonction cohesion(agent, voisins):
 
 ---
 
-## 6. Règle 4 — Répulsion des limites *(ajoutée par Gakkel)*
+## 6. Règle 4 : Répulsion des limites *(ajoutée par Gakkel)*
 
 **But :** garder les drones dans la zone de recherche simulée. Le modèle de Reynolds pur ne dit
 pas ce qui se passe au bord.
@@ -138,7 +138,7 @@ l'[ADR-0007](adr/0007-coordinate-frames.fr.md).
 
 ---
 
-## 7. Règle 5 — Évitement des obstacles *(ajoutée par Gakkel)*
+## 7. Règle 5 : Évitement des obstacles *(ajoutée par Gakkel)*
 
 **But :** contourner les obstacles (des sphères pour l'instant).
 
@@ -165,7 +165,7 @@ retire la partie de sa vitesse qui va vers l'intérieur (`resolveObstacleCollisi
 
 ---
 
-## 8. Règle 6 — Fuite du prédateur *(ajoutée par Gakkel)*
+## 8. Règle 6 : Fuite du prédateur *(ajoutée par Gakkel)*
 
 **But :** fuir le prédateur quand il s'approche. Le prédateur est un seul objet qui bouge, pas un
 voisin : il est traité à part de la liste des voisins.
@@ -188,7 +188,7 @@ moins de 1,5 m, il attrape le drone : le drone est retiré, puis revient 5 s plu
 
 ---
 
-## 9. Règle 7 — Errance *(ajoutée par Gakkel)*
+## 9. Règle 7 : Errance *(ajoutée par Gakkel)*
 
 **But :** un petit mouvement au hasard, pour que l'essaim n'ait pas l'air mécanique, et pour
 qu'un groupe arrêté puisse repartir.
@@ -360,4 +360,4 @@ Ce qui ne changerait pas : les 4 règles ajoutées, le coût O(N²), le comporte
 - **Reynolds, C. W.** (1987). *Flocks, herds and schools: A distributed behavioral model.*
   SIGGRAPH '87, p. 25–34. [DOI : 10.1145/37401.37406](https://doi.org/10.1145/37401.37406)
   (souvent daté de 1986, l'année d'envoi).
-- Reynolds, C. W. — [Boids — Background and Update](https://www.red3d.com/cwr/boids/).
+- Reynolds, C. W. : [Boids — Background and Update](https://www.red3d.com/cwr/boids/).

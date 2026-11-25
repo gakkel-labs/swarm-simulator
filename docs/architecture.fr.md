@@ -1,4 +1,4 @@
-# Architecture — simulateur d'essaim Gakkel
+# Architecture : simulateur d'essaim Gakkel
 
 [English](architecture.md)
 
@@ -40,10 +40,10 @@ flowchart LR
     PLACE -.->|PlaceTarget unaire| CTRL
 ```
 
-Pourquoi ce découpage : [ADR-0001 — gRPC streaming](adr/0001-grpc-streaming.fr.md),
-[ADR-0002 — pas de Spring Boot](adr/0002-no-spring-boot-for-mvp.fr.md),
-[ADR-0003 — assets 3D minimaux](adr/0003-minimal-3d-assets.fr.md) et
-[ADR-0006 — vue détaillée et vue simple](adr/0006-detailed-and-simple-view.fr.md).
+Pourquoi ce découpage : [ADR-0001 : gRPC streaming](adr/0001-grpc-streaming.fr.md),
+[ADR-0002 : pas de Spring Boot](adr/0002-no-spring-boot-for-mvp.fr.md),
+[ADR-0003 : assets 3D minimaux](adr/0003-minimal-3d-assets.fr.md) et
+[ADR-0006 : vue détaillée et vue simple](adr/0006-detailed-and-simple-view.fr.md).
 
 Le poste de contrôle de l'opérateur (web) vivra dans son propre dépôt,
 [mission-console](https://github.com/gakkel-labs/mission-console), à partir de l'étape 4
@@ -53,7 +53,7 @@ Le poste de contrôle de l'opérateur (web) vivra dans son propre dépôt,
 
 ## 2. Découpage en modules
 
-### Backend — Maven multi-modules
+### Backend : Maven multi-modules
 
 `pom.xml` racine (`fr.gakkel.swarmsimulator:swarm-simulator:0.1-SNAPSHOT`, packaging `pom`) avec 3 modules :
 
@@ -66,7 +66,7 @@ Le poste de contrôle de l'opérateur (web) vivra dans son propre dépôt,
 Versions principales dans le POM racine : Java **21**, gRPC **1.81.0**, Protobuf **3.25.5**,
 JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 
-### Backend — packages
+### Backend : packages
 
 ```
 fr.gakkel.swarmsimulator.swarmserver
@@ -83,7 +83,7 @@ Le **prédateur** n'existe que dans la démo en direct. Dans le moteur, les dron
 le **risque de perte** (`LossRiskLevel`, voir l'[ADR-0012](adr/0012-loss-risk-replaces-the-predator.fr.md) et le
 [glossaire](produit/glossaire.fr.md)).
 
-### Backend — règle de dépendance
+### Backend : règle de dépendance
 
 Le domaine est du Java pur, au centre. Le moteur de simulation n'utilise que le domaine.
 Les adaptateurs, qui parlent au monde extérieur, restent autour : `server` (gRPC et le contrat
@@ -115,7 +115,7 @@ Ses règles sont regroupées par thème (domaine, moteur, adaptateurs) :
 Exception connue : `SimulationLoop` (l'horloge en direct qui cadence la simulation pour Unity)
 utilise un planificateur. Elle sortira du moteur dans l'issue #186.
 
-### Unity — scripts
+### Unity : scripts
 
 ```
 unity-client/Assets/
@@ -182,7 +182,7 @@ flowchart TD
     MAIN --> HOOK
 ```
 
-Tous les réglages et leurs valeurs par défaut : [README — Configuration](../README.fr.md#configuration).
+Tous les réglages et leurs valeurs par défaut : [README, section Configuration](../README.fr.md#configuration).
 
 Trois groupes de threads travaillent en même temps :
 
@@ -207,7 +207,7 @@ Pas de verrou. Chaque morceau d'état partagé utilise l'outil sûr le plus lég
 
 Chaque drone est toujours entier, mais un `WorldState` peut mélanger des drones de deux ticks
 voisins. Cela ne se voit pas à 20 Hz. Détails et limites :
-[ADR-0008 — partager le World sans verrou](adr/0008-shared-world-concurrency.fr.md).
+[ADR-0008 : partager le World sans verrou](adr/0008-shared-world-concurrency.fr.md).
 
 ---
 
@@ -252,7 +252,7 @@ Le backend, le réseau et Unity n'utilisent **pas** les mêmes axes :
 | Unity | Est | Haut | Nord |
 
 Chaque côté convertit à un seul endroit : `CoordinateConversions` en Java, `CoordinateUtils` en C#.
-Détails : [ADR-0007 — repères](adr/0007-coordinate-frames.fr.md).
+Détails : [ADR-0007 : repères](adr/0007-coordinate-frames.fr.md).
 
 ---
 
@@ -329,18 +329,18 @@ Pour l'instant, la simulation suit l'horloge de l'ordinateur. Une horloge de sim
 
 ## 8. Pour aller plus loin
 
-- [ADR-0001 — gRPC streaming](adr/0001-grpc-streaming.fr.md)
-- [ADR-0002 — pas de Spring Boot pour le MVP](adr/0002-no-spring-boot-for-mvp.fr.md)
-- [ADR-0003 — assets 3D minimaux](adr/0003-minimal-3d-assets.fr.md)
-- [ADR-0004 — placement de cible déclenché par l'opérateur](adr/0004-target-placement-operator-triggered.fr.md)
-- [ADR-0005 — mission-console](adr/0005-mission-console-replaces-fleet-dashboard.fr.md)
-- [ADR-0006 — vue détaillée et vue simple](adr/0006-detailed-and-simple-view.fr.md)
-- [ADR-0007 — repères](adr/0007-coordinate-frames.fr.md)
-- [ADR-0008 — partager le World sans verrou](adr/0008-shared-world-concurrency.fr.md)
-- [ADR-0009 — stockage et fonctionnement hors ligne](adr/0009-storage-and-offline-operation.fr.md)
-- [ADR-0010 — drones triés par id, pas d'optimisation pour l'instant](adr/0010-sorted-drone-list.fr.md)
-- [ADR-0011 — échelle réaliste, fiche technique et capteurs](adr/0011-model-assumptions-and-scale.fr.md)
-- [ADR-0012 — risque de perte, prédateur pour la démo seulement](adr/0012-loss-risk-replaces-the-predator.fr.md)
+- [ADR-0001 : gRPC streaming](adr/0001-grpc-streaming.fr.md)
+- [ADR-0002 : pas de Spring Boot pour le MVP](adr/0002-no-spring-boot-for-mvp.fr.md)
+- [ADR-0003 : assets 3D minimaux](adr/0003-minimal-3d-assets.fr.md)
+- [ADR-0004 : placement de cible déclenché par l'opérateur](adr/0004-target-placement-operator-triggered.fr.md)
+- [ADR-0005 : mission-console](adr/0005-mission-console-replaces-fleet-dashboard.fr.md)
+- [ADR-0006 : vue détaillée et vue simple](adr/0006-detailed-and-simple-view.fr.md)
+- [ADR-0007 : repères](adr/0007-coordinate-frames.fr.md)
+- [ADR-0008 : partager le World sans verrou](adr/0008-shared-world-concurrency.fr.md)
+- [ADR-0009 : stockage et fonctionnement hors ligne](adr/0009-storage-and-offline-operation.fr.md)
+- [ADR-0010 : drones triés par id, pas d'optimisation pour l'instant](adr/0010-sorted-drone-list.fr.md)
+- [ADR-0011 : échelle réaliste, fiche technique et capteurs](adr/0011-model-assumptions-and-scale.fr.md)
+- [ADR-0012 : risque de perte, prédateur pour la démo seulement](adr/0012-loss-risk-replaces-the-predator.fr.md)
 - [Règles Boids](01-boids-rules.fr.md) · [Contrat gRPC](02-grpc-contract.fr.md) ·
   [Intégration Unity](03-unity-integration.fr.md) · [Bathymétrie du fond marin](04-seabed-bathymetry.fr.md)
 - [Dette technique, 2026-11-22](tech-debt/tech-debt-2026-11-22.fr.md) (bilans précédents : [2026-05-21](tech-debt/tech-debt-2026-05-21.fr.md), [2026-05-25](tech-debt/tech-debt-2026-05-25.fr.md))

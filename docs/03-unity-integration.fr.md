@@ -1,4 +1,4 @@
-# Intégration Unity — pont gRPC thread-safe
+# Intégration Unity : pont gRPC thread-safe
 
 [English](03-unity-integration.md)
 
@@ -11,7 +11,7 @@
 
 Unity impose une règle stricte : **seul le main thread peut modifier des objets de la scène** (`Transform`, `Renderer`, champs de composants, …). La violer fait crasher l'éditeur ou provoque une corruption silencieuse.
 
-Les données gRPC arrivent sur un **Task du thread-pool .NET** — un thread d'arrière-plan géré par le runtime, jamais le main thread Unity.
+Les données gRPC arrivent sur un **Task du thread-pool .NET**, un thread d'arrière-plan géré par le runtime, jamais le main thread Unity.
 
 Appeler naïvement `transform.position = …` depuis le callback gRPC crash immédiatement.
 
@@ -62,7 +62,7 @@ Trois horloges indépendantes : **sim-loop à 30 Hz**, **broadcaster à 20 Hz**,
 
 ## 3. Synchronisation côté Java
 
-Le thread broadcaster lit l'état des agents pendant que le thread sim-loop les écrit en même temps. Pas de verrou — `position` et `velocity` sont déclarés `volatile` :
+Le thread broadcaster lit l'état des agents pendant que le thread sim-loop les écrit en même temps. Pas de verrou. `position` et `velocity` sont déclarés `volatile` :
 
 ```java
 // Agent.java
@@ -77,7 +77,7 @@ public void update(Vector3D newPosition, Vector3D newVelocity) {
 
 Une écriture de référence `volatile` en Java est **atomique** et immédiatement visible par les autres threads. `Vector3D` est immuable (tous les champs finaux), donc un lecteur ne peut jamais observer un objet à moitié construit.
 
-> Les champs internes de `SimulationLoop` (`tickCount`, …) ne sont **pas** volatiles — ils sont confinés au thread sim-loop par conception et ne doivent pas être exposés au broadcaster sans synchronisation.
+> Les champs internes de `SimulationLoop` (`tickCount`, …) ne sont **pas** volatiles : ils sont confinés au thread sim-loop par conception et ne doivent pas être exposés au broadcaster sans synchronisation.
 
 Les listes de drones et d'obstacles du `World` sont des `CopyOnWriteArrayList` : le diffuseur peut
 les parcourir pendant que la simulation retire ou ajoute un drone. La stratégie complète et ses
@@ -111,7 +111,7 @@ private IEnumerator ProcessQueue()
 }
 ```
 
-`yield return null` reprend à la frame suivante — la coroutine s'exécute toujours sur le **main thread**. `ConcurrentQueue<T>` est sans verrou et sûre pour plusieurs producteurs avec un seul consommateur.
+`yield return null` reprend à la frame suivante. La coroutine s'exécute toujours sur le **main thread**. `ConcurrentQueue<T>` est sans verrou et sûre pour plusieurs producteurs avec un seul consommateur.
 
 ### 4.2 WorldStateReceiver
 
@@ -174,7 +174,7 @@ Unity détecte le contexte du thread et lève une `UnityException`. Les objets n
 lock (_positionLock) { transform.position = pos; }
 ```
 
-Un `lock` protège des données partagées contre l'accès concurrent, mais il **ne change pas quel thread exécute le code**. L'assignation `transform.position` s'exécute toujours sur le Task thread — crash quand même.
+Un `lock` protège des données partagées contre l'accès concurrent, mais il **ne change pas quel thread exécute le code**. L'assignation `transform.position` s'exécute toujours sur le Task thread, donc Unity plante quand même.
 
 ### `UnityMainThreadDispatcher.Instance().Enqueue()` (bibliothèque externe)
 
@@ -192,12 +192,12 @@ N'existe pas dans Unity. Il n'y a pas de dispatch basé sur `SynchronizationCont
 |----------|--------|-------|
 | Fréquence de push WorldState | 20 Hz | Côté serveur, `SwarmObserverImpl.STREAM_RATE_HZ` |
 | Fréquence Unity | ~60 fps | Queue vidée une fois par frame |
-| Actions en queue par frame | ~0,3 | 20 Hz ÷ 60 fps — un `WorldState` toutes les ~3 frames |
+| Actions en queue par frame | ~0,3 | 20 Hz ÷ 60 fps, soit un `WorldState` toutes les ~3 frames |
 | Profondeur queue en régime | 0–1 entrées | Le consommateur (60 fps) est plus rapide que le producteur (20 Hz) |
 | Mémoire par action en queue | ~64 o | Fermeture capturant une référence `WorldState` |
 | Débit max soutenable | >500 Hz | `ConcurrentQueue` est sans verrou ; limité par la pression GC, pas la contention |
 
-La queue ne s'accumule jamais dans des conditions normales car le main thread (60 fps) la vide ~3× plus vite que le broadcaster ne la remplit (20 Hz). Un pic n'arrive que si Unity tombe sous 20 fps — et là, les frames plus anciennes sont de toute façon supplantées par les WorldState plus récents, donc le lag visuel reste borné.
+La queue ne s'accumule jamais dans des conditions normales car le main thread (60 fps) la vide ~3× plus vite que le broadcaster ne la remplit (20 Hz). Un pic n'arrive que si Unity tombe sous 20 fps. Dans ce cas, les WorldState plus récents remplacent de toute façon les plus anciens, donc le lag visuel reste borné.
 
 La queue n'a pas de taille maximale explicite. Si le serveur spam à un rythme déraisonnable et qu'Unity se bloque, la mémoire croît. Pour ce projet (20 Hz, loopback local, 20 agents) ce scénario ne peut pas se produire en pratique.
 
@@ -208,7 +208,7 @@ La queue n'a pas de taille maximale explicite. Si le serveur spam à un rythme d
 1. Ajouter `MainThreadDispatcher` comme **GameObject persistant** dans la première scène chargée (`DontDestroyOnLoad` est configuré automatiquement dans `Awake`).
 2. Ajouter `WorldStateReceiver` à n'importe quel GameObject actif et câbler les références `SwarmVisualizer` et `TargetRenderer` dans l'Inspector.
 3. Démarrer le serveur Java avant d'entrer en Play mode : `mvn -pl swarm-server -am package`, puis `mvn -pl swarm-server exec:java -Dexec.mainClass="fr.gakkel.swarmsimulator.swarmserver.server.SwarmServer"`.
-4. Le log de debug `[gRPC]` apparaît dans la Console (éditeur uniquement — garde `#if UNITY_EDITOR`) confirmant que le stream est actif.
+4. Le log de debug `[gRPC]` apparaît dans la Console (éditeur uniquement, garde `#if UNITY_EDITOR`) confirmant que le stream est actif.
 
 ---
 
@@ -220,14 +220,14 @@ Le projet a été créé sous Unity 2022.3 et est désormais épinglé sur **Uni
 
 Unity 6 a **retiré la police Arial intégrée** (`{fileID: 10102, guid: 0000000000000000e000000000000000}`), remplacée par `LegacyRuntime.ttf`. Tout composant legacy `UnityEngine.UI.Text` qui référence l'ancienne Arial s'affiche **vide**. Les 4 labels des toggles de `SampleScene` étaient touchés.
 
-**Correctif (déjà appliqué) :** leur `m_Font` a été repointé vers `LiberationSans.ttf` (`{fileID: 12800000, guid: e3265ab4bf004d28a9537516768c1c75, type: 3}`), livré avec TextMeshPro et présent dans le projet. `LegacyRuntime.ttf` fonctionne aussi. Le `hudText` TMP (Agents/FPS/Spread) n'est pas concerné — les TMP Essentials et `LiberationSans SDF` sont commités dans `Assets/TextMesh Pro/`.
+**Correctif (déjà appliqué) :** leur `m_Font` a été repointé vers `LiberationSans.ttf` (`{fileID: 12800000, guid: e3265ab4bf004d28a9537516768c1c75, type: 3}`), livré avec TextMeshPro et présent dans le projet. `LegacyRuntime.ttf` fonctionne aussi. Le `hudText` TMP (Agents/FPS/Spread) n'est pas concerné : les TMP Essentials et `LiberationSans SDF` sont commités dans `Assets/TextMesh Pro/`.
 
 ### 8.2 Le Canvas Scaler doit être en *Scale With Screen Size*
 
-Le Canvas Scaler du HUD était en **Constant Pixel Size** : l'UI gardait une taille en pixels fixe et se tassait dans un coin sur un écran plus haute résolution — donnant l'impression qu'elle était absente. **Correctif (déjà appliqué) :** UI Scale Mode = **Scale With Screen Size**, Reference Resolution = **1920×1080**, Screen Match Mode = Match Width Or Height, Match = **0.5**.
+Le Canvas Scaler du HUD était en **Constant Pixel Size** : l'UI gardait une taille en pixels fixe et se tassait dans un coin sur un écran plus haute résolution, ce qui donnait l'impression qu'elle était absente. **Correctif (déjà appliqué) :** UI Scale Mode = **Scale With Screen Size**, Reference Resolution = **1920×1080**, Screen Match Mode = Match Width Or Height, Match = **0.5**.
 
 Deux pièges d'éditeur associés lors de la vérification :
-- **Tester la vue Game à une résolution fixe `1920×1080`, pas en *Free Aspect*.** Le Free Aspect recalcule l'UI en direct quand on redimensionne la fenêtre, ce qui donne l'illusion d'éléments qui « disparaissent » — un vrai build se comporte comme une résolution fixe, pas comme le Free Aspect.
+- **Tester la vue Game à une résolution fixe `1920×1080`, pas en *Free Aspect*.** Le Free Aspect recalcule l'UI en direct quand on redimensionne la fenêtre, ce qui donne l'illusion d'éléments qui « disparaissent ». Un vrai build se comporte comme une résolution fixe.
 - **Les modifications de composants faites en mode Play sont annulées à la sortie.** Régler le Canvas Scaler en **mode édition**, puis sauvegarder la scène (`Ctrl+S`).
 
 ## 9. Caméras et commandes

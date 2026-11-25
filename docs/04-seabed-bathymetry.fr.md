@@ -1,4 +1,4 @@
-# Fond marin — vrai relief à partir de la bathymétrie IBCAO / GEBCO
+# Fond marin : vrai relief à partir de la bathymétrie IBCAO / GEBCO
 
 > Comment le fond marin Unity est construit à partir de vraies données bathymétriques de la dorsale de Gakkel.
 > English version: [`04-seabed-bathymetry.md`](04-seabed-bathymetry.md).

@@ -2,8 +2,8 @@ package fr.gakkel.swarmsimulator.swarmserver.domain;
 
 /**
  * When a run stops. The live demo never stops: the operator places a new target and the swarm
- * goes on. A batch run stops like a mission: wreck detected, limit time reached, or no drone
- * left. The coverage threshold will be one more reason once coverage is computed (#133).
+ * goes on. A scoring simulation stops like a mission: wreck detected, limit time reached, or no
+ * drone left. The coverage threshold will be one more reason once coverage is computed (#133).
  *
  * <p>The list is sealed: a new kind of end shows every {@code switch} that must handle it.
  */

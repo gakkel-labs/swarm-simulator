@@ -56,8 +56,7 @@ public final class SwarmServerBootstrap {
         LOG.info("Drone catalog {} - models {} | fleet {} drones", settings.droneCatalogLocation(),
                 catalog.models(), fleet.droneCount());
         SimulationLoop.Wiring wiring = SimulationLoop.wire(
-                fleet, settings.worldWidth(), settings.worldHeight(),
-                settings.worldDepth(), settings.diagnostics(), settings.lossRisk(),
+                fleet, settings.demoMission(), settings.diagnostics(),
                 settings.demoOptions(), settings.seed(),
                 singleDaemonThreadExecutor("sim-loop"), csvExporter);
         World world = wiring.world();

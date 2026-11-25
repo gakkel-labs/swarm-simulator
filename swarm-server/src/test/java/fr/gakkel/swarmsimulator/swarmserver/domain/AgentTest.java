@@ -48,7 +48,7 @@ class AgentTest {
     void equals_sameId_returnsTrue() {
         var id = UUID.randomUUID();
         var a1 = new Agent(id, TestDrones.DEMO_DETECTION_DRONE, ORIGIN, Vector3D.ZERO);
-        var a2 = new Agent(id, TestDrones.batchDetectionDrone(), SOME_POS, SOME_VEL);
+        var a2 = new Agent(id, TestDrones.scoringDetectionDrone(), SOME_POS, SOME_VEL);
 
         assertEquals(a1, a2);
     }

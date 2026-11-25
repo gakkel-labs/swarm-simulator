@@ -29,6 +29,7 @@ class ArchitectureTest {
     private static final String SIMULATION = "..swarmserver.simulation..";
     private static final String SERVER = "..swarmserver.server..";
     private static final String CONFIG = "..swarmserver.config..";
+    private static final String SCORING = "..swarmserver.scoring..";
 
     private static final String GRPC = "io.grpc..";
     private static final String PROTOBUF = "com.google.protobuf..";
@@ -63,7 +64,7 @@ class ArchitectureTest {
         static final ArchRule domain_depends_on_no_other_server_package =
                 noClasses().that().resideInAPackage(DOMAIN)
                         .should().dependOnClassesThat()
-                        .resideInAnyPackage(SIMULATION, SERVER, CONFIG);
+                        .resideInAnyPackage(SIMULATION, SERVER, CONFIG, SCORING);
     }
 
     /** The engine (domain and simulation) runs alone: no adapter, framework or thread. */
@@ -73,7 +74,7 @@ class ArchitectureTest {
         static final ArchRule simulation_does_not_depend_on_adapters =
                 noClasses().that().resideInAPackage(SIMULATION)
                         .should().dependOnClassesThat()
-                        .resideInAnyPackage(SERVER, CONFIG);
+                        .resideInAnyPackage(SERVER, CONFIG, SCORING);
 
         @ArchTest
         static final ArchRule engine_does_not_use_grpc_or_frameworks =
@@ -95,7 +96,10 @@ class ArchitectureTest {
                         .belongToAnyOf(Executors.class, Thread.class, CompletableFuture.class);
     }
 
-    /** The adapters stay apart: only server speaks the contract, config never calls server. */
+    /**
+     * The adapters stay apart: only server speaks the contract, config never calls server or
+     * scoring.
+     */
     static final class AdapterRules {
 
         @ArchTest
@@ -105,9 +109,9 @@ class ArchitectureTest {
                         .resideInAnyPackage(GENERATED_CONTRACT);
 
         @ArchTest
-        static final ArchRule config_does_not_depend_on_server =
+        static final ArchRule config_does_not_depend_on_server_or_scoring =
                 noClasses().that().resideInAPackage(CONFIG)
                         .should().dependOnClassesThat()
-                        .resideInAPackage(SERVER);
+                        .resideInAnyPackage(SERVER, SCORING);
     }
 }

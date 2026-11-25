@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JsonDroneCatalogRepositoryTest {
 
-    // One drone with the batch values of ADR-0011.
+    // One drone with the scoring values of ADR-0011.
     private static final String SIDE_SCAN_DRONE = """
             {
               "model": "side-scan-drone",
@@ -56,7 +56,7 @@ class JsonDroneCatalogRepositoryTest {
         DroneCatalog catalog = repository.load();
 
         assertThat(catalog.specification("side-scan-drone"))
-                .isEqualTo(TestDrones.batchDetectionDrone());
+                .isEqualTo(TestDrones.scoringDetectionDrone());
     }
 
     @Test
@@ -196,25 +196,25 @@ class JsonDroneCatalogRepositoryTest {
     }
 
     @Test
-    void load_batchCatalogOfTheServer_holdsTheValuesOfTheAdr() {
+    void load_scoringCatalogOfTheServer_holdsTheValuesOfTheAdr() {
         JsonDroneCatalogRepository repository =
-                JsonDroneCatalogRepository.fromLocation("classpath:drone-catalog-batch.json");
+                JsonDroneCatalogRepository.fromLocation("classpath:drone-catalog-scoring.json");
 
         DroneCatalog catalog = repository.load();
 
         assertThat(catalog.specification("side-scan-drone"))
-                .isEqualTo(TestDrones.batchDetectionDrone());
+                .isEqualTo(TestDrones.scoringDetectionDrone());
     }
 
     @Test
-    void load_demoAndBatchCatalogs_useTheSameModelNames() {
+    void load_demoAndScoringCatalogs_useTheSameModelNames() {
         // A fleet configuration is written the same way in both profiles (#177).
         DroneCatalog demo =
                 JsonDroneCatalogRepository.fromLocation(Settings.DEFAULT_DRONE_CATALOG).load();
-        DroneCatalog batch = JsonDroneCatalogRepository
-                .fromLocation("classpath:drone-catalog-batch.json").load();
+        DroneCatalog scoring = JsonDroneCatalogRepository
+                .fromLocation("classpath:drone-catalog-scoring.json").load();
 
-        assertThat(demo.models()).isEqualTo(batch.models());
+        assertThat(demo.models()).isEqualTo(scoring.models());
     }
 
     private static String catalogOf(String drones) {

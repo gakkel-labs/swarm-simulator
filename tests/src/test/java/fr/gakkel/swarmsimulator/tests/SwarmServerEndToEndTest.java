@@ -4,6 +4,7 @@ import fr.gakkel.swarmsimulator.swarmserver.config.Settings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchArea;
 import fr.gakkel.swarmsimulator.swarmserver.server.SwarmServerBootstrap;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
 import io.gakkel.swarm.contracts.v1.PlaceTargetRequest;
@@ -42,7 +43,7 @@ class SwarmServerEndToEndTest {
     @BeforeEach
     void startServer() throws Exception {
         // Port 0: the system picks a free port, so the test never clashes with a running server.
-        Settings settings = new Settings(0, DRONE_COUNT, 100, 100, 50, 42L,
+        Settings settings = new Settings(0, DRONE_COUNT, new SearchArea(100, 50), 100, 42L,
                 BoidsConfig.builder().build(), DiagnosticsConfig.builder().build(),
                 PredatorConfig.defaults(), true, LossRiskLevel.NONE,
                 Settings.DEFAULT_DRONE_CATALOG, List.of());

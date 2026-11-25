@@ -13,8 +13,8 @@ public final class TestDrones {
 
     private TestDrones() {}
 
-    /** The batch values of ADR-0011. */
-    public static DroneSpecification batchDetectionDrone() {
+    /** The scoring values of ADR-0011. */
+    public static DroneSpecification scoringDetectionDrone() {
         return new DroneSpecification("side-scan-drone", AgentType.EXPLORER,
                 new MovementLimits(1.5, 10.0, 0.5, 15.0, 6000.0),
                 Duration.ofHours(16),

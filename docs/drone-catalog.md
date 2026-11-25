@@ -34,7 +34,7 @@ can take its place without changing the domain or the engine.
 | File | Values | Used by |
 |---|---|---|
 | `swarm-server/src/main/resources/drone-catalog-demo.json` | the live demo: 5 m/s, detection radius 10 m (no nadir) | the server by default, so the Unity demo looks the same as before |
-| `swarm-server/src/main/resources/drone-catalog-batch.json` | ADR-0011: 1.5 m/s, side-scan sonar 50 m per side, 16 h | the score and the optimizer, once the `batch` profile exists (#177) |
+| `swarm-server/src/main/resources/drone-catalog-scoring.json` | ADR-0011: 1.5 m/s, side-scan sonar 50 m per side, 16 h | the simulations of a scoring (profile `scoring`, #177), then the optimizer |
 
 Both files use **the same model names**: a fleet configuration is written the same way in both
 profiles.

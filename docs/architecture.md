@@ -70,13 +70,16 @@ JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 
 ```
 fr.gakkel.swarmsimulator.swarmserver
-├── config         # Settings: reads env vars → application.properties → defaults, once at start
+├── config         # Settings (server), ScoringSettings (read when a scoring starts): env vars →
+│                  # application.properties → defaults
 ├── domain         # Agent, AgentType, World, Vector3D, LossRiskLevel, Predator (demo only), PredatorConfig,
 │                  # Motion (position + velocity), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules,
-│                  # Scenario, EndConditions, SimulationEvent (domain events)
-├── simulation     # Simulation (the engine), DemoOptions, WorldFactory, SimulationLoop, SimulationService,
+│                  # Scenario, EndConditions, SimulationEvent (domain events), SearchArea, Mission
+├── simulation     # Simulation (the engine), SimulationProfile, SimulationResult, Scoring, DemoOptions,
+│                  # WorldFactory, SimulationLoop, SimulationService,
 │                  # SimulationConstants, FlockingDiagnostician,
 │                  # DiagnosticsConfig, CohesionMetric (sliding-window spread), CohesionCsvExporter
+├── scoring        # ParallelScoring (simulations side by side, on their own threads), ScoringCommand (main)
 └── server         # SwarmServer (main), SwarmServerBootstrap (wiring), SwarmObserverImpl,
                    # SimulationControlImpl, PingServiceImpl, WorldStateBuilder, CoordinateConversions
 ```
@@ -93,18 +96,19 @@ engine writes no log: the live loop logs the events, and the score (#82) will co
 
 The same engine runs in two ways ([ADR-0013](adr/0013-simulation-events-and-end-of-a-run.md)):
 
-| | Live demo (Unity) | Batch run (score, optimizer) |
+| | Live demo (Unity), profile `demo` | Scoring simulation (score, optimizer), profile `scoring` |
 |---|---|---|
 | Wreck | placed by a click, during the run | set by the `Scenario`, or none |
 | End | never (`EndConditions.never()`) | wreck detected, limit time, or no drone left |
-| Demo options | predator and respawn (`DemoOptions` from the settings) | none (`DemoOptions.none()`) |
+| Demo options | predator, respawn and three obstacles (`DemoOptions` from the settings) | none (`DemoOptions.none()`): open, flat seabed |
 | Flocking diagnostics, CSV | in `SimulationLoop` | not run |
 
 ### Backend — dependency rule
 
 The domain is plain Java at the center. The simulation engine only uses the domain.
 The adapters, which talk to the outside world, stay around them: `server` (gRPC and the
-generated contract) and `config` (JSON files, environment variables). Arrows always point
+generated contract), `config` (JSON files, environment variables) and `scoring` (the threads that
+run the simulations of a scoring, and its command). Arrows always point
 inward.
 
 ```mermaid
@@ -115,6 +119,9 @@ flowchart TB
     SERVER -->|wiring at start| CONFIG
     CONFIG --> DOMAIN
     SIMULATION --> DOMAIN
+    SCORING[scoring<br/>threads, command] --> SIMULATION
+    SCORING --> CONFIG
+    SCORING --> DOMAIN
 ```
 
 An ArchUnit test checks this rule in every `mvn verify` (so in CI):
@@ -122,11 +129,11 @@ An ArchUnit test checks this rule in every `mvn verify` (so in CI):
 Its rules are grouped by theme (domain, engine, adapters):
 
 - `domain` depends on no other package of the server;
-- `simulation` depends neither on `server` nor on `config`;
+- `simulation` depends neither on `server`, nor on `config`, nor on `scoring`;
 - `domain` and `simulation` use neither gRPC, Protobuf, Spring, nor threads
   (`Thread`, any `Executor`, `Executors`, `CompletableFuture`);
 - only `server` uses the classes generated from the contract;
-- `config` does not depend on `server` (`server` uses `config` only to wire the server at start);
+- `config` depends neither on `server` nor on `scoring` (they use `config` to wire themselves at start);
 - there is no cycle between packages.
 
 Known exception: `SimulationLoop` (the live clock that paces the simulation for Unity) uses a

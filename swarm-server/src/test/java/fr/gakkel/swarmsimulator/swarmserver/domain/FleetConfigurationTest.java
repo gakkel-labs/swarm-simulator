@@ -57,6 +57,19 @@ class FleetConfigurationTest {
     }
 
     @Test
+    void shortestEndurance_twoModels_returnsTheModelThatMustComeBackFirst() {
+        DroneSpecification shortLived = new DroneSpecification("short-lived-c",
+                FAST.role(), FAST.movement(), java.time.Duration.ofHours(8), FAST.searchSensor(),
+                FAST.navigationSensors(), FAST.acousticModem());
+        FleetConfiguration fleet = new FleetConfiguration(
+                List.of(new DroneGroup(SIDE_SCAN, 6), new DroneGroup(shortLived, 4)), BOIDS);
+
+        java.time.Duration shortest = fleet.shortestEndurance();
+
+        assertThat(shortest).isEqualTo(java.time.Duration.ofHours(8));
+    }
+
+    @Test
     void droneGroups_listChangedAfterwards_keepsTheFirstValues() {
         List<DroneGroup> groups = new ArrayList<>(List.of(new DroneGroup(SIDE_SCAN, 6)));
         FleetConfiguration fleet = new FleetConfiguration(groups, BOIDS);

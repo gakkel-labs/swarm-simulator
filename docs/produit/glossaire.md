@@ -142,7 +142,9 @@ Details and formulas: [`../01-boids-rules.md`](../01-boids-rules.md).
 | **Control station** | The operator's web application, where the mission is defined (repository `mission-console`). The operator can create a mission there alone, from start to end, without using the simulation. | 🔜 |
 | **Detailed view / simple view** | The two looks of the viewer. The detailed view shows 3D models and a real seabed, to present the project; the simple view shows plain shapes, to read the swarm behaviour. The V key switches ([ADR-0006](../adr/0006-detailed-and-simple-view.md)). | ✅ |
 | **Replay** | Play again a mission that is finished, in the viewer, to see how the drones moved and what happened. | 🔜 |
-| **Simulation** | A computer run that imitates the mission, to test it before going to sea. It helps the operator; it is not a required step. | ✅ |
+| **Simulation** | A computer run that imitates the mission, to test it before going to sea. It helps the operator; it is not a required step. In the code, one simulation is one run of the engine with one seed. | ✅ |
+| **Simulation profile** | How one simulation is run: `demo` (small search area, real time, shown in the 3D view) or `scoring` (real-size search area, steps of 1 s, as fast as possible, no display). Same engine, same rules. | ✅ (`SimulationProfile`) |
+| **Scoring** | Many simulations of one fleet configuration on one mission, each with its own seed, run side by side. The score is computed from their results. | ✅ (`Scoring`) |
 | **Agent** | The code name of a drone in the simulation. Its type says its role: `EXPLORER` (detection drone), `SPECIALIST` (specialised drone, type only reserved), `CARRIER` (drone carrier). | ✅ |
 | **Tick** | One step of the simulation. The backend computes 30 ticks per second. | ✅ |
 | **WorldState** | A "photo" of the simulation at one moment: drones, obstacles, demo predator, target. The backend sends one 20 times per second. | ✅ |

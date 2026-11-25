@@ -5,6 +5,7 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.BoidsSearchPattern;
 import fr.gakkel.swarmsimulator.swarmserver.domain.EndConditions;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Mission;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Scenario;
@@ -109,23 +110,25 @@ public final class Simulation {
      * respawn places, the random part of the search pattern and the lost drones. The generators
      * belong to this simulation only: never share them with another simulation or thread.
      *
-     * <p>A batch run passes {@link DemoOptions#none()} and {@link EndConditions#missionEnd}; the
+     * <p>A scoring simulation passes {@link DemoOptions#none()} and
+     * {@link EndConditions#missionEnd}; the
      * live demo passes its demo options and {@link EndConditions#never()}.
      *
+     * @param mission  the search area, the flat seabed and the loss risk
      * @param scenario the wreck, placed at time 0 (or no wreck), and the master seed
      * @throws IllegalArgumentException if the wreck is outside the search area, or if a mission
      *                                  run (end conditions {@code missionEnd}) has demo options
      */
-    public static Simulation create(FleetConfiguration fleet, double width, double height,
-                                    double depth, LossRiskLevel lossRisk, Scenario scenario,
+    public static Simulation create(FleetConfiguration fleet, Mission mission, Scenario scenario,
                                     EndConditions endConditions, DemoOptions demo) {
         if (endConditions instanceof EndConditions.MissionEnd && !demo.equals(DemoOptions.none())) {
             throw new IllegalArgumentException(
                     "a mission run has no demo option (predator, respawn), got " + demo);
         }
         long masterSeed = scenario.seed();
-        World world = WorldFactory.createWorld(fleet.droneGroups(), width, height, depth,
-                demo.predator(), new Random(masterSeed));
+        World world = WorldFactory.createWorld(fleet.droneGroups(), mission.searchArea(),
+                mission.seabedDepthMeters(), demo, new Random(masterSeed));
+        LossRiskLevel lossRisk = mission.lossRisk();
         Random searchPatternRandom = new Random(masterSeed ^ SEARCH_PATTERN_SEED_SALT);
         // A factory: the configuration only names the pattern and its settings, and each run
         // gets a new pattern object with its own random generator.
@@ -161,6 +164,26 @@ public final class Simulation {
      */
     public List<UUID> lostDroneIds() {
         return List.copyOf(lostDroneIds);
+    }
+
+    /**
+     * Runs the simulation to its end, as fast as possible, with steps of {@code stepSeconds}, and
+     * returns what happened. Only for a run that ends (a mission run): the live demo never ends.
+     *
+     * @throws IllegalStateException if the run never ends or has already ended
+     */
+    public SimulationResult runToEnd(double stepSeconds) {
+        if (endConditions instanceof EndConditions.Never) {
+            throw new IllegalStateException("this simulation never ends: it cannot run to its end");
+        }
+        if (isOver()) {
+            throw new IllegalStateException("the run ended at " + runEnd.atSeconds() + " s");
+        }
+        List<SimulationEvent> events = new ArrayList<>();
+        while (!isOver()) {
+            events.addAll(step(stepSeconds));
+        }
+        return new SimulationResult(runEnd, events);
     }
 
     /** True once the run has ended: no more step is allowed. */

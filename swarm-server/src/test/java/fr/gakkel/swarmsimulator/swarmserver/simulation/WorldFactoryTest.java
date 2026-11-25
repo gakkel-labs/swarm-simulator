@@ -4,12 +4,12 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneSpecification;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchArea;
 import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -56,11 +56,11 @@ class WorldFactoryTest {
     @Test
     void createWorld_scalesObstacleRadiiWithSmallestDimensionRatio() {
         // default dimensions => scale 1.0 => original radii (8/5/6) unchanged
-        World defaultWorld = WorldFactory.createWorld(TestDrones.demoDrones(5), 100, 100, 50, new Random(0L));
+        World defaultWorld = WorldFactory.createWorld(TestDrones.demoDrones(5), new SearchArea(100, 50), 100, new Random(0L));
         assertEquals(8.0, defaultWorld.obstacles().get(0).radius(), 1e-9);
 
         // half the depth (the smallest extent) => radii halved so spheres still fit the box
-        World smallWorld = WorldFactory.createWorld(TestDrones.demoDrones(5), 100, 100, 25, new Random(0L));
+        World smallWorld = WorldFactory.createWorld(TestDrones.demoDrones(5), new SearchArea(100, 25), 100, new Random(0L));
         assertEquals(4.0, smallWorld.obstacles().get(0).radius(), 1e-9);
     }
 
@@ -81,14 +81,28 @@ class WorldFactoryTest {
 
     @Test
     void createWorld_withoutPredator_hasNoPredatorAndTheSameDrones() {
-        World withPredator = WorldFactory.createWorld(TestDrones.demoDrones(20), 100, 100, 50,
-                Optional.of(PredatorConfig.defaults()), new Random(42L));
-        World withoutPredator = WorldFactory.createWorld(TestDrones.demoDrones(20), 100, 100, 50,
-                Optional.empty(), new Random(42L));
+        World withPredator = WorldFactory.createWorld(TestDrones.demoDrones(20),
+                new SearchArea(100, 50), 100, DemoOptions.withPredator(PredatorConfig.defaults()),
+                new Random(42L));
+        World withoutPredator = WorldFactory.createWorld(TestDrones.demoDrones(20),
+                new SearchArea(100, 50), 100, DemoOptions.withoutPredator(), new Random(42L));
 
         assertNull(withoutPredator.predator());
         // The predator is drawn after the drones: switching it off does not move them.
         assertEquals(dronePositions(withPredator), dronePositions(withoutPredator));
+    }
+
+    @Test
+    void createWorld_noDemoObstacles_hasNoObstacleAndTheSameDrones() {
+        // A scoring has no obstacle nobody chose: Step 2 searches an open, flat seabed.
+        World demo = WorldFactory.createWorld(TestDrones.demoDrones(20), new SearchArea(100, 50),
+                100, DemoOptions.withPredator(PredatorConfig.defaults()), new Random(42L));
+        World scoring = WorldFactory.createWorld(TestDrones.demoDrones(20),
+                new SearchArea(100, 50), 100, DemoOptions.none(), new Random(42L));
+
+        assertEquals(3, demo.obstacles().size());
+        assertTrue(scoring.obstacles().isEmpty());
+        assertEquals(dronePositions(demo), dronePositions(scoring));
     }
 
     private static List<String> dronePositions(World world) {

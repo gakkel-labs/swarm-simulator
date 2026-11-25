@@ -4,12 +4,12 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.Agent;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Obstacle;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Predator;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchArea;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
 import fr.gakkel.swarmsimulator.swarmserver.domain.Vector3D;
 import fr.gakkel.swarmsimulator.swarmserver.domain.World;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -26,38 +26,52 @@ public final class WorldFactory {
     private WorldFactory() {}
 
     static World createWorld(List<DroneGroup> droneGroups, Random rng) {
-        return createWorld(droneGroups,
-                SimulationConstants.DEFAULT_WORLD_WIDTH, SimulationConstants.DEFAULT_WORLD_HEIGHT,
-                SimulationConstants.DEFAULT_WORLD_DEPTH, rng);
+        return createWorld(droneGroups, SimulationConstants.DEMO_SEARCH_AREA,
+                SimulationConstants.DEMO_SEABED_DEPTH, rng);
     }
 
     // Obstacle/predator positions are expressed as fractions of the world dimensions, and obstacle
     // radii scale by the smallest dimension ratio so a sphere never outgrows the smallest extent.
     // At the default 100x100x50 the scale is 1.0, reproducing the original literal positions
     // (50,-50,25)/(25,-70,25)/(75,-30,25), radii (8/5/6) and predator (5,-5,5) exactly.
-    static World createWorld(List<DroneGroup> droneGroups, double width, double height,
-                             double depth, Random rng) {
-        return createWorld(droneGroups, width, height, depth, Optional.of(PredatorConfig.defaults()),
-                rng);
+    static World createWorld(List<DroneGroup> droneGroups, SearchArea searchArea,
+                             double seabedDepthMeters, Random rng) {
+        return createWorld(droneGroups, searchArea, seabedDepthMeters,
+                DemoOptions.withPredator(PredatorConfig.defaults()), rng);
     }
 
     // Drones are created group by group, in the order of the fleet configuration: the same
     // configuration and seed always give the same random draws, so the same world. The demo
     // predator is drawn last, so switching it off does not move the drones.
-    static World createWorld(List<DroneGroup> droneGroups, double width, double height,
-                             double depth, Optional<PredatorConfig> demoPredator, Random rng) {
-        World world = new World(width, height, depth);
+    // Inside the world, "width" is East, "height" is the water column and "depth" is North
+    // (ADR-0007, renaming listed in the tech debt).
+    // The obstacles and the predator come only with the options of the live demo. Placing the
+    // obstacles draws no random number, so the drones are the same with or without them.
+    static World createWorld(List<DroneGroup> droneGroups, SearchArea searchArea,
+                             double seabedDepthMeters, DemoOptions demo, Random rng) {
+        World world = new World(searchArea, seabedDepthMeters);
+        double width = world.width();
+        double height = world.height();
+        double depth = world.depth();
         for (DroneGroup group : droneGroups) {
             for (int i = 0; i < group.count(); i++) {
                 world.addAgent(createDrone(group, width, height, depth, rng));
             }
         }
-        double radiusScale = Math.min(width / SimulationConstants.DEFAULT_WORLD_WIDTH,
-                Math.min(height / SimulationConstants.DEFAULT_WORLD_HEIGHT, depth / SimulationConstants.DEFAULT_WORLD_DEPTH));
-        world.addObstacle(new Obstacle(new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0 * radiusScale));
-        world.addObstacle(new Obstacle(new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
-        world.addObstacle(new Obstacle(new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
-        demoPredator.ifPresent(predatorConfig -> {
+        if (demo.obstacles()) {
+            SearchArea demoArea = SimulationConstants.DEMO_SEARCH_AREA;
+            double radiusScale = Math.min(
+                    searchArea.widthEastMeters() / demoArea.widthEastMeters(),
+                    Math.min(seabedDepthMeters / SimulationConstants.DEMO_SEABED_DEPTH,
+                            searchArea.lengthNorthMeters() / demoArea.lengthNorthMeters()));
+            world.addObstacle(new Obstacle(
+                    new Vector3D(0.50 * width, -0.50 * height, 0.50 * depth), 8.0 * radiusScale));
+            world.addObstacle(new Obstacle(
+                    new Vector3D(0.25 * width, -0.70 * height, 0.50 * depth), 5.0 * radiusScale));
+            world.addObstacle(new Obstacle(
+                    new Vector3D(0.75 * width, -0.30 * height, 0.50 * depth), 6.0 * radiusScale));
+        }
+        demo.predator().ifPresent(predatorConfig -> {
             Vector3D predatorStart = new Vector3D(0.05 * width, -0.05 * height, 0.10 * depth);
             world.setPredator(
                     new Predator(seededId(rng), predatorStart, Vector3D.ZERO, predatorConfig));

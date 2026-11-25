@@ -6,13 +6,18 @@ import fr.gakkel.swarmsimulator.swarmserver.domain.DroneGroup;
 import fr.gakkel.swarmsimulator.swarmserver.domain.DroneSpecification;
 import fr.gakkel.swarmsimulator.swarmserver.domain.FleetConfiguration;
 import fr.gakkel.swarmsimulator.swarmserver.domain.LossRiskLevel;
+import fr.gakkel.swarmsimulator.swarmserver.domain.Mission;
 import fr.gakkel.swarmsimulator.swarmserver.domain.PredatorConfig;
+import fr.gakkel.swarmsimulator.swarmserver.domain.SearchArea;
 import fr.gakkel.swarmsimulator.swarmserver.domain.SearchPatternSettings;
 import fr.gakkel.swarmsimulator.swarmserver.domain.TestDrones;
 import fr.gakkel.swarmsimulator.swarmserver.domain.UnknownDroneModelException;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DemoOptions;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.DiagnosticsConfig;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,9 +53,8 @@ class SettingsTest {
 
         assertEquals(50051, s.port());
         assertEquals(20, s.agentCount());
-        assertEquals(100, s.worldWidth());
-        assertEquals(100, s.worldHeight());
-        assertEquals(50, s.worldDepth());
+        assertEquals(new SearchArea(100, 50), s.demoSearchArea());
+        assertEquals(100, s.demoSeabedDepthMeters());
         assertEquals(42L, s.seed());
         assertEquals(BoidsConfig.builder().build(), s.boids());
         assertEquals(DiagnosticsConfig.builder().build(), s.diagnostics());
@@ -151,12 +155,12 @@ class SettingsTest {
         Settings s = load(Map.of(), props(
                 "swarm.port", "50060",
                 "swarm.agent-count", "8",
-                "swarm.world.width", "200",
+                "swarm.demo.search-area.width", "200",
                 "swarm.boids.cohesion-weight", "9.0"));
 
         assertEquals(50060, s.port());
         assertEquals(8, s.agentCount());
-        assertEquals(200, s.worldWidth());
+        assertEquals(new SearchArea(200, 50), s.demoSearchArea());
         assertEquals(9.0, s.boids().cohesionWeight());
         // untouched keys keep their builder default
         assertEquals(BoidsConfig.builder().build().separationWeight(), s.boids().separationWeight());
@@ -207,8 +211,8 @@ class SettingsTest {
     @Test
     void invalidDouble_throwsWithKeyInMessage() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> load(Map.of("SWARM_WORLD_WIDTH", "wide"), new Properties()));
-        assertEquals("SWARM_WORLD_WIDTH='wide' is not a valid number", ex.getMessage());
+                () -> load(Map.of("SWARM_DEMO_SEARCH_AREA_WIDTH", "wide"), new Properties()));
+        assertEquals("SWARM_DEMO_SEARCH_AREA_WIDTH='wide' is not a valid number", ex.getMessage());
     }
 
     @Test
@@ -267,7 +271,7 @@ class SettingsTest {
         Settings settings = load(Map.of("SWARM_PREDATOR_ENABLED", "false",
                 "SWARM_PREDATOR_SPEED", "fast"), new Properties());
 
-        assertEquals(DemoOptions.none(), settings.demoOptions());
+        assertEquals(DemoOptions.withoutPredator(), settings.demoOptions());
     }
 
     @Test
@@ -275,8 +279,8 @@ class SettingsTest {
         Settings defaults = load(Map.of(), new Properties());
 
         NullPointerException exception = assertThrows(NullPointerException.class,
-                () -> new Settings(defaults.port(), defaults.agentCount(), defaults.worldWidth(),
-                        defaults.worldHeight(), defaults.worldDepth(), defaults.seed(),
+                () -> new Settings(defaults.port(), defaults.agentCount(),
+                        defaults.demoSearchArea(), defaults.demoSeabedDepthMeters(), defaults.seed(),
                         defaults.boids(), defaults.diagnostics(), defaults.predator(),
                         defaults.predatorEnabled(), null, defaults.droneCatalogLocation(),
                         defaults.requestedFleet()));
@@ -291,8 +295,8 @@ class SettingsTest {
     }
 
     @Test
-    void demoOptions_predatorOff_givesNoDemoOption() {
-        assertEquals(DemoOptions.none(),
+    void demoOptions_predatorOff_keepsTheObstaclesOfTheDemo() {
+        assertEquals(DemoOptions.withoutPredator(),
                 load(Map.of("SWARM_PREDATOR_ENABLED", "false"), new Properties()).demoOptions());
     }
 
@@ -321,5 +325,49 @@ class SettingsTest {
     @Test
     void predator_defaultsMatchTheHistoricalValues() {
         assertEquals(PredatorConfig.defaults(), load(Map.of(), new Properties()).predator());
+    }
+
+    @Nested
+    class DemoMission {
+
+        @Test
+        void demoKeys_giveTheSearchAreaAndTheSeabedOfTheLiveDemo() {
+            Settings settings = load(Map.of("SWARM_DEMO_SEARCH_AREA_LENGTH", "80"), props(
+                    "swarm.demo.search-area.width", "120",
+                    "swarm.demo.seabed.depth", "60",
+                    "swarm.loss-risk.level", "low"));
+
+            Mission mission = settings.demoMission();
+
+            assertEquals(new Mission(new SearchArea(120, 80), 60, LossRiskLevel.LOW), mission);
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"swarm.world.width", "swarm.world.height", "swarm.world.depth"})
+        void oldWorldKey_stopsTheStartWithTheNewName(String oldKey) {
+            // A renamed key must not be ignored without a word: the demo would not be the one
+            // asked for.
+            assertThatThrownBy(() -> load(Map.of(), props(oldKey, "200")))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining(oldKey)
+                    .hasMessageContaining("swarm.demo.");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"0", "-5", "NaN"})
+        void badDemoSeabedDepth_stopsTheStart(String depth) {
+            // Checked when the settings are read, not later when the demo is wired.
+            assertThatThrownBy(() -> load(Map.of("SWARM_DEMO_SEABED_DEPTH", depth),
+                    new Properties()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("seabed depth");
+        }
+
+        @Test
+        void oldWorldEnvironmentVariable_stopsTheStartWithTheNewName() {
+            assertThatThrownBy(() -> load(Map.of("SWARM_WORLD_WIDTH", "200"), new Properties()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("SWARM_DEMO_SEARCH_AREA_WIDTH");
+        }
     }
 }

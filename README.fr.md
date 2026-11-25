@@ -43,10 +43,10 @@ L'étape 1 (une belle scène Unity) est terminée. Aujourd'hui le dépôt contie
 
 - Un **backend Java** simule un essaim de 20 drones en 3D. Les drones se déplacent en
   groupe (règles Boids de Reynolds), évitent des obstacles, restent dans la zone de
-  recherche et fuient un danger qui les chasse.
+  recherche et fuient un prédateur qui les chasse.
 - Une **vue Unity** se connecte au backend et affiche l'essaim en direct, au-dessus d'un
   vrai fond marin (bathymétrie de la dorsale de Gakkel). La **vue détaillée** montre des
-  modèles 3D (drones, un requin pour le danger, une épave, des cheminées hydrothermales) ;
+  modèles 3D (drones, un requin pour le prédateur, une épave, des cheminées hydrothermales) ;
   la **vue simple** (touche V) montre des formes simples. Trois caméras : vue d'ensemble,
   suivi d'un drone, caméra libre.
 - Dans la vue, un **clic gauche place une cible** (l'« épave »). Le premier drone qui
@@ -74,7 +74,7 @@ voisins proches et suit trois règles simples.
 De ces règles locales naît un comportement de groupe. C'est bien adapté à un essaim de
 drones : pas de cerveau central, donc perdre un drone n'arrête pas les autres, et
 l'essaim reste groupé sans communication lourde. Gakkel ajoute quelques règles :
-éviter les obstacles, rester dans la zone de recherche, fuir un danger, et un peu
+éviter les obstacles, rester dans la zone de recherche, fuir un prédateur, et un peu
 d'errance aléatoire (désactivée par défaut).
 
 Détails, schémas et formules : [`docs/01-boids-rules.fr.md`](docs/01-boids-rules.fr.md).
@@ -136,7 +136,7 @@ SwarmServer on :50051 — sim 30Hz — stream 20Hz
 ### 3. Résultat attendu
 
 - Des drones apparaissent au-dessus du fond marin et se déplacent en groupe.
-- Un danger (un requin, ou une sphère rouge en vue simple) les chasse ; les drones proches s'enfuient.
+- Un prédateur (un requin, ou une sphère rouge en vue simple) les chasse ; les drones proches s'enfuient.
 - Clic gauche dans la scène pour placer la cible. Quand un drone passe près d'elle,
   le drone clignote et l'écran affiche « Found by … in …s ».
 - Touches : **V** vue détaillée / simple, **B** rochers du fond, **F** caméra de suivi,
@@ -158,7 +158,7 @@ l'état de la simulation ; Unity ne fait que l'afficher.
 flowchart LR
     subgraph Backend["Backend Java (swarm-server)"]
         SIM[SimulationLoop<br/>tick 30 Hz]
-        WORLD[(World<br/>drones, obstacles,<br/>danger, cible)]
+        WORLD[(World<br/>drones, obstacles,<br/>prédateur, cible)]
         BCAST[SwarmObserverImpl<br/>diffusion 20 Hz]
         CTRL[SimulationControlImpl<br/>RPC PlaceTarget]
         SIM -->|écrit| WORLD
@@ -206,6 +206,9 @@ threads, catalogue des messages).
 - [ADR-0011](docs/adr/0011-model-assumptions-and-scale.fr.md) — **Une échelle réaliste pour le score** :
   zone de recherche de 7 x 7 km, fiche technique du drone, sonar latéral, voisins par modem
   acoustique ; la démo Unity garde un petit monde (proposée).
+- [ADR-0012](docs/adr/0012-loss-risk-replaces-the-predator.fr.md) — **Un risque de perte au lieu
+  du prédateur** : l'opérateur choisit un niveau (aucun à extrême), les drones perdus ne
+  reviennent pas ; le prédateur reste pour la démo en direct seulement (proposée).
 
 ### Configuration
 
@@ -228,8 +231,10 @@ SWARM_SEED=12345 SWARM_AGENT_COUNT=40 mvn -pl swarm-server exec:java -Dexec.main
 | `SWARM_WORLD_HEIGHT` | `swarm.world.height` | `100` | Colonne d'eau, de la surface au fond (m) |
 | `SWARM_WORLD_DEPTH` | `swarm.world.depth` | `50` | Taille Nord–Sud de la zone de recherche (m) |
 | `SWARM_SEED` | `swarm.seed` | `42` | Graine aléatoire (`random` en tire une et l'écrit dans les logs) |
-| `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Vitesse du danger (m/s), plus lent que les drones |
-| `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance à laquelle le danger attrape un drone (m) |
+| `SWARM_PREDATOR_SPEED` | `swarm.predator.speed` | `3.0` | Vitesse du prédateur (m/s), plus lent que les drones |
+| `SWARM_PREDATOR_EAT_RADIUS` | `swarm.predator.eat-radius` | `1.5` | Distance à laquelle le prédateur attrape un drone (m) |
+| `SWARM_PREDATOR_ENABLED` | `swarm.predator.enabled` | `true` | Affiche le prédateur de la démo en direct (`false` pour le cacher) |
+| `SWARM_LOSS_RISK_LEVEL` | `swarm.loss-risk.level` | `none` | Risque de perte : `none`, `low`, `medium`, `high`, `extreme` (0 %, 0,2 %, 2 %, 5 %, 15 % pour 24 h de plongée). Un drone perdu ne revient pas |
 | `SWARM_BOIDS_*` | `swarm.boids.*` | (par règle) | Poids et rayons des règles Boids |
 | `SWARM_DIAG_*` | `swarm.diag.*` | (par seuil) | Seuils des diagnostics |
 
@@ -238,7 +243,7 @@ La liste complète, avec les valeurs par défaut, est commentée dans
 
 À propos de la graine : la même graine donne les mêmes positions de départ et les mêmes
 tirages aléatoires. Mais la simulation tourne encore sur l'horloge réelle (par exemple
-le délai de réapparition après le danger), donc deux exécutions peuvent diverger avec
+le délai de réapparition après le prédateur), donc deux exécutions peuvent diverger avec
 le temps. Une horloge de simulation avec un moteur `step(dt)` est prévue avant
 l'optimiseur (étape 2).
 

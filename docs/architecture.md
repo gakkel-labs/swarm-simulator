@@ -19,7 +19,7 @@ Two independent processes talk over **gRPC**:
 flowchart LR
     subgraph Backend["Java backend (swarm-server)"]
         SIM[SimulationLoop<br/>30 Hz tick]
-        WORLD[(World<br/>drones, obstacles,<br/>danger, target)]
+        WORLD[(World<br/>drones, obstacles,<br/>predator, target)]
         BCAST[SwarmObserverImpl<br/>broadcaster 20 Hz]
         CTRL[SimulationControlImpl<br/>PlaceTarget RPC]
         SIM -->|writes| WORLD
@@ -71,7 +71,7 @@ JUnit **5.10.2**, Mockito **5.23.0**, SLF4J **2.0.13**, Logback **1.5.32**.
 ```
 fr.gakkel.swarmsimulator.swarmserver
 ├── config         # Settings: reads env vars → application.properties → defaults, once at start
-├── domain         # Agent, AgentType, World, Vector3D, Predator (the danger), PredatorConfig,
+├── domain         # Agent, AgentType, World, Vector3D, LossRiskLevel, Predator (demo only), PredatorConfig,
 │                  # Motion (position + velocity), Target, Obstacle, TriggerSource, BoidsConfig, BoidsRules
 ├── simulation     # SimulationLoop, SimulationService, SimulationConstants, FlockingDiagnostician,
 │                  # DiagnosticsConfig, CohesionMetric (sliding-window spread), CohesionCsvExporter
@@ -79,8 +79,9 @@ fr.gakkel.swarmsimulator.swarmserver
                    # SimulationControlImpl, PingServiceImpl, WorldStateBuilder, CoordinateConversions
 ```
 
-`Predator` is the code name of the **danger** (see the [glossary](produit/glossaire.md));
-it will be renamed.
+The **predator** only exists in the live demo. In the engine, drones are lost through the
+**loss risk** (`LossRiskLevel`, see [ADR-0012](adr/0012-loss-risk-replaces-the-predator.md) and the
+[glossary](produit/glossaire.md)).
 
 ### Backend — dependency rule
 
@@ -130,7 +131,7 @@ unity-client/Assets/
 │   │   ├── SwarmVisualizer.cs        # one GameObject per drone; keys V and B
 │   │   ├── DetailedView.cs           # shared switch detailed / simple view (ADR-0006)
 │   │   ├── TargetRenderer.cs         # the target (wreck)
-│   │   ├── PredatorRenderer.cs       # the danger
+│   │   ├── PredatorRenderer.cs       # the predator
 │   │   ├── HydrothermalChimney.cs    # obstacles in the detailed view
 │   │   ├── SeabedTerrain.cs          # real seabed from IBCAO bathymetry
 │   │   ├── SeabedRocks.cs            # rocks on the seabed
@@ -187,7 +188,7 @@ All settings and their defaults: [README — Configuration](../README.md#configu
 Three groups of threads work at the same time:
 
 1. **`sim-loop`** (1 daemon thread) runs `SimulationLoop.tick()` every **33 ms**
-   (`TICK_RATE_HZ = 30`). It moves the drones and the danger, and removes or adds drones.
+   (`TICK_RATE_HZ = 30`). It moves the drones and the predator, and removes or adds drones.
 2. **`swarm-broadcaster`** (1 daemon thread) runs `SwarmObserverImpl.broadcast()` every
    **50 ms** (`STREAM_RATE_HZ = 20`). It reads the `World`, builds the message with
    `WorldStateBuilder` and sends it to every subscriber that is ready (gRPC flow control:
@@ -229,7 +230,7 @@ Vec3            { float x, y, z }                          # NED, meters
 AgentType       enum { UNSPECIFIED, EXPLORER, SPECIALIST, CARRIER }
 AgentState      { string id (UUID), AgentType type, Vec3 position_xyz, Vec3 velocity_mps }
 Obstacle        { Vec3 position_xyz, float radius_m }
-PredatorState   { string id, Vec3 position_xyz, Vec3 velocity_mps }    # the danger
+PredatorState   { string id, Vec3 position_xyz, Vec3 velocity_mps }    # the predator
 WorldState      { int64 timestamp_unix_ms,
                   repeated AgentState agents,
                   repeated Obstacle obstacles,
@@ -264,7 +265,7 @@ sequenceDiagram
     participant Loop as SimulationLoop
     participant Rules as BoidsRules
     participant World as World
-    participant Danger as Predator (danger)
+    participant Predator as Predator (demo only)
 
     loop every 33 ms
         Exec->>Loop: tick()
@@ -272,7 +273,7 @@ sequenceDiagram
         Loop->>Rules: steer(drone, neighbours, world) for each drone
         Rules-->>Loop: sum of the 7 rules
         Loop->>World: move each drone (speed limit, obstacles, walls)
-        Loop->>Danger: update, try to catch a drone (respawn after 5 s)
+        Loop->>Predator: update, try to catch a drone (respawn after 5 s)
         Loop->>World: check target detection (sensor radius 10 m)
         Loop->>Loop: cohesion metric, CSV every 1 s, diagnostics every 5 s
     end
@@ -340,6 +341,7 @@ repeatable runs, is planned for Step 2.
 - [ADR-0009 — storage and offline operation](adr/0009-storage-and-offline-operation.md)
 - [ADR-0010 — drones sorted by id, no optimisation yet](adr/0010-sorted-drone-list.md)
 - [ADR-0011 — realistic scale, drone specification and sensors](adr/0011-model-assumptions-and-scale.md)
+- [ADR-0012 — loss risk, predator for the demo only](adr/0012-loss-risk-replaces-the-predator.md)
 - [Boids rules](01-boids-rules.md) · [gRPC contract](02-grpc-contract.md) ·
   [Unity integration](03-unity-integration.md) · [Seabed bathymetry](04-seabed-bathymetry.md)
 - [Tech debt, 2026-11-22](tech-debt/tech-debt-2026-11-22.md) (earlier snapshots: [2026-05-21](tech-debt/tech-debt-2026-05-21.md), [2026-05-25](tech-debt/tech-debt-2026-05-25.md))

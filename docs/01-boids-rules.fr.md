@@ -11,14 +11,14 @@
 
 À chaque tick, chaque drone (un **boid**) applique les **3 règles de Reynolds** (séparation,
 alignement, cohésion) et **4 règles ajoutées par Gakkel** pour son environnement : rester dans la
-zone de recherche, éviter les obstacles, fuir le danger, et errer un peu. Chaque règle donne un
+zone de recherche, éviter les obstacles, fuir le prédateur, et errer un peu. Chaque règle donne un
 vecteur. Les vecteurs sont pondérés, additionnés, puis appliqués à la vitesse.
 
 **Principe clé :** un drone ne voit que ses **voisins proches**, dans un rayon de perception
 unique (`perceptionRadius`). Pas de vue globale, pas de chef. Le comportement de groupe naît de
 ces règles locales simples.
 
-> Dans le code, un drone est un `Agent` et le danger est un `Predator` (ancien nom, à renommer).
+> Dans le code, un drone est un `Agent`. Le prédateur (`Predator`) n'existe que dans la démo en direct : les lots de simulations n'en ont pas, et la perte de drones y vient du [risque de perte](adr/0012-loss-risk-replaces-the-predator.fr.md).
 > Toutes les règles sont dans [`BoidsRules.java`](../swarm-server/src/main/java/fr/gakkel/swarmsimulator/swarmserver/domain/BoidsRules.java).
 
 | # | Règle | Code | Reynolds ? | Sortie |
@@ -28,7 +28,7 @@ ces règles locales simples.
 | 3 | Cohésion | `cohesion` | oui | vecteur unitaire |
 | 4 | Répulsion des limites | `boundaryRepulsion` | non | vecteur unitaire |
 | 5 | Évitement des obstacles | `obstacleAvoidance` | non | **non normalisé** |
-| 6 | Fuite du danger | `predatorFlee` | non | **non normalisé** |
+| 6 | Fuite du prédateur | `predatorFlee` | non | **non normalisé** |
 | 7 | Errance | `wander` | non | vecteur unitaire (désactivée par défaut) |
 
 ---
@@ -43,7 +43,7 @@ flowchart LR
     P --> C[3 Cohésion<br/>rester groupé]
     A --> B[4 Limites<br/>éviter les bords]
     A --> O[5 Obstacles<br/>contourner]
-    A --> F[6 Danger<br/>fuir]
+    A --> F[6 Prédateur<br/>fuir]
     A --> W[7 Errance<br/>hasard]
     S -->|× w_sep| SUM((Σ))
     AL -->|× w_align| SUM
@@ -57,7 +57,7 @@ flowchart LR
 ```
 
 Seules les règles 1 à 3 utilisent la liste des voisins. Les règles 4 à 7 regardent le monde
-(parois, obstacles, danger) ou rien du tout (errance).
+(parois, obstacles, prédateur) ou rien du tout (errance).
 
 ---
 
@@ -165,26 +165,26 @@ retire la partie de sa vitesse qui va vers l'intérieur (`resolveObstacleCollisi
 
 ---
 
-## 8. Règle 6 — Fuite du danger *(ajoutée par Gakkel)*
+## 8. Règle 6 — Fuite du prédateur *(ajoutée par Gakkel)*
 
-**But :** fuir le danger quand il s'approche. Le danger est un seul objet qui bouge, pas un
+**But :** fuir le prédateur quand il s'approche. Le prédateur est un seul objet qui bouge, pas un
 voisin : il est traité à part de la liste des voisins.
 
-**Principe :** dans `threatFleeRadius`, le danger repousse le drone avec une force de **1/d**.
+**Principe :** dans `threatFleeRadius`, le prédateur repousse le drone avec une force de **1/d**.
 Le résultat n'est **pas normalisé** : avec `threatFleeWeight = 200`, la fuite l'emporte sur
-toutes les autres règles quand le danger est à quelques mètres. Hors du rayon, la force est nulle.
+toutes les autres règles quand le prédateur est à quelques mètres. Hors du rayon, la force est nulle.
 
 ```text
-fonction predatorFlee(agent, danger):
-    away = agent.position - danger.position
+fonction predatorFlee(agent, prédateur):
+    away = agent.position - prédateur.position
     d = |away|
     si d > threatFleeRadius ou d < ε : retourner (0, 0, 0)
     retourner away / d²                         # = unitaire(away) / d, NON normalisé
 ```
 
-Le danger lui-même (`Predator`) va tout droit vers le drone le plus proche à 3 m/s (par défaut). S'il passe à
+Le prédateur lui-même (`Predator`) va tout droit vers le drone le plus proche à 3 m/s (par défaut). S'il passe à
 moins de 1,5 m, il attrape le drone : le drone est retiré, puis revient 5 s plus tard, à au moins
-30 m du danger.
+30 m du prédateur.
 
 ---
 
@@ -207,7 +207,7 @@ steer = w_sep      · separation(agent, voisins)
       + w_coh      · cohesion(agent, voisins)
       + w_boundary · boundaryRepulsion(agent, monde)
       + w_obstacle · obstacleAvoidance(agent, obstacles)
-      + w_flee     · predatorFlee(agent, danger)      # seulement s'il y a un danger
+      + w_flee     · predatorFlee(agent, prédateur)      # seulement s'il y a un prédateur
       + w_wander   · wander()
 
 v = limiter(v + steer · dt, maxSpeed)                 # la seule limite
@@ -234,7 +234,7 @@ peut changer les derniers chiffres. C'est pour cela que le monde garde ses drone
 - Le temps vient de l'horloge de simulation (`SimulationClock`), jamais de l'horloge de l'ordinateur.
 
 Le test `SimulationTest.Reproducibility` vérifie ces règles : la même graine lancée deux fois
-donne des positions et des vitesses strictement égales après 30 s, danger compris.
+donne des positions et des vitesses strictement égales après 30 s, prédateur compris.
 
 ---
 
@@ -253,16 +253,16 @@ d'environnement `SWARM_BOIDS_*` ou une propriété `swarm.boids.*` (voir le [REA
 | `boundaryRepulsionWeight`  | `2.0`             | Poids de la répulsion des limites                               | Les drones tournent plus tôt avant les parois |
 | `obstacleAvoidanceRadius`  | `8.0` m           | Écart à la surface d'une sphère en dessous duquel elle repousse | Les drones contournent de plus loin          |
 | `obstacleAvoidanceWeight`  | `4.0`             | Poids de l'évitement des obstacles                              | Virages plus larges autour des obstacles     |
-| `threatFleeRadius`         | `15.0` m          | Distance à laquelle un drone fuit le danger                     | Zone de panique plus large                   |
-| `threatFleeWeight`         | `200.0`           | Poids de la fuite du danger                                     | Panique plus forte                           |
+| `threatFleeRadius`         | `15.0` m          | Distance à laquelle un drone fuit le prédateur                     | Zone de panique plus large                   |
+| `threatFleeWeight`         | `200.0`           | Poids de la fuite du prédateur                                     | Panique plus forte                           |
 | `wanderWeight`             | `0.0`             | Poids de l'errance (0 = éteinte)                                | Plus de hasard, moins mécanique              |
 | `dt` *(boucle)*            | `1/30 s ≈ 33 ms`  | Pas de temps (30 Hz)                                            | Pas plus grands → moins stable               |
 
-Le danger a ses propres réglages : vitesse 3 m/s (`SWARM_PREDATOR_SPEED`) et rayon de capture
+Le prédateur a ses propres réglages : vitesse 3 m/s (`SWARM_PREDATOR_SPEED`) et rayon de capture
 1,5 m (`SWARM_PREDATOR_EAT_RADIUS`), tous deux dans `PredatorConfig`. La vitesse maximale (5 m/s)
 et le rayon de détection (10 m) d'un drone ne sont pas des réglages de Boids : ils viennent de sa
 fiche technique dans le [catalogue de drones](drone-catalog.fr.md) (#176). Autres valeurs fixes
-(dans le code, pas encore réglables) : retour après 5 s à au moins 30 m du danger (`Simulation`). Ces 5 s sont du temps de simulation, pas du temps réel.
+(dans le code, pas encore réglables) : retour après 5 s à au moins 30 m du prédateur (`Simulation`). Ces 5 s sont du temps de simulation, pas du temps réel.
 
 **Repères :**
 - `w_sep` un peu plus grand que `w_align` et `w_coh` → pas de collision, l'essaim tient.
@@ -319,7 +319,7 @@ quelque chose). La seule limite est `maxSpeed` sur la vitesse.
 
 ### 13.4 Quatre règles ajoutées
 
-Répulsion des limites, évitement des obstacles, fuite du danger et errance ne sont pas dans le
+Répulsion des limites, évitement des obstacles, fuite du prédateur et errance ne sont pas dans le
 modèle à 3 règles. La méthode `steer(agent, voisins)` sans `world` (visibilité package) garde la
 somme pure des 3 règles pour les tests unitaires.
 
@@ -328,7 +328,7 @@ somme pure des 3 règles pour les tests unitaires.
 | Sortie d'une règle | `desired − velocity`, limitée | direction unitaire (règles 1–4, 7) | Chaque règle testée seule |
 | Rayons | 2 | 1 (`perceptionRadius`) | Un seul paramètre à régler |
 | MAX_FORCE | oui | non ; seulement `maxSpeed` | Les vecteurs unitaires sont déjà bornés |
-| Environnement | non traité | 4 règles ajoutées | Parois, obstacles, danger, errance |
+| Environnement | non traité | 4 règles ajoutées | Parois, obstacles, prédateur, errance |
 
 ---
 

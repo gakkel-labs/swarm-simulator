@@ -135,11 +135,11 @@ message PredatorState {
 }
 ```
 
-Photo du **danger** à l'instant de la diffusion. `Predator` est l'ancien nom de code du danger (voir le [glossaire](produit/glossaire.fr.md)) ; le message garde son nom en `v1` pour ne pas casser le contrat.
+Photo du **prédateur** à l'instant de la diffusion. Le prédateur n'existe que dans la démo en direct, pour rendre la scène vivante (voir le [glossaire](produit/glossaire.fr.md) et l'[ADR-0012](adr/0012-loss-risk-replaces-the-predator.fr.md)).
 
-- `id` — UUID du danger, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état.
-- `position_xyz` — centre du danger, mètres, NED. Même repère que `AgentState.position_xyz`.
-- `velocity_mps` — vitesse instantanée, m/s, NED. Sa norme est la vitesse du danger, réglée par `SWARM_PREDATOR_SPEED` (3,0 m/s par défaut, plus lent que les drones pour qu'ils puissent s'échapper). La distance de capture se règle par `SWARM_PREDATOR_EAT_RADIUS` (1,5 m par défaut).
+- `id` — UUID du prédateur, stable pendant toute la simulation. Les clients doivent indexer par `id` pour un rendu avec état.
+- `position_xyz` — centre du prédateur, mètres, NED. Même repère que `AgentState.position_xyz`.
+- `velocity_mps` — vitesse instantanée, m/s, NED. Sa norme est la vitesse du prédateur, réglée par `SWARM_PREDATOR_SPEED` (3,0 m/s par défaut, plus lent que les drones pour qu'ils puissent s'échapper). La distance de capture se règle par `SWARM_PREDATOR_EAT_RADIUS` (1,5 m par défaut).
 
 Pas de champ d'orientation — le cap visuel est déduit côté client depuis `velocity_mps`.
 
@@ -163,7 +163,7 @@ Snapshot complet du monde simulé à l'instant `timestamp_unix_ms`.
 - `timestamp_unix_ms` — horloge wall-clock du serveur au moment où la frame est construite (`System.currentTimeMillis()`). Cf. §5.3.
 - `agents` — tous les agents du monde. L'ordre **n'est pas** garanti ; les clients doivent indexer par `id`.
 - `obstacles` — tous les obstacles du monde. Une liste vide est légale.
-- `predators` — tous les dangers du monde. Contient exactement **1 entrée** aujourd'hui. Une liste vide est légale (pas de danger). Les clients doivent gérer une liste vide — cacher le GameObject du danger si la liste devient vide.
+- `predators` — tous les prédateurs du monde. Contient **1 entrée** quand le prédateur de démo est activé (`SWARM_PREDATOR_ENABLED=true`, par défaut) et est **vide** quand il est désactivé. Les clients doivent gérer une liste vide — cacher le GameObject du prédateur si la liste devient vide.
 - `search_status` — présent uniquement quand une cible a été placée via `PlaceTarget`. Absent jusqu'à ce moment (valeur par défaut proto3).
 - `sensor_radius_m` — rayon de détection partagé par tous les agents, en mètres. Les clients l'utilisent pour dimensionner l'overlay de zone de détection.
 - `cohesion_spread_m` — dispersion moyenne des positions (écart-type par rapport au centroïde) lissée sur les 30 derniers ticks (~1 s). Zéro jusqu'au premier tick. Utilisé par le HUD Unity et exporté dans `metrics/cohesion-*.csv`.
@@ -368,7 +368,7 @@ Le contrat est volontairement minimal pour que les itérations futures s'insère
 
 | Besoin futur                            | Extension probable                                                              |
 | --------------------------------------- | ------------------------------------------------------------------------------- |
-| Danger                                  | ✅ **Fait** — `repeated PredatorState predators = 4` sur `WorldState`. Le danger chasse les drones ; Unity le dessine en requin (vue détaillée) ou en sphère rouge (vue simple), voir `PredatorRenderer.cs`. |
+| Prédateur                                  | ✅ **Fait** — `repeated PredatorState predators = 4` sur `WorldState`. Le prédateur chasse les drones ; Unity le dessine en requin (vue détaillée) ou en sphère rouge (vue simple), voir `PredatorRenderer.cs`. |
 | Porte-drones et drones spécialisés      | L'enum `AgentType` couvre déjà `CARRIER` / `SPECIALIST`                         |
 | Commandes vers la flotte (étape 6)      | **Nouveau** service, RPC séparé — garder l'observer en lecture seule            |
 | Configurations de flotte et scores (étapes 2–3) | Nouveaux messages ou nouveau service ; l'observer ne change pas        |

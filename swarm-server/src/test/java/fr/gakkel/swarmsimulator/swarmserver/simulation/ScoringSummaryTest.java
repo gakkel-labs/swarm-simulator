@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,6 +73,30 @@ class ScoringSummaryTest {
                 ScoringSummary.of(List.of(result(EndReason.LIMIT_TIME_REACHED, 57600, 0)));
 
         assertThat(summary.describe()).contains("mean detection time -");
+    }
+
+    @Test
+    void constructor_moreDetectionsThanSimulations_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> new ScoringSummary(4, 6, OptionalDouble.of(10), 0))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void constructor_noSimulation_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> new ScoringSummary(0, 0, OptionalDouble.empty(), 0))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void constructor_negativeLostDrones_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> new ScoringSummary(1, 0, OptionalDouble.empty(), -1))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void constructor_noDetectionTimeObject_throwsNullPointerException() {
+        assertThatThrownBy(() -> new ScoringSummary(1, 0, null, 0))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

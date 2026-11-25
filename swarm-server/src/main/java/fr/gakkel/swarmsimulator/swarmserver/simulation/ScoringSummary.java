@@ -2,6 +2,7 @@ package fr.gakkel.swarmsimulator.swarmserver.simulation;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.OptionalDouble;
 
 /**
@@ -20,6 +21,22 @@ public record ScoringSummary(int simulationCount, int detectedCount,
                              double meanLostDronesPerSimulation) {
 
     private static final double SECONDS_PER_HOUR = 3600.0;
+
+    public ScoringSummary {
+        if (simulationCount < 1) {
+            throw new IllegalArgumentException(
+                    "a scoring summary needs at least one simulation, got " + simulationCount);
+        }
+        if (detectedCount < 0 || detectedCount > simulationCount) {
+            throw new IllegalArgumentException("detected count must be between 0 and "
+                    + simulationCount + ", got " + detectedCount);
+        }
+        Objects.requireNonNull(meanDetectionTimeSeconds, "meanDetectionTimeSeconds");
+        if (!(meanLostDronesPerSimulation >= 0)) {
+            throw new IllegalArgumentException("mean lost drones must be >= 0, got "
+                    + meanLostDronesPerSimulation);
+        }
+    }
 
     public static ScoringSummary of(List<SimulationResult> results) {
         if (results.isEmpty()) {

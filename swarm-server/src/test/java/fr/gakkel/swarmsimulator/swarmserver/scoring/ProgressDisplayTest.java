@@ -64,6 +64,18 @@ class ProgressDisplayTest {
     }
 
     @Test
+    void finish_withoutStart_showsZeroSecondsAndNoRedraw() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        ProgressDisplay display =
+                new ProgressDisplay(2, new PrintStream(bytes, true, StandardCharsets.UTF_8));
+
+        display.finish();
+
+        assertThat(bytes.toString(StandardCharsets.UTF_8))
+                .isEqualTo("\r| [....................] 0/2 (  0 %) 0 s" + System.lineSeparator());
+    }
+
+    @Test
     void constructor_noSimulation_throwsIllegalArgumentException() {
         assertThatThrownBy(() -> new ProgressDisplay(0, System.out))
                 .isInstanceOf(IllegalArgumentException.class);

@@ -2,9 +2,12 @@ package fr.gakkel.swarmsimulator.swarmserver.scoring;
 
 import fr.gakkel.swarmsimulator.swarmserver.simulation.Scoring;
 import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +25,8 @@ import java.util.function.IntConsumer;
  * master seed always gives the same list.
  */
 public final class ParallelScoring {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ParallelScoring.class);
 
     private final int threadCount;
 
@@ -52,10 +57,12 @@ public final class ParallelScoring {
     /**
      * Same as {@link #simulate(Scoring, int)}, and calls {@code onSimulationDone} with the number
      * of simulations ended so far each time one ends. It is called from the simulation threads:
-     * keep it short.
+     * keep it short. If it fails, the error is logged and the scoring goes on: showing the
+     * progress must never cost a result.
      */
     public List<SimulationResult> simulate(Scoring scoring, int simulationCount,
                                            IntConsumer onSimulationDone) {
+        Objects.requireNonNull(onSimulationDone, "onSimulationDone");
         if (simulationCount < 1) {
             throw new IllegalArgumentException(
                     "simulation count must be >= 1, got " + simulationCount);
@@ -66,7 +73,12 @@ public final class ParallelScoring {
             int simulationIndex = index;
             simulations.add(() -> {
                 SimulationResult result = scoring.simulate(simulationIndex);
-                onSimulationDone.accept(doneCount.incrementAndGet());
+                int doneSoFar = doneCount.incrementAndGet();
+                try {
+                    onSimulationDone.accept(doneSoFar);
+                } catch (RuntimeException progressError) {
+                    LOG.warn("Progress of the scoring not shown: {}", progressError.toString());
+                }
                 return result;
             });
         }

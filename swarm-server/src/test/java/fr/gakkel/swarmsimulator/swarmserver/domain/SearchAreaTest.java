@@ -32,6 +32,12 @@ class SearchAreaTest {
     }
 
     @Test
+    void toString_largeSizes_neverUsesScientificNotation() {
+        assertThat(new SearchArea(12_345_678.5, 1e20))
+                .hasToString("12345678.5 x 100000000000000000000 m");
+    }
+
+    @Test
     void toString_partOfAMeter_keepsTheDecimals() {
         assertThat(new SearchArea(100.5, 50)).hasToString("100.5 x 50 m");
     }

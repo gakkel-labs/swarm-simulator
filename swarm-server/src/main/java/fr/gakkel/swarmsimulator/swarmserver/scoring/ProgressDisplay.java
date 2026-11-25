@@ -25,7 +25,7 @@ final class ProgressDisplay {
     private final String countFormat;
     private final AtomicInteger doneCount = new AtomicInteger();
     private final ScheduledExecutorService refresher;
-    private long startNanos;
+    private long startNanos = System.nanoTime();
     private int frame;
 
     ProgressDisplay(int simulationCount, PrintStream out) {
@@ -44,7 +44,10 @@ final class ProgressDisplay {
         });
     }
 
-    /** Starts redrawing the line, 4 times per second. */
+    /**
+     * Starts redrawing the line, 4 times per second. Call it only in a terminal: without it,
+     * {@link #finish()} writes the last line once, which suits a log file.
+     */
     void start() {
         startNanos = System.nanoTime();
         refresher.scheduleAtFixedRate(this::redraw, 0, REFRESH_MILLISECONDS,

@@ -13,6 +13,8 @@ import fr.gakkel.swarmsimulator.swarmserver.simulation.SimulationResult;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -47,11 +49,27 @@ class ParallelScoringTest {
 
     @Test
     void simulate_withProgress_reportsEachEndedSimulationOnceUpToTheTotal() {
-        List<Integer> doneCounts = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+        List<Integer> doneCounts = Collections.synchronizedList(new ArrayList<>());
 
         new ParallelScoring(3).simulate(SCORING, 6, doneCounts::add);
 
         assertThat(doneCounts).containsExactlyInAnyOrder(1, 2, 3, 4, 5, 6);
+    }
+
+    @Test
+    void simulate_progressThatFails_stillReturnsEveryResult() {
+        List<SimulationResult> results = new ParallelScoring(2).simulate(SCORING, 3,
+                doneSoFar -> {
+                    throw new IllegalStateException("display closed");
+                });
+
+        assertThat(results).hasSize(3);
+    }
+
+    @Test
+    void simulate_noProgress_throwsNullPointerExceptionBeforeAnySimulation() {
+        assertThatThrownBy(() -> new ParallelScoring(2).simulate(SCORING, 3, null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

@@ -20,8 +20,8 @@ import java.util.Map;
 /**
  * The command of Step 2: scores one fleet configuration on one mission, with no display. It
  * uses the same engine and the same {@link ParallelScoring} as the server will (the web call
- * comes with #175). The score itself comes with #82: for now it logs how the simulations ended and a
- * {@link ScoringSummary}.
+ * comes with #175). The score itself comes with #82: for now it logs how the simulations ended
+ * and a {@link ScoringSummary}.
  *
  * <p>The mission comes from {@code SWARM_SCORING_*} settings; there is no default search area,
  * seabed depth or fleet (see {@link ScoringSettings}).
@@ -49,7 +49,10 @@ public final class ScoringCommand {
 
         long startNanos = System.nanoTime();
         ProgressDisplay progress = new ProgressDisplay(settings.simulationCount(), System.out);
-        progress.start();
+        // The line is redrawn only in a terminal: a log file gets the last line once.
+        if (System.console() != null) {
+            progress.start();
+        }
         List<SimulationResult> results;
         try {
             results = new ParallelScoring(threadCount).simulate(scoring,

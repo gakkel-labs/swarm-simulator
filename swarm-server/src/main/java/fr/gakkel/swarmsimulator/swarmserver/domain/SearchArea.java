@@ -1,5 +1,7 @@
 package fr.gakkel.swarmsimulator.swarmserver.domain;
 
+import java.math.BigDecimal;
+
 /**
  * The search area of a mission, seen from above: a rectangle facing North, from its south-west
  * corner. The operator chooses it: it comes from the mission, never from the engine (ADR-0011).
@@ -29,9 +31,9 @@ public record SearchArea(double widthEastMeters, double lengthNorthMeters) {
         return meters(widthEastMeters) + " x " + meters(lengthNorthMeters) + " m";
     }
 
-    // 7000.0 is written 7000, and 100.5 stays 100.5.
+    // 7000.0 is written 7000, 100.5 stays 100.5, and a large size never becomes 1.2E7.
     private static String meters(double value) {
-        return value == Math.rint(value) ? Long.toString((long) value) : Double.toString(value);
+        return BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
     }
 
     // "!(x > 0)" also rejects NaN, which fails every comparison.
